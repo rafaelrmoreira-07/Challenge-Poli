@@ -1,26 +1,24 @@
-import { Suspense } from "react";
-import { simulateIrregularRhythm } from "@/app/actions";
+"use client";
+
 import { WearableChart } from "@/components/charts";
 import { WatchIcon } from "@/components/icons";
 import { AlertCard, Disclaimer, SectionTitle, Skeleton } from "@/components/ui";
-import { getDb } from "@/lib/db";
 import { formatDate } from "@/lib/dates";
 import { computeAlerts } from "@/lib/health";
+import { simulateIrregularRhythm, useDb } from "@/lib/store";
 
 export default function WearablesPage() {
+  const db = useDb();
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight">Sinais dos wearables</h1>
       <p className="mt-1 text-sm text-slate-600">Batimento, sono, oxigenação, pressão e atividade, no mesmo histórico dos seus exames.</p>
-      <Suspense fallback={<Skeleton lines={5} />}>
-        <Wearables />
-      </Suspense>
+      {db ? <Wearables db={db} /> : <Skeleton lines={5} />}
     </div>
   );
 }
 
-async function Wearables() {
-  const db = await getDb();
+function Wearables({ db }: { db: NonNullable<ReturnType<typeof useDb>> }) {
   const alerts = computeAlerts(db).filter((a) => a.kind !== "exames");
   const days = db.wearableDays;
   const irregular = days.filter((d) => d.irregularRhythmEvents > 0).reverse();
@@ -45,9 +43,9 @@ async function Wearables() {
       <div className="space-y-3">
         {alerts.length ? alerts.map((a) => <AlertCard key={a.id} alert={a} />) : <p className="card text-sm text-slate-600">Nenhum alerta nos wearables.</p>}
       </div>
-      <form action={simulateIrregularRhythm} className="mt-3">
-        <button className="btn-secondary w-full text-xs">Demo: simular episódios de ritmo irregular</button>
-      </form>
+      <button className="btn-secondary mt-3 w-full text-xs" onClick={() => simulateIrregularRhythm()}>
+        Demo: simular episódios de ritmo irregular
+      </button>
 
       <SectionTitle>Frequência cardíaca de repouso</SectionTitle>
       <div className="card px-2">

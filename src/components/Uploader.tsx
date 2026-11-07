@@ -1,16 +1,28 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { saveExam, type SaveExamInput } from "@/app/actions";
+import { ageFrom } from "@/lib/dates";
+import { ACCEPTED_TYPES, extractLabReport, MAX_UPLOAD_BYTES, NoKeyError } from "@/lib/extraction";
 import { labStatus } from "@/lib/health";
+import { asset } from "@/lib/paths";
+import { getDbSnapshot, saveExam, type SaveExamInput } from "@/lib/store";
 import type { Extraction, ExtractedResult } from "@/lib/types";
 import { CameraIcon, FileIcon, SparkIcon } from "./icons";
 import { StatusBadge } from "./ui";
 
 type Phase =
-  | { step: "idle"; error?: string }
+  | { step: "idle"; error?: string; needsKey?: boolean }
   | { step: "reading"; filename: string }
-  | { step: "review"; uploadId: string; filename: string; mimeType: string; extraction: Extraction | null; warning?: string };
+  | { step: "review"; file: File; extraction: Extraction | null; warning?: string };
+
+/** Navegadores às vezes não informam o tipo (ex.: HEIC); deduz pela extensão. */
+function fileType(f: File): string {
+  if (f.type) return f.type;
+  const ext = f.name.split(".").pop()?.toLowerCase();
+  return { pdf: "application/pdf", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", heic: "image/heic", heif: "image/heif" }[ext ?? ""] ?? "";
+}
 
 const SAMPLES = [
   { file: "laudo-vida-2026-11.pdf", type: "application/pdf", title: "PDF do laboratório", desc: "Laudo de nov/2026 com 14 exames" },
@@ -39,26 +51,30 @@ export function Uploader() {
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
-  async function upload(file: File) {
+  async function upload(picked: File) {
+    const type = fileType(picked);
+    if (!ACCEPTED_TYPES.includes(type)) return setPhase({ step: "idle", error: "Formato não aceito. Envie PDF, JPG, PNG, WEBP ou HEIC." });
+    if (picked.size > MAX_UPLOAD_BYTES) return setPhase({ step: "idle", error: "Arquivo maior que 10 MB." });
+    const file = picked.type ? picked : new File([picked], picked.name, { type });
+
     setPreview(URL.createObjectURL(file));
     setPhase({ step: "reading", filename: file.name });
-    const body = new FormData();
-    body.append("file", file);
+    const { patient } = getDbSnapshot();
     try {
-      const res = await fetch("/api/exames/extrair", { method: "POST", body });
-      const json = await res.json();
-      if (!json.uploadId) {
-        setPhase({ step: "idle", error: json.error ?? "Não foi possível enviar o arquivo." });
+      const extraction = await extractLabReport(file, { sex: patient.sex, age: ageFrom(patient.birthDate) });
+      setPhase({ step: "review", file, extraction });
+    } catch (err) {
+      if (err instanceof NoKeyError) {
+        setPreview(null);
+        setPhase({ step: "idle", needsKey: true, error: "Para ler este laudo com IA, informe uma chave da Gemini em Configurações. Os dois laudos de exemplo abaixo funcionam sem chave." });
         return;
       }
-      setPhase({ step: "review", uploadId: json.uploadId, filename: json.filename, mimeType: json.mimeType, extraction: json.extraction, warning: json.error });
-    } catch {
-      setPhase({ step: "idle", error: "Falha de conexão. Tente de novo." });
+      setPhase({ step: "review", file, extraction: null, warning: "A IA não conseguiu ler o laudo agora. Tente de novo ou preencha os resultados à mão." });
     }
   }
 
   async function sendSample(s: (typeof SAMPLES)[number]) {
-    const res = await fetch(`/exemplos/${s.file}`);
+    const res = await fetch(asset(`/exemplos/${s.file}`));
     const blob = await res.blob();
     await upload(new File([blob], s.file, { type: s.type }));
   }
@@ -75,7 +91,12 @@ export function Uploader() {
 
   return (
     <div>
-      {phase.error && <p className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">{phase.error}</p>}
+      {phase.error && (
+        <p className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+          {phase.error}
+          {phase.needsKey && <> <Link href="/configuracoes" className="font-semibold underline">Abrir Configurações</Link></>}
+        </p>
+      )}
       <input ref={fileRef} type="file" accept="application/pdf,image/*" className="hidden" onChange={onPick} />
       <input ref={camRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onPick} />
       <div className="grid grid-cols-2 gap-3">
@@ -100,14 +121,14 @@ export function Uploader() {
               <p className="text-sm font-semibold">{s.title}</p>
               <p className="text-[11px] text-slate-500">{s.desc}</p>
             </div>
-            <a href={`/exemplos/${s.file}`} target="_blank" rel="noopener" className="text-xs font-semibold text-slate-500">ver</a>
+            <a href={asset(`/exemplos/${s.file}`)} target="_blank" rel="noopener" className="text-xs font-semibold text-slate-500">ver</a>
             <button type="button" onClick={() => sendSample(s)} className="btn-primary px-3 py-1.5 text-xs">Enviar</button>
           </div>
         ))}
       </div>
       <p className="mt-6 text-[11px] leading-relaxed text-slate-500">
-        O arquivo é enviado para a Gemini API (Google) só para leitura. Use dados sintéticos ou seus próprios; dados de outra pessoa
-        só com o consentimento dela.
+        Com a IA ligada, o arquivo vai do seu navegador direto para a Gemini API (Google), só para leitura. O histórico fica
+        salvo apenas neste navegador. Use dados sintéticos ou seus próprios; dados de outra pessoa só com o consentimento dela.
       </p>
     </div>
   );
@@ -160,6 +181,7 @@ const toRow = (r: ExtractedResult, id: number): Row => ({
 });
 
 function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "review" }>; preview: string | null; onCancel: () => void }) {
+  const router = useRouter();
   const ex = phase.extraction;
   const [lab, setLab] = useState(ex?.lab ?? "");
   const [date, setDate] = useState(ex?.examDate ?? "");
@@ -174,10 +196,8 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
   function submit() {
     setError(null);
     const input: SaveExamInput = {
-      uploadId: phase.uploadId,
-      filename: phase.filename,
-      mimeType: phase.mimeType,
-      extractedBy: ex?.source ?? "simulado",
+      file: phase.file,
+      extractedBy: ex?.source ?? "manual",
       model: ex?.model,
       lab,
       examDate: date,
@@ -194,17 +214,18 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
     };
     start(async () => {
       const res = await saveExam(input);
-      if (res?.error) setError(res.error);
+      if ("error" in res) setError(res.error);
+      else router.push(`/exames/?novo=${res.docId}`);
     });
   }
 
-  const isImage = phase.mimeType.startsWith("image/");
+  const isImage = phase.file.type.startsWith("image/");
 
   return (
     <div>
       <div className={`mb-3 rounded-xl px-3 py-2 text-sm ring-1 ${ex?.source === "gemini" ? "bg-brand-50 text-brand-900 ring-brand-200" : "bg-amber-50 text-amber-900 ring-amber-200"}`}>
         {ex?.source === "gemini" && <>A IA leu <strong>{rows.length} resultados</strong> ({ex.model}). Confira e corrija o que for preciso antes de salvar.</>}
-        {ex?.source === "simulado" && <>A IA está indisponível agora. Mostrando a leitura pré-gravada deste laudo de exemplo.</>}
+        {ex?.source === "simulado" && <>Leitura pré-gravada deste laudo de exemplo (IA desligada ou indisponível). Com uma chave da Gemini em Configurações, a leitura é feita ao vivo.</>}
         {!ex && <>{phase.warning ?? "Não foi possível ler o laudo."} Você pode adicionar os resultados manualmente.</>}
       </div>
       {ex?.patientName && <p className="mb-2 text-xs text-slate-500">Nome no laudo: {ex.patientName}</p>}

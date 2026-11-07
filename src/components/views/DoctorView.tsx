@@ -1,62 +1,110 @@
-import type { Metadata } from "next";
-import { headers } from "next/headers";
-import { Suspense } from "react";
+"use client";
+
+import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { LabTrendChart, WearableChart } from "@/components/charts";
 import { DoctorSummary } from "@/components/DoctorSummary";
-import { HeartIcon, ShieldIcon } from "@/components/icons";
+import { ShieldIcon } from "@/components/icons";
 import { AlertCard, StatusBadge } from "@/components/ui";
 import { ageFrom, formatDate, formatDateTime } from "@/lib/dates";
+import { summaryForShare } from "@/lib/doctor";
+import { geminiConfigured } from "@/lib/gemini";
 import { analyteSeries, fmt, formatRef, medicationMarkers, wearableSnapshot } from "@/lib/health";
-import { openShare } from "@/lib/share";
+import { decodeSharePayload, scopedData, shareState, type ScopedData } from "@/lib/share";
+import { logAccess, openDocumentFile, useDb } from "@/lib/store";
+import { fallbackSummary, generateDoctorSummary } from "@/lib/summary";
 import { buildTimeline } from "@/lib/timeline";
-import { SCOPE_LABELS } from "@/lib/types";
-
-export const metadata: Metadata = {
-  title: "Visão do médico · Elo Saúde",
-  robots: { index: false, follow: false },
-};
-
-export default function MedicoPage(props: PageProps<"/medico/[token]">) {
-  return (
-    <div className="min-h-dvh bg-[#f4f6f8]">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2 font-semibold text-brand-900">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white"><HeartIcon width={18} height={18} /></span>
-            Elo Saúde <span className="font-normal text-slate-400">· Visão do médico</span>
-          </div>
-          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">Dados sintéticos</span>
-        </div>
-      </header>
-      <Suspense fallback={<p className="p-8 text-center text-sm text-slate-500">Carregando histórico…</p>}>
-        <Medico params={props.params} />
-      </Suspense>
-    </div>
-  );
-}
+import { SCOPE_LABELS, type DoctorSummary as Summary, type Share } from "@/lib/types";
 
 const DENIED = {
-  nao_encontrado: "Este link de acesso não existe.",
+  nao_encontrado: "Este link de acesso não existe ou está incompleto.",
   expirado: "Este link de acesso expirou. Peça ao paciente um novo link.",
   revogado: "O paciente revogou este acesso.",
 };
 
-async function Medico({ params }: { params: PageProps<"/medico/[token]">["params"] }) {
-  const { token } = await params;
-  const h = await headers();
-  const access = await openShare(token, { logAccess: true, userAgent: h.get("user-agent") ?? undefined });
+type FromLink = { share: Share; data: ScopedData; summary?: Summary } | "invalid" | null;
 
-  if (!access.ok) {
+export function DoctorView() {
+  const token = useSearchParams().get("t") ?? "";
+  const db = useDb();
+  const [fromLink, setFromLink] = useState<FromLink>(null);
+  const logged = useRef(false);
+
+  const local = db?.shares.find((s) => s.token === token);
+
+  // Link aberto em outro aparelho: os dados vêm no fragmento #d=...
+  useEffect(() => {
+    if (!db || local) return;
+    const payload = new URLSearchParams(window.location.hash.slice(1)).get("d");
+    if (!payload) {
+      queueMicrotask(() => setFromLink("invalid"));
+      return;
+    }
+    decodeSharePayload(payload)
+      .then((r) => setFromLink(r.share.token === token ? r : "invalid"))
+      .catch(() => setFromLink("invalid"));
+  }, [db, local, token]);
+
+  // Registro do acesso (quando o compartilhamento é deste navegador)
+  useEffect(() => {
+    if (local && shareState(local) === "ativo" && !logged.current) {
+      logged.current = true;
+      logAccess(token, navigator.userAgent);
+    }
+  }, [local, token]);
+
+  if (!db || (!local && fromLink === null)) return <p className="p-8 text-center text-sm text-slate-500">Carregando histórico…</p>;
+
+  if (local) {
+    const st = shareState(local);
+    if (st !== "ativo") return <Denied reason={st} />;
+    const data = scopedData(db, local.scopes);
     return (
-      <div className="mx-auto mt-16 max-w-md px-4 text-center">
-        <ShieldIcon className="mx-auto h-12 w-12 text-slate-400" />
-        <h1 className="mt-3 text-xl font-bold">Acesso indisponível</h1>
-        <p className="mt-1 text-sm text-slate-600">{DENIED[access.reason]}</p>
-      </div>
+      <Dashboard
+        share={local}
+        data={data}
+        loadSummary={() => summaryForShare(local, data)}
+        openDoc={(id) => openDocumentFile(id)}
+      />
     );
   }
 
-  const { share, data } = access;
+  if (fromLink === "invalid" || !fromLink) return <Denied reason="nao_encontrado" />;
+  if (shareState(fromLink.share) !== "ativo") return <Denied reason="expirado" />;
+  const { share, data, summary } = fromLink;
+  return (
+    <Dashboard
+      share={share}
+      data={data}
+      fromLink
+      loadSummary={async () => summary ?? (geminiConfigured() ? generateDoctorSummary(data) : fallbackSummary(data))}
+    />
+  );
+}
+
+function Denied({ reason }: { reason: keyof typeof DENIED }) {
+  return (
+    <div className="mx-auto mt-16 max-w-md px-4 text-center">
+      <ShieldIcon className="mx-auto h-12 w-12 text-slate-400" />
+      <h1 className="mt-3 text-xl font-bold">Acesso indisponível</h1>
+      <p className="mt-1 text-sm text-slate-600">{DENIED[reason]}</p>
+    </div>
+  );
+}
+
+function Dashboard({
+  share,
+  data,
+  loadSummary,
+  openDoc,
+  fromLink,
+}: {
+  share: Share;
+  data: ScopedData;
+  loadSummary: () => Promise<Summary>;
+  openDoc?: (storedAs: string) => void;
+  fromLink?: boolean;
+}) {
   const p = data.patient;
   const series = analyteSeries(data.labResults);
   const out = series.filter((s) => s.status === "alto" || s.status === "baixo");
@@ -65,14 +113,13 @@ async function Medico({ params }: { params: PageProps<"/medico/[token]">["params
     .slice(0, 6);
   const activeMeds = data.medications.filter((m) => !m.endDate);
   const has = (s: (typeof share.scopes)[number]) => share.scopes.includes(s);
-  const timeline = buildTimeline(data, [], (id) =>
-    data.documents.find((d) => d.id === id)?.storedAs ? `/api/medico/${token}/documentos/${id}` : undefined,
-  ).filter((e) => e.kind === "exame" || e.kind === "consulta");
+  const docs = new Map(data.documents.map((d) => [d.id, d]));
+  const timeline = buildTimeline(data).filter((e) => e.kind === "exame" || e.kind === "consulta");
   const w = data.wearableDays.length ? wearableSnapshot(data.wearableDays) : null;
+  const cacheKey = `${data.labResults.length}-${data.alerts.map((a) => a.id).join(",")}-${data.wearableDays.at(-1)?.irregularRhythmEvents ?? 0}`;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-5">
-      {/* Paciente + consentimento */}
       <section className="card flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{p.name}</h1>
@@ -89,14 +136,15 @@ async function Medico({ params }: { params: PageProps<"/medico/[token]">["params
           <ShieldIcon className="h-5 w-5 shrink-0 text-brand-600" />
           <p>
             Acesso autorizado pelo paciente para <strong>{share.doctorName}</strong> até {formatDateTime(share.expiresAt)}.
-            Escopo: {share.scopes.map((s) => SCOPE_LABELS[s].toLowerCase()).join(", ")}. Este acesso fica registrado.
+            Escopo: {share.scopes.map((s) => SCOPE_LABELS[s].toLowerCase()).join(", ")}.
+            {fromLink ? " Cópia enviada pelo paciente por link." : " Este acesso fica registrado."}
           </p>
         </div>
       </section>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <DoctorSummary token={token} />
+          <DoctorSummary load={loadSummary} cacheKey={cacheKey} />
 
           {data.alerts.length > 0 && (
             <section>
@@ -207,15 +255,22 @@ async function Medico({ params }: { params: PageProps<"/medico/[token]">["params
             <section className="card">
               <h2 className="text-sm font-semibold">Consultas e laudos</h2>
               <ol className="mt-2 space-y-2 text-xs">
-                {timeline.map((e) => (
-                  <li key={e.id} className="border-l-2 border-slate-200 pl-3">
-                    <p className="text-[10px] font-medium text-slate-400">{formatDate(e.date)}</p>
-                    <p className="font-semibold">
-                      {e.href ? <a href={e.href} target="_blank" rel="noopener" className="text-brand-700 underline">{e.title}</a> : e.title}
-                    </p>
-                    {e.detail && <p className="text-slate-600">{e.detail}</p>}
-                  </li>
-                ))}
+                {timeline.map((e) => {
+                  const doc = e.kind === "exame" ? docs.get(e.id.replace(/^doc-/, "")) : undefined;
+                  return (
+                    <li key={e.id} className="border-l-2 border-slate-200 pl-3">
+                      <p className="text-[10px] font-medium text-slate-400">{formatDate(e.date)}</p>
+                      <p className="font-semibold">
+                        {doc?.storedAs && openDoc ? (
+                          <button type="button" onClick={() => openDoc(doc.storedAs!)} className="text-left text-brand-700 underline">{e.title}</button>
+                        ) : (
+                          e.title
+                        )}
+                      </p>
+                      {e.detail && <p className="text-slate-600">{e.detail}</p>}
+                    </li>
+                  );
+                })}
               </ol>
             </section>
           )}
@@ -231,7 +286,8 @@ async function Medico({ params }: { params: PageProps<"/medico/[token]">["params
         </aside>
       </div>
       <p className="mt-8 text-center text-[11px] text-slate-400">
-        Dados informados pelo paciente e por dispositivos de consumo. Os alertas não são diagnóstico. Laudos lidos por IA trazem link para o original.
+        Dados informados pelo paciente e por dispositivos de consumo. Os alertas não são diagnóstico.
+        {fromLink ? " Os laudos originais ficam no aparelho do paciente." : " Laudos lidos por IA trazem link para o original."}
       </p>
     </main>
   );

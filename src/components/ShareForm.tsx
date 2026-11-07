@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import QRCode from "qrcode";
-import { useActionState, useEffect, useState } from "react";
-import { createShare } from "@/app/actions";
+import { useEffect, useState } from "react";
+import { buildDoctorLink } from "@/lib/doctor";
+import { absoluteUrl } from "@/lib/paths";
+import { createShare } from "@/lib/store";
 import { SCOPE_LABELS, SCOPES } from "@/lib/types";
-import { ShieldIcon } from "./icons";
+import { useAiEnabled } from "./AiStatus";
+import { ShieldIcon, SparkIcon } from "./icons";
 
 const DURATIONS = [
   { hours: 1, label: "1 hora (durante a consulta)" },
@@ -14,64 +17,34 @@ const DURATIONS = [
   { hours: 720, label: "30 dias" },
 ];
 
+/** Limite prático de um QR code legível pela câmera do celular. */
+const QR_MAX_CHARS = 2300;
+
 export function ShareForm() {
-  const [state, action, pending] = useActionState(createShare, {});
-  const [dismissed, setDismissed] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  if (state.token && dismissed !== state.token) {
-    const token = state.token;
-    return <ShareResult key={token} token={token} onDone={() => setDismissed(token)} />;
-  }
-  return <Form action={action} pending={pending} error={state.error} />;
-}
-
-function ShareResult({ token, onDone }: { token: string; onDone: () => void }) {
-  // Só renderiza no navegador, depois que a Server Action devolve o token.
-  const url = `${window.location.origin}/medico/${token}`;
-  const [qr, setQr] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    QRCode.toDataURL(url, { width: 240, margin: 1, color: { dark: "#0b3b35" } }).then(setQr);
-  }, [url]);
+  if (token) return <ShareResult key={token} token={token} onDone={() => setToken(null)} />;
 
   return (
-      <div className="card text-center">
-        <p className="text-sm font-semibold text-brand-700">Acesso criado</p>
-        <p className="mt-1 text-xs text-slate-500">Mostre o QR code ao médico ou envie o link.</p>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {qr && <img src={qr} alt="QR code do link de acesso" className="mx-auto mt-3 h-48 w-48" />}
-        <p className="mt-3 break-all rounded-lg bg-slate-100 px-3 py-2 font-mono text-[11px]">{url}</p>
-        <div className="mt-3 flex gap-2">
-          <button
-            type="button"
-            className="btn-secondary flex-1"
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(url);
-                setCopied(true);
-              } catch {
-                // Sem HTTPS o navegador bloqueia a área de transferência; o link continua visível acima.
-                window.prompt("Copie o link:", url);
-              }
-            }}
-          >
-            {copied ? "Copiado ✓" : "Copiar link"}
-          </button>
-          <Link href={`/medico/${token}`} target="_blank" className="btn-primary flex-1">
-            Abrir visão do médico
-          </Link>
-        </div>
-        <button type="button" className="mt-3 text-xs font-semibold text-slate-500" onClick={onDone}>
-          Criar outro acesso
-        </button>
-      </div>
-  );
-}
-
-function Form({ action, pending, error }: { action: (form: FormData) => void; pending: boolean; error?: string }) {
-  return (
-    <form action={action} className="card space-y-4">
+    <form
+      className="card space-y-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const f = new FormData(e.currentTarget);
+        const res = createShare({
+          doctorName: String(f.get("doctorName") ?? ""),
+          doctorCrm: String(f.get("doctorCrm") ?? ""),
+          scopes: f.getAll("scopes").map(String),
+          hours: Number(f.get("hours")),
+        });
+        if ("error" in res) setError(res.error);
+        else {
+          setError(null);
+          setToken(res.token);
+        }
+      }}
+    >
       <div className="grid grid-cols-3 gap-2">
         <label className="col-span-2 block">
           <span className="label">Nome do médico</span>
@@ -111,7 +84,84 @@ function Form({ action, pending, error }: { action: (form: FormData) => void; pe
       </div>
 
       {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">{error}</p>}
-      <button className="btn-primary w-full" disabled={pending}>{pending ? "Criando…" : "Autorizar e gerar link"}</button>
+      <button className="btn-primary w-full">Autorizar e gerar link</button>
     </form>
+  );
+}
+
+function ShareResult({ token, onDone }: { token: string; onDone: () => void }) {
+  const ai = useAiEnabled();
+  const [url, setUrl] = useState<string | null>(null);
+  const [qr, setQr] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    buildDoctorLink(token).then(async (link) => {
+      if (!link || cancelled) return;
+      const full = absoluteUrl(link.path);
+      setUrl(full);
+      if (full.length <= QR_MAX_CHARS) setQr(await QRCode.toDataURL(full, { width: 260, margin: 1, errorCorrectionLevel: "L", color: { dark: "#0b3b35" } }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  const canShare = typeof navigator !== "undefined" && "share" in navigator;
+
+  return (
+    <div className="card text-center">
+      <p className="text-sm font-semibold text-brand-700">Acesso criado</p>
+      {!url ? (
+        <div className="py-8">
+          <SparkIcon className="mx-auto h-8 w-8 animate-pulse text-brand-600" />
+          <p className="mt-2 text-sm text-slate-600">{ai ? "Preparando o resumo por IA para o médico…" : "Preparando o link…"}</p>
+        </div>
+      ) : (
+        <>
+          <p className="mt-1 text-xs text-slate-500">
+            {qr ? "Mostre o QR code ao médico ou envie o link." : "Envie o link ao médico (por WhatsApp ou e-mail)."}
+          </p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {qr && <img src={qr} alt="QR code do link de acesso" className="mx-auto mt-3 h-52 w-52" />}
+          <div className="mt-3 flex flex-col gap-2">
+            {canShare && (
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => navigator.share({ title: "Histórico de saúde", text: "Acesso ao meu histórico de saúde", url }).catch(() => undefined)}
+              >
+                Enviar link
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(url);
+                  setCopied(true);
+                } catch {
+                  window.prompt("Copie o link:", url);
+                }
+              }}
+            >
+              {copied ? "Link copiado ✓" : "Copiar link"}
+            </button>
+            <Link href={`/medico/?t=${encodeURIComponent(token)}`} target="_blank" className="btn-secondary">
+              Abrir visão do médico aqui
+            </Link>
+          </div>
+          <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
+            O link leva uma cópia compactada só dos dados autorizados e deixa de abrir no fim do prazo. Até lá, quem tiver o link
+            consegue abrir: envie só para o médico.
+          </p>
+        </>
+      )}
+      <button type="button" className="mt-3 text-xs font-semibold text-slate-500" onClick={onDone}>
+        Criar outro acesso
+      </button>
+    </div>
   );
 }

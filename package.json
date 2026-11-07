@@ -5,18 +5,19 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "npx --yes serve@14 out -l 3000",
     "lint": "eslint",
     "exemplos": "node scripts/gerar-exemplos.mjs",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "icones": "node scripts/gerar-icones.mjs",
+    "build:pages": "NEXT_PUBLIC_BASE_PATH=/Challenge next build"
   },
   "dependencies": {
     "next": "16.4.5",
     "qrcode": "^1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "recharts": "^3.10.1",
-    "server-only": "^0.0.1"
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",

@@ -11,7 +11,7 @@ export function StatusBadge({ status }: { status: LabStatus }) {
     sem_faixa: ["Sem faixa", "bg-slate-50 text-slate-600 ring-slate-200"],
   } as const;
   const [label, cls] = map[status];
-  return <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${cls}`}>{label}</span>;
+  return <span className={`inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${cls}`}>{label}</span>;
 }
 
 export function SectionTitle({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {

@@ -1,21 +1,11 @@
-import "server-only";
-import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { analyteCatalogForPrompt, analyteInfo, resolveAnalyteKey } from "./analytes";
-import { generateJson, GeminiUnavailableError } from "./gemini";
 import { isValidISODate } from "./dates";
-import type { Extraction, ExtractedResult } from "./types";
+import { generateJson, geminiConfigured, GeminiUnavailableError } from "./gemini";
+import { asset } from "./paths";
 import { SAMPLE_EXTRACTIONS } from "./samples";
+import type { Extraction, ExtractedResult } from "./types";
 
-export const ACCEPTED_TYPES = [
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/heic",
-  "image/heif",
-] as const;
+export const ACCEPTED_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 const SYSTEM = `Você é um extrator de laudos laboratoriais brasileiros. Leia o documento (PDF ou foto, às vezes antiga, torta ou com baixa qualidade) e devolva os resultados em JSON.
@@ -105,52 +95,67 @@ function normalizeExtraction(raw: RawExtraction): Omit<Extraction, "source" | "m
   };
 }
 
-let sampleHashes: Map<string, string> | null = null;
-
-async function sampleKeyFor(hash: string): Promise<string | undefined> {
-  if (!sampleHashes) {
-    sampleHashes = new Map();
-    for (const file of Object.keys(SAMPLE_EXTRACTIONS)) {
-      try {
-        const buf = await readFile(path.join(/*turbopackIgnore: true*/ process.cwd(), "public", "exemplos", file));
-        sampleHashes.set(createHash("sha256").update(buf).digest("hex"), file);
-      } catch {
-        // arquivo de exemplo ausente: segue sem fallback para ele
-      }
-    }
-  }
-  return sampleHashes.get(hash);
+async function sha256(buf: ArrayBuffer): Promise<string> {
+  const d = await crypto.subtle.digest("SHA-256", buf);
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-/**
- * Extrai os resultados com a Gemini. Se a API estiver indisponível e o arquivo
- * for um dos laudos de exemplo da demo, usa a extração pré-gravada dele
- * (marcada como "simulado" na interface).
- */
-export async function extractLabReport(
-  file: Buffer,
-  mimeType: string,
-  patient: { sex: "F" | "M"; age: number },
-): Promise<Extraction> {
-  try {
-    const { data, model } = await generateJson<RawExtraction>({
-      system: SYSTEM,
-      schema: SCHEMA,
-      timeoutMs: 40_000,
-      parts: [
-        { inlineData: { mimeType, data: file.toString("base64") } },
-        { text: `Paciente: sexo ${patient.sex === "F" ? "feminino" : "masculino"}, ${patient.age} anos. Extraia os resultados deste laudo.` },
-      ],
-    });
-    return { ...normalizeExtraction(data), source: "gemini", model };
-  } catch (err) {
-    const hash = createHash("sha256").update(file).digest("hex");
-    const sample = await sampleKeyFor(hash);
-    if (sample) {
-      console.warn("[extração] usando extração pré-gravada do exemplo", sample, (err as Error).message);
-      return { ...normalizeExtraction(SAMPLE_EXTRACTIONS[sample]), source: "simulado" };
+let sampleHashes: Promise<Map<string, string>> | null = null;
+
+function loadSampleHashes() {
+  sampleHashes ??= (async () => {
+    const map = new Map<string, string>();
+    for (const file of Object.keys(SAMPLE_EXTRACTIONS)) {
+      try {
+        const res = await fetch(asset(`/exemplos/${file}`));
+        if (res.ok) map.set(await sha256(await res.arrayBuffer()), file);
+      } catch {
+        // sem rede: segue sem fallback para este exemplo
+      }
     }
-    if (err instanceof GeminiUnavailableError) throw err;
-    throw new GeminiUnavailableError((err as Error).message);
+    return map;
+  })();
+  return sampleHashes;
+}
+
+function toBase64(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+export class NoKeyError extends Error {}
+
+/**
+ * Extrai os resultados com a Gemini. Sem chave configurada, ou se a IA cair,
+ * os dois laudos de exemplo usam a leitura pré-gravada (marcada como
+ * "simulado" na interface). Qualquer outro arquivo pede a chave ou o
+ * preenchimento manual.
+ */
+export async function extractLabReport(file: File, patient: { sex: "F" | "M"; age: number }): Promise<Extraction> {
+  const buf = await file.arrayBuffer();
+  let failure: Error | null = null;
+
+  if (geminiConfigured()) {
+    try {
+      const { data, model } = await generateJson<RawExtraction>({
+        system: SYSTEM,
+        schema: SCHEMA,
+        timeoutMs: 40_000,
+        parts: [
+          { inlineData: { mimeType: file.type, data: toBase64(buf) } },
+          { text: `Paciente: sexo ${patient.sex === "F" ? "feminino" : "masculino"}, ${patient.age} anos. Extraia os resultados deste laudo.` },
+        ],
+      });
+      return { ...normalizeExtraction(data), source: "gemini", model };
+    } catch (err) {
+      failure = err as Error;
+    }
   }
+
+  const sample = (await loadSampleHashes()).get(await sha256(buf));
+  if (sample) return { ...normalizeExtraction(SAMPLE_EXTRACTIONS[sample]), source: "simulado" };
+  if (!failure) throw new NoKeyError("Chave da Gemini não configurada");
+  throw failure instanceof GeminiUnavailableError ? failure : new GeminiUnavailableError(failure.message);
 }

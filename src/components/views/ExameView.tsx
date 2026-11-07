@@ -1,25 +1,26 @@
+"use client";
+
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { LabTrendChart } from "@/components/charts";
 import { Skeleton, StatusBadge } from "@/components/ui";
-import { getDb } from "@/lib/db";
 import { formatDate } from "@/lib/dates";
 import { analyteSeries, fmt, formatRef, labStatus, medicationMarkers } from "@/lib/health";
+import { openDocumentFile, useDb } from "@/lib/store";
 
-export default function AnalitoPage(props: PageProps<"/exames/[analito]">) {
-  return (
-    <Suspense fallback={<Skeleton lines={4} />}>
-      <Analito params={props.params} />
-    </Suspense>
-  );
-}
+export function ExameView() {
+  const db = useDb();
+  const key = useSearchParams().get("a");
+  if (!db) return <Skeleton lines={4} />;
 
-async function Analito({ params }: { params: PageProps<"/exames/[analito]">["params"] }) {
-  const { analito } = await params;
-  const db = await getDb();
-  const s = analyteSeries(db.labResults).find((x) => x.key === analito);
-  if (!s) notFound();
+  const s = analyteSeries(db.labResults).find((x) => x.key === key);
+  if (!s) {
+    return (
+      <div className="card text-sm">
+        Exame não encontrado. <Link href="/exames" className="font-semibold text-brand-700">Ver todos os exames</Link>
+      </div>
+    );
+  }
   const numeric = s.results.filter((r) => r.value != null);
   const docs = new Map(db.documents.map((d) => [d.id, d]));
 
@@ -64,9 +65,9 @@ async function Analito({ params }: { params: PageProps<"/exames/[analito]">["par
                 <span className="text-sm font-semibold">{r.value != null ? fmt(r.value) : r.valueText}</span>
                 <StatusBadge status={labStatus(r)} />
                 {doc?.storedAs && (
-                  <a href={`/api/documentos/${doc.id}`} target="_blank" rel="noopener" className="text-[11px] font-semibold text-brand-700">
+                  <button type="button" onClick={() => openDocumentFile(doc.storedAs!)} className="text-[11px] font-semibold text-brand-700">
                     laudo
-                  </a>
+                  </button>
                 )}
               </div>
             </li>

@@ -4,20 +4,22 @@ import { useEffect, useState } from "react";
 import type { DoctorSummary as Summary } from "@/lib/types";
 import { SparkIcon } from "./icons";
 
-export function DoctorSummary({ token }: { token: string }) {
+/**
+ * Mostra o resumo clínico. `load` busca do cache ou gera; `cacheKey` muda
+ * quando os dados autorizados mudam e dispara uma nova busca.
+ */
+export function DoctorSummary({ load, cacheKey }: { load: () => Promise<Summary>; cacheKey: string }) {
   const [data, setData] = useState<Summary | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
-
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/medico/${token}/resumo`, { method: "POST" })
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
-      .then((json: Summary) => {
+    load()
+      .then((s) => {
         if (cancelled) return;
-        setData(json);
+        setData(s);
         setError(false);
       })
       .catch(() => !cancelled && setError(true))
@@ -25,9 +27,11 @@ export function DoctorSummary({ token }: { token: string }) {
     return () => {
       cancelled = true;
     };
-  }, [token, attempt]);
+    // `load` muda a cada render; o que importa são os dados (cacheKey) e o botão Atualizar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cacheKey, attempt]);
 
-  const load = () => {
+  const reload = () => {
     setLoading(true);
     setError(false);
     setAttempt((n) => n + 1);
@@ -37,10 +41,10 @@ export function DoctorSummary({ token }: { token: string }) {
     <section className="card">
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 font-semibold text-slate-900">
-          <SparkIcon className="h-5 w-5 text-brand-600" /> Resumo clínico por IA
+          <SparkIcon className="h-5 w-5 text-brand-600" /> Resumo clínico {data && data.geradoPor.startsWith("regras") ? "automático" : "por IA"}
         </h2>
         {data && !loading && (
-          <button type="button" onClick={load} className="text-xs font-semibold text-brand-700">Atualizar</button>
+          <button type="button" onClick={reload} className="text-xs font-semibold text-brand-700">Atualizar</button>
         )}
       </div>
 
@@ -51,7 +55,7 @@ export function DoctorSummary({ token }: { token: string }) {
         </div>
       )}
       {error && !loading && (
-        <p className="mt-3 text-sm text-red-700">Não foi possível gerar o resumo. <button className="font-semibold underline" onClick={load}>Tentar de novo</button></p>
+        <p className="mt-3 text-sm text-red-700">Não foi possível gerar o resumo. <button className="font-semibold underline" onClick={reload}>Tentar de novo</button></p>
       )}
       {data && !loading && (
         <div className="mt-3 text-sm">

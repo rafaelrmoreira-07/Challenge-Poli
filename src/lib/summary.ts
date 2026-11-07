@@ -1,11 +1,8 @@
-import "server-only";
-import { createHash } from "node:crypto";
-import { updateDb } from "./db";
 import { ageFrom, formatDate, todayISO } from "./dates";
-import { generateJson } from "./gemini";
+import { generateJson, geminiConfigured } from "./gemini";
 import { analyteSeries, fmt, formatRef, wearableSnapshot } from "./health";
 import type { ScopedData } from "./share";
-import type { DoctorSummary, Share } from "./types";
+import type { DoctorSummary } from "./types";
 
 /** Contexto compacto e estruturado enviado ao modelo (sem nome do paciente). */
 export function buildClinicalContext(data: ScopedData): string {
@@ -75,50 +72,20 @@ const SCHEMA = {
   required: ["resumo", "pontosDeAtencao", "perguntasSugeridas"],
 };
 
-export function contextHash(context: string): string {
-  return createHash("sha256").update(context).digest("hex").slice(0, 16);
-}
-
-// Global de processo: Server Actions e Route Handlers podem carregar instâncias
-// diferentes deste módulo.
-const g = globalThis as typeof globalThis & { __summaryInFlight?: Map<string, Promise<DoctorSummary>> };
-const inFlight = (g.__summaryInFlight ??= new Map());
-
-/**
- * Devolve o resumo do cache do compartilhamento ou gera um novo. Chamadas
- * simultâneas para os mesmos dados esperam a mesma geração (o pré-aquecimento
- * feito ao criar o link e a abertura da página pelo médico, por exemplo).
- */
-export async function getOrCreateSummary(token: string, share: Share, data: ScopedData): Promise<DoctorSummary> {
-  const hash = contextHash(buildClinicalContext(data));
-  if (share.summaryCache?.hash === hash) return share.summaryCache.summary;
-
-  const key = `${token}:${hash}`;
-  let job = inFlight.get(key);
-  if (!job) {
-    job = generateDoctorSummary(data).then(async (summary) => {
-      if (!summary.geradoPor.startsWith("regras")) {
-        await updateDb((db) => {
-          const s = db.shares.find((x) => x.token === token);
-          if (s) s.summaryCache = { hash, summary };
-        });
-      }
-      return summary;
-    });
-    inFlight.set(key, job);
-    job.finally(() => inFlight.delete(key)).catch(() => undefined);
-  }
-  return job;
+/** Hash curto do contexto: o resumo em cache só vale enquanto os dados não mudam. */
+export async function contextHash(context: string): Promise<string> {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(context));
+  return [...new Uint8Array(d)].slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 export async function generateDoctorSummary(data: ScopedData): Promise<DoctorSummary> {
-  const context = buildClinicalContext(data);
+  if (!geminiConfigured()) return fallbackSummary(data);
   try {
     const { data: out, model } = await generateJson<Omit<DoctorSummary, "geradoPor" | "geradoEm">>({
       system: SYSTEM,
       schema: SCHEMA,
       timeoutMs: 30_000,
-      parts: [{ text: context }],
+      parts: [{ text: buildClinicalContext(data) }],
     });
     return {
       resumo: String(out.resumo ?? ""),
@@ -132,8 +99,10 @@ export async function generateDoctorSummary(data: ScopedData): Promise<DoctorSum
   }
 }
 
-/** Resumo por regras, usado se a IA estiver indisponível. */
-function fallbackSummary(data: ScopedData): DoctorSummary {
+export const isRuleSummary = (s: DoctorSummary) => s.geradoPor.startsWith("regras");
+
+/** Resumo por regras, usado sem chave da IA ou se ela estiver indisponível. */
+export function fallbackSummary(data: ScopedData): DoctorSummary {
   const out = analyteSeries(data.labResults).filter((s) => s.status === "alto" || s.status === "baixo");
   const active = data.medications.filter((m) => !m.endDate);
   return {
@@ -147,11 +116,11 @@ function fallbackSummary(data: ScopedData): DoctorSummary {
       ...data.alerts.map((a) => ({ titulo: a.title, detalhe: a.message })),
       ...out.slice(0, 3).map((s) => ({
         titulo: s.name,
-        detalhe: `${fmt(s.latest.value!)} ${s.unit} em ${formatDate(s.latest.date)} (ref. ${formatRef(s.latest)}).`,
+        detalhe: `${s.latest.value != null ? fmt(s.latest.value) : s.latest.valueText} ${s.unit} em ${formatDate(s.latest.date)} (ref. ${formatRef(s.latest)}).`,
       })),
     ].slice(0, 5),
     perguntasSugeridas: [],
-    geradoPor: "regras (IA indisponível)",
+    geradoPor: "regras (sem IA)",
     geradoEm: new Date().toISOString(),
   };
 }

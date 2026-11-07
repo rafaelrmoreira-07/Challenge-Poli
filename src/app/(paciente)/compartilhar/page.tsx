@@ -1,11 +1,11 @@
+"use client";
+
 import Link from "next/link";
-import { Suspense } from "react";
-import { revokeShare } from "@/app/actions";
 import { ShareForm } from "@/components/ShareForm";
-import { SectionTitle, Skeleton } from "@/components/ui";
-import { getDb } from "@/lib/db";
+import { SectionTitle } from "@/components/ui";
 import { formatDateTime } from "@/lib/dates";
 import { shareState } from "@/lib/share";
+import { revokeShare, useDb } from "@/lib/store";
 import { SCOPE_LABELS } from "@/lib/types";
 
 export default function CompartilharPage() {
@@ -16,16 +16,14 @@ export default function CompartilharPage() {
         Como no open finance: você escolhe quem vê, o quê e por quanto tempo. O médico recebe um link com tudo organizado numa tela só.
       </p>
       <ShareForm />
-      <Suspense fallback={<Skeleton lines={2} />}>
-        <Shares />
-      </Suspense>
+      <Shares />
     </div>
   );
 }
 
-async function Shares() {
-  const db = await getDb();
-  if (!db.shares.length) return null;
+function Shares() {
+  const db = useDb();
+  if (!db?.shares.length) return null;
   const now = new Date();
   return (
     <>
@@ -49,7 +47,7 @@ async function Shares() {
               <p className="mt-1.5 text-[11px] text-slate-600">{s.scopes.map((x) => SCOPE_LABELS[x]).join(" · ")}</p>
               <details className="mt-1.5 text-[11px] text-slate-600">
                 <summary className="cursor-pointer font-medium">
-                  {s.accessLog.length} {s.accessLog.length === 1 ? "acesso registrado" : "acessos registrados"}
+                  {s.accessLog.length} {s.accessLog.length === 1 ? "acesso registrado neste aparelho" : "acessos registrados neste aparelho"}
                 </summary>
                 <ul className="mt-1 list-disc pl-4">
                   {s.accessLog.slice(-10).reverse().map((a) => <li key={a.at}>{formatDateTime(a.at)}</li>)}
@@ -57,10 +55,8 @@ async function Shares() {
               </details>
               {st === "ativo" && (
                 <div className="mt-2 flex gap-2">
-                  <Link href={`/medico/${s.token}`} target="_blank" className="btn-secondary flex-1 py-1.5 text-xs">Abrir</Link>
-                  <form action={revokeShare.bind(null, s.token)} className="flex-1">
-                    <button className="btn-danger w-full py-1.5 text-xs">Revogar</button>
-                  </form>
+                  <Link href={`/medico/?t=${encodeURIComponent(s.token)}`} target="_blank" className="btn-secondary flex-1 py-1.5 text-xs">Abrir</Link>
+                  <button className="btn-danger flex-1 py-1.5 text-xs" onClick={() => revokeShare(s.token)}>Revogar</button>
                 </div>
               )}
             </li>

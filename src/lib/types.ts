@@ -9,13 +9,13 @@ export interface Patient {
   allergies: string[];
 }
 
-export type ExtractionSource = "gemini" | "simulado" | "seed";
+export type ExtractionSource = "gemini" | "simulado" | "manual" | "seed";
 
 export interface SourceDocument {
   id: string;
   filename: string;
   mimeType: string;
-  /** Nome do arquivo em .data/uploads. Ausente em registros importados (seed). */
+  /** Chave do arquivo original no IndexedDB. Ausente em registros importados (seed). */
   storedAs?: string;
   uploadedAt: string;
   examDate: string;
