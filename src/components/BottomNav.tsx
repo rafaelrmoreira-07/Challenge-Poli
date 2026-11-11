@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
-import { DoctorIcon, HomeIcon, PlusIcon, TimelineIcon, WatchIcon } from "./icons";
+import { DoctorIcon, HistoryIcon, HomeIcon, PlusIcon, VitalsIcon } from "./icons";
 
 const ITEMS = [
   { href: "/", label: "Início", icon: HomeIcon, match: (p: string) => p === "/" },
-  { href: "/historico", label: "Histórico", icon: TimelineIcon, match: (p: string) => p.startsWith("/historico") || p.startsWith("/exames") || p.startsWith("/exame") },
-  { href: "/enviar", label: "Enviar", icon: PlusIcon, match: (p: string) => p.startsWith("/enviar"), primary: true },
-  { href: "/wearables", label: "Sinais", icon: WatchIcon, match: (p: string) => p.startsWith("/wearables") },
+  { href: "/historico", label: "Histórico", icon: HistoryIcon, match: (p: string) => p.startsWith("/historico") || p.startsWith("/exames") || p.startsWith("/exame") },
+  { href: "/enviar", label: "Adicionar", icon: PlusIcon, match: (p: string) => p.startsWith("/enviar"), primary: true },
+  { href: "/wearables", label: "Sinais", icon: VitalsIcon, match: (p: string) => p.startsWith("/wearables") },
   { href: "/compartilhar", label: "Médico", icon: DoctorIcon, match: (p: string) => p.startsWith("/compartilhar") },
 ];
 
@@ -47,10 +47,11 @@ function NavItems({ pathname }: { pathname: string }) {
               <span className={`absolute inset-x-4 top-0 h-[3px] rounded-b ${active ? "bg-brand-600" : "bg-transparent"}`} aria-hidden />
               {primary ? (
                 <span className={`flex h-8 w-11 items-center justify-center rounded-lg ${active ? "bg-brand-700" : "bg-brand-600"} text-white`}>
-                  <Icon width={20} height={20} strokeWidth={2.2} />
+                  <Icon width={20} />
                 </span>
               ) : (
-                <Icon width={24} height={24} strokeWidth={active ? 2.2 : 1.8} />
+                // Ativo: ícone preenchido, como nos apps nativos
+                <Icon width={24} weight={active ? "fill" : "regular"} />
               )}
               {label}
             </Link>

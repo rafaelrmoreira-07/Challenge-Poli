@@ -34,22 +34,22 @@ export function buildTimeline(
       id: "doc-" + doc.id,
       date: doc.examDate,
       kind: "exame",
-      title: `Exames · ${doc.lab ?? "laboratório não informado"}`,
-      subtitle: `${results.length} resultados${doc.extractedBy === "gemini" ? " · lido por IA" : doc.extractedBy === "simulado" ? " · leitura simulada" : ""}`,
-      detail: out.length ? `Fora da faixa: ${out.map((r) => r.name).join(", ")}` : "Todos dentro da faixa do laudo",
+      title: doc.lab ?? "Laboratório não informado",
+      subtitle: `Exames de laboratório, ${results.length} resultados`,
+      detail: out.length ? `Alterados: ${out.map((r) => r.name).join(", ")}` : "Todos dentro da referência",
       href: docHref(doc.id),
-      badge: out.length ? { text: `${out.length} fora`, tone: "red" } : { text: "ok", tone: "green" },
+      badge: out.length ? { text: `${out.length} ${out.length === 1 ? "alterado" : "alterados"}`, tone: "red" } : undefined,
     });
   }
   for (const e of data.encounters) {
-    ev.push({ id: e.id, date: e.date, kind: "consulta", title: `Consulta · ${e.specialty}`, subtitle: `${e.professional} · ${e.place}`, detail: [e.reason, e.notes].filter(Boolean).join(". ") });
+    ev.push({ id: e.id, date: e.date, kind: "consulta", title: e.specialty, subtitle: `Consulta com ${e.professional}, ${e.place}`, detail: [e.reason, e.notes].filter(Boolean).join(". ") });
   }
   for (const m of data.medications) {
-    ev.push({ id: m.id + "-ini", date: m.startDate, kind: "medicamento", title: `Início: ${m.name} ${m.dose}`, subtitle: m.frequency, detail: m.reason, badge: m.endDate ? undefined : { text: "em uso", tone: "slate" } });
-    if (m.endDate) ev.push({ id: m.id + "-fim", date: m.endDate, kind: "medicamento", title: `Fim: ${m.name}`, subtitle: m.reason });
+    ev.push({ id: m.id + "-ini", date: m.startDate, kind: "medicamento", title: `${m.name} ${m.dose}`, subtitle: `Começou a tomar, ${m.frequency}`, detail: m.reason, badge: m.endDate ? undefined : { text: "Em uso", tone: "slate" } });
+    if (m.endDate) ev.push({ id: m.id + "-fim", date: m.endDate, kind: "medicamento", title: `${m.name} ${m.dose}`, subtitle: "Parou de tomar", detail: m.reason });
   }
   for (const v of data.vaccines) {
-    ev.push({ id: v.id, date: v.date, kind: "vacina", title: `Vacina · ${v.name}`, subtitle: v.dose });
+    ev.push({ id: v.id, date: v.date, kind: "vacina", title: v.name, subtitle: v.dose ? `Vacina, ${v.dose.toLowerCase()}` : "Vacina" });
   }
   const today = todayISO();
   for (const a of alerts.filter((x) => x.kind !== "exames")) {
@@ -57,9 +57,10 @@ export function buildTimeline(
       id: "alerta-" + a.id,
       date: today,
       kind: "alerta",
-      title: `Alerta · ${a.title}`,
+      title: a.title,
+      subtitle: "Alerta do relógio ou do medidor",
       detail: a.message,
-      badge: a.severity === "procure_medico" ? { text: "procure médico", tone: "red" } : { text: "atenção", tone: "amber" },
+      badge: a.severity === "procure_medico" ? { text: "Procure um médico", tone: "red" } : { text: "Atenção", tone: "amber" },
     });
   }
   return ev.sort((a, b) => b.date.localeCompare(a.date) || a.kind.localeCompare(b.kind));

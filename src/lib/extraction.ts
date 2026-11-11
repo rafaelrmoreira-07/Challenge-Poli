@@ -8,6 +8,13 @@ import type { Extraction, ExtractedResult } from "./types";
 export const ACCEPTED_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
+/** Navegadores às vezes não informam o tipo (ex.: HEIC); deduz pela extensão. */
+export function fileType(f: File): string {
+  if (f.type) return f.type;
+  const ext = f.name.split(".").pop()?.toLowerCase();
+  return { pdf: "application/pdf", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", heic: "image/heic", heif: "image/heif" }[ext ?? ""] ?? "";
+}
+
 const SYSTEM = `Você é um extrator de laudos laboratoriais brasileiros. Leia o documento (PDF ou foto, às vezes antiga, torta ou com baixa qualidade) e devolva os resultados em JSON.
 
 Regras:

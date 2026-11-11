@@ -19,6 +19,7 @@ Requisito: Node.js 20 ou mais novo.
 src/
 ├── app/
 │   ├── (paciente)/   páginas do paciente: enviar, exames, histórico, wearables, compartilhar, configurações
+│   ├── conversa/     conversa com o Elo (chat no estilo do WhatsApp)
 │   ├── medico/       página que o médico abre pelo link compartilhado
 │   └── demo/         modo apresentação (para projetar no palco)
 ├── components/
@@ -29,6 +30,7 @@ src/
     ├── health.ts                  regras de alerta dos sinais vitais
     ├── summary.ts, doctor.ts      resumo clínico para o médico
     ├── share.ts                   consentimento, link e QR code
+    ├── chat.ts, chatbot.ts        conversa com o Elo e suas respostas
     ├── store.ts                   dados salvos no navegador
     └── seed.ts                    dados sintéticos do paciente "Carlos Mendes"
 public/exemplos/      laudos fictícios usados na demo

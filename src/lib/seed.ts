@@ -101,7 +101,7 @@ export function createSeedDb(now = new Date()): Db {
     createdAt: now.toISOString(),
     patient: {
       id: "paciente-demo",
-      name: "Carlos Mendes (dados sintéticos)",
+      name: "Carlos Mendes",
       birthDate: "1968-03-14",
       sex: "M",
       bloodType: "O+",

@@ -13,6 +13,7 @@
     "build:pages": "NEXT_PUBLIC_BASE_PATH=/Challenge-Poli next build"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
     "next": "16.4.5",
     "qrcode": "^1.5.4",
     "react": "19.3.0",

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
+import { ChatButton } from "@/components/ChatButton";
+import { ChatNotifier } from "@/components/ChatNotifier";
 import { GearIcon, LogoMark } from "@/components/icons";
 
 export default function PacienteLayout({ children }: { children: React.ReactNode }) {
@@ -10,19 +12,21 @@ export default function PacienteLayout({ children }: { children: React.ReactNode
           <LogoMark />
           <span className="font-serif text-xl font-semibold tracking-[-0.01em] text-brand-800">Elo Saúde</span>
         </Link>
-        <div className="flex items-center gap-1">
-          <span className="rounded border border-warn-300 px-1.5 py-0.5 text-xs font-semibold text-warn-800">
-            Dados sintéticos
+        <div className="flex items-center">
+          <span className="mr-1 rounded border border-warn-300 px-1.5 py-0.5 text-xs font-semibold text-warn-800">
+            Dados fictícios
           </span>
+          <ChatButton />
           <Link
             href="/configuracoes"
             aria-label="Configurações"
             className="flex h-11 w-11 items-center justify-center rounded-lg text-ink-600 transition-colors hover:bg-ink-100"
           >
-            <GearIcon width={22} height={22} />
+            <GearIcon width={24} />
           </Link>
         </div>
       </header>
+      <ChatNotifier />
       <main className="flex-1 px-4 pb-32 pt-5">{children}</main>
       <BottomNav />
     </div>

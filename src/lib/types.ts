@@ -102,7 +102,7 @@ export const SCOPE_LABELS: Record<Scope, string> = {
   consultas: "Consultas",
   medicamentos: "Medicamentos",
   vacinas: "Vacinas",
-  wearables: "Dados de wearables e alertas",
+  wearables: "Relógio, medidor de pressão e alertas",
 };
 
 export interface AccessLogEntry {

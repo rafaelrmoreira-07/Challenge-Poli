@@ -17,7 +17,8 @@ export function daysBetween(a: string, b: string): number {
   );
 }
 
-export function formatDate(iso: string, opts: Intl.DateTimeFormatOptions = { day: "2-digit", month: "short", year: "numeric" }): string {
+/** Padrão dd/mm/aaaa, como nos laudos e prontuários. */
+export function formatDate(iso: string, opts: Intl.DateTimeFormatOptions = { day: "2-digit", month: "2-digit", year: "numeric" }): string {
   return new Date(iso.slice(0, 10) + "T12:00:00Z").toLocaleDateString("pt-BR", { ...opts, timeZone: "UTC" });
 }
 
