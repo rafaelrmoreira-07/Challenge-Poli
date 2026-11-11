@@ -2,7 +2,7 @@
 
 Protótipo para o desafio da Rivio (demo em 14/11/2026, Gama House). Usa IA para juntar o histórico de saúde de uma pessoa, do exame em papel de dez anos atrás aos dados dos wearables, e organizar tudo para ela e para o médico dela.
 
-**Site publicado (depois de ativar o GitHub Pages, veja CONTRIBUTING):** https://suzetemirandasilva5601-cpu.github.io/Challenge-Poli/
+**Site publicado:** https://suzetemirandasilva5601-cpu.github.io/Challenge-Poli/
 **Modo apresentação:** https://suzetemirandasilva5601-cpu.github.io/Challenge-Poli/demo/
 
 > **Todos os dados são sintéticos.** O paciente "Carlos Mendes" e os laudos em `public/exemplos/` são fictícios.

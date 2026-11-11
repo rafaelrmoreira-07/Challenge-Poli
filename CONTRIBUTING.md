@@ -67,5 +67,5 @@ Evite trabalhar duas pessoas no mesmo arquivo ao mesmo tempo. Combine no grupo q
 npm run build:pages     # gera out/ com o prefixo /Challenge-Poli
 ```
 
-Copie o conteúdo de `out/` (inclusive `.nojekyll`) para a branch `gh-pages` e faça push. Em Settings → Pages, escolha a branch `gh-pages`.
+Copie o conteúdo de `out/` (inclusive `.nojekyll`) para a branch `gh-pages` e faça push. O Pages já está configurado para servir a branch `gh-pages` (Settings → Pages).
 O script `build:pages` usa sintaxe de shell Unix. No Windows, rode-o pelo Git Bash ou pelo WSL.
