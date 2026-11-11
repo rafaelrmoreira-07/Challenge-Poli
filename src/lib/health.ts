@@ -87,11 +87,11 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
       kind: "ritmo_irregular",
       severity: "procure_medico",
       title: "Ritmo cardíaco irregular",
-      message: `Seu relógio registrou ${irregularCount} episódios de ritmo cardíaco irregular nos últimos 14 dias. O padrão pode indicar fibrilação atrial.`,
+      message: `O relógio registrou ${irregularCount} episódios de batimento irregular nos últimos 14 dias. Esse padrão pode ser sinal de fibrilação atrial.`,
       recommendation:
-        "Marque um cardiologista nos próximos dias e leve este histórico. Se sentir dor no peito, falta de ar forte, desmaio ou fraqueza de um lado do corpo, vá ao pronto-socorro ou ligue 192.",
+        "Marque consulta com um cardiologista nos próximos dias. Se tiver dor no peito, falta de ar forte, desmaio ou fraqueza de um lado do corpo, vá ao pronto-socorro ou ligue 192.",
       specialty: "Cardiologia",
-      evidence: irregular.map((d) => `${formatDate(d.date)}: ${d.irregularRhythmEvents} episódio(s)`),
+      evidence: irregular.map((d) => `${formatDate(d.date)}: ${d.irregularRhythmEvents} ${d.irregularRhythmEvents === 1 ? "episódio" : "episódios"}`),
     });
   }
 
@@ -105,12 +105,12 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
       kind: "apneia",
       severity: "procure_medico",
       title: "Sinais de apneia do sono",
-      message: `Em ${apneaNights.length} das últimas 30 noites a oxigenação caiu abaixo de 90% (mínima de ${minSpo2}%) junto com muitos distúrbios respiratórios.`,
-      recommendation: "Converse com um médico do sono ou pneumologista. O exame que confirma ou descarta apneia é a polissonografia.",
+      message: `Em ${apneaNights.length} das últimas 30 noites, a saturação de oxigênio ficou abaixo de 90% (menor valor: ${minSpo2}%), com muitas pausas na respiração.`,
+      recommendation: "Procure um pneumologista ou um médico do sono. O exame que confirma ou descarta apneia é a polissonografia.",
       specialty: "Medicina do sono",
       evidence: [
-        `Noites com SpO2 < 90%: ${apneaNights.length}`,
-        `Distúrbios respiratórios nessas noites: média de ${Math.round(avg(apneaNights.map((d) => d.breathingDisturbances)))}/h`,
+        `Noites com saturação abaixo de 90%: ${apneaNights.length}`,
+        `Pausas na respiração nessas noites: média de ${Math.round(avg(apneaNights.map((d) => d.breathingDisturbances)))} por hora`,
       ],
     });
   }
@@ -127,12 +127,12 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
         kind: "pressao",
         severity: high ? "procure_medico" : "atencao",
         title: "Pressão acima da meta",
-        message: `Média de ${sys}/${dia} mmHg nos últimos 30 dias${onMed ? ", mesmo com remédio para pressão em uso" : ""}. A meta usual é abaixo de 130/80.`,
+        message: `Sua pressão ficou em média ${sys}/${dia} mmHg nos últimos 30 dias${onMed ? ", mesmo tomando remédio para pressão" : ""}. A meta costuma ser abaixo de 130/80.`,
         recommendation: onMed
-          ? "Leve estas medidas ao médico que acompanha sua pressão: pode ser preciso ajustar o tratamento."
-          : "Agende uma consulta para avaliar a pressão.",
+          ? "Mostre estas medidas ao médico que trata sua pressão. Pode ser preciso ajustar o remédio."
+          : "Marque uma consulta para avaliar a pressão.",
         specialty: "Clínica médica ou cardiologia",
-        evidence: [`${last30.length} medições diárias`, `Média: ${sys}/${dia} mmHg`],
+        evidence: [`${last30.length} medições em 30 dias`, `Média: ${sys}/${dia} mmHg`],
       });
     }
   }
@@ -151,10 +151,10 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
         id: "fc_repouso",
         kind: "fc_repouso",
         severity: "atencao",
-        title: "Frequência de repouso mais alta",
-        message: `Sua frequência cardíaca de repouso está em ${Math.round(now)} bpm na última semana, contra ${Math.round(base)} bpm no seu padrão anterior.`,
-        recommendation: "Pode ser estresse, sono ruim, infecção ou outro motivo. Se continuar ou vier com sintomas, comente com seu médico.",
-        evidence: [`Últimos 7 dias: ${Math.round(now)} bpm`, `Padrão (2 a 8 semanas atrás): ${Math.round(base)} bpm`],
+        title: "Batimentos em repouso mais altos",
+        message: `Na última semana, seus batimentos em repouso ficaram em ${Math.round(now)} bpm. Antes, o normal para você era ${Math.round(base)} bpm.`,
+        recommendation: "Estresse, noites mal dormidas ou uma infecção podem causar isso. Se continuar ou vier com outros sintomas, fale com seu médico.",
+        evidence: [`Últimos 7 dias: ${Math.round(now)} bpm`, `De 2 a 8 semanas atrás: ${Math.round(base)} bpm`],
       });
     }
   }
@@ -168,10 +168,10 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
       id: "exames",
       kind: "exames",
       severity: "atencao",
-      title: "Exames fora da faixa de referência",
-      message: `${recentOut.length === 1 ? "Um resultado do último ano está" : `${recentOut.length} resultados do último ano estão`} fora da faixa indicada no laudo.`,
-      recommendation: "Leve estes resultados à sua próxima consulta. Valores fora da faixa nem sempre são um problema, e quem interpreta é o médico.",
-      evidence: recentOut.map((s) => `${s.name}: ${fmt(s.latest.value!)} ${s.unit} (${s.status}, ref. ${formatRef(s.latest)})`),
+      title: "Exames alterados no último ano",
+      message: `${recentOut.length === 1 ? "Um resultado do último ano está" : `${recentOut.length} resultados do último ano estão`} fora do valor de referência do laudo.`,
+      recommendation: "Leve estes resultados à próxima consulta. Um valor fora da referência nem sempre é problema; quem interpreta é o médico.",
+      evidence: recentOut.map((s) => `${s.name}: ${fmt(s.latest.value!)} ${s.unit} (${s.status}; referência ${formatRef(s.latest)})`),
     });
   }
 
@@ -206,5 +206,5 @@ const MED_RELEVANCE: Record<string, RegExp> = {
 export function medicationMarkers(analyteKey: string, meds: Db["medications"]) {
   const re = MED_RELEVANCE[analyteKey];
   if (!re) return [];
-  return meds.filter((m) => re.test(m.name)).map((m) => ({ date: m.startDate, label: `Início ${m.name}` }));
+  return meds.filter((m) => re.test(m.name)).map((m) => ({ date: m.startDate, label: `${m.name}` }));
 }

@@ -12,14 +12,14 @@ export default function PacienteLayout({ children }: { children: React.ReactNode
         </Link>
         <div className="flex items-center gap-1">
           <span className="rounded border border-warn-300 px-1.5 py-0.5 text-xs font-semibold text-warn-800">
-            Dados sintéticos
+            Dados fictícios
           </span>
           <Link
             href="/configuracoes"
             aria-label="Configurações"
             className="flex h-11 w-11 items-center justify-center rounded-lg text-ink-600 transition-colors hover:bg-ink-100"
           >
-            <GearIcon width={22} height={22} />
+            <GearIcon width={24} />
           </Link>
         </div>
       </header>

@@ -105,18 +105,26 @@ export const isRuleSummary = (s: DoctorSummary) => s.geradoPor.startsWith("regra
 export function fallbackSummary(data: ScopedData): DoctorSummary {
   const out = analyteSeries(data.labResults).filter((s) => s.status === "alto" || s.status === "baixo");
   const active = data.medications.filter((m) => !m.endDate);
+  // Minúscula só na inicial, e nunca em siglas (TSH, PSA, LDL...)
+  const low = (t: string) => (/^\p{Lu}{2}/u.test(t) ? t : t.charAt(0).toLowerCase() + t.slice(1));
+  const list = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} e ${xs.at(-1)}` : xs[0] ?? "");
+  const p = data.patient;
   return {
     resumo: [
-      `Paciente de ${ageFrom(data.patient.birthDate)} anos.`,
-      active.length ? `Em uso de ${active.map((m) => `${m.name} ${m.dose}`).join(", ")}.` : "",
-      out.length ? `${out.length} exame(s) com último resultado fora da faixa do laudo.` : "",
-      data.alerts.length ? `${data.alerts.length} alerta(s) automático(s) ativo(s).` : "",
+      `${p.sex === "F" ? "Mulher" : "Homem"}, ${ageFrom(p.birthDate)} anos.`,
+      active.length ? `Em uso de ${list(active.map((m) => `${low(m.name)} ${m.dose}`))}.` : "Sem medicamentos em uso registrados.",
+      out.length
+        ? `${out.length === 1 ? "Último resultado alterado" : `${out.length} exames com último resultado alterado`}: ${list(out.map((s) => low(s.name)))}.`
+        : "Últimos exames dentro da referência.",
+      data.alerts.length
+        ? `${data.alerts.length === 1 ? "Um alerta" : `${data.alerts.length} alertas`} da monitorização domiciliar: ${list(data.alerts.map((a) => low(a.title)))}.`
+        : "",
     ].filter(Boolean).join(" "),
     pontosDeAtencao: [
       ...data.alerts.map((a) => ({ titulo: a.title, detalhe: a.message })),
       ...out.slice(0, 3).map((s) => ({
         titulo: s.name,
-        detalhe: `${s.latest.value != null ? fmt(s.latest.value) : s.latest.valueText} ${s.unit} em ${formatDate(s.latest.date)} (ref. ${formatRef(s.latest)}).`,
+        detalhe: `${s.latest.value != null ? fmt(s.latest.value) : s.latest.valueText} ${s.unit} em ${formatDate(s.latest.date)} (referência ${formatRef(s.latest)}).`,
       })),
     ].slice(0, 5),
     perguntasSugeridas: [],

@@ -53,7 +53,7 @@ export function DoctorView() {
     }
   }, [local, token]);
 
-  if (!db || (!local && fromLink === null)) return <p className="p-8 text-center text-sm text-ink-500">Carregando histórico…</p>;
+  if (!db || (!local && fromLink === null)) return <p className="p-8 text-center text-sm text-ink-500">Carregando relatório…</p>;
 
   if (local) {
     const st = shareState(local);
