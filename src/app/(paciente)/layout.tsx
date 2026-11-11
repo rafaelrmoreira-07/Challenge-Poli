@@ -1,27 +1,29 @@
 import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
-import { GearIcon, HeartIcon } from "@/components/icons";
+import { GearIcon, LogoMark } from "@/components/icons";
 
 export default function PacienteLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-[#f4f6f8]">
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200/70 bg-white/90 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur">
-        <Link href="/" className="flex items-center gap-2 font-semibold text-brand-900">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white">
-            <HeartIcon width={18} height={18} />
-          </span>
-          Elo Saúde
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-paper">
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-ink-200 bg-paper px-4 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <Link href="/" className="-ml-1 flex min-h-11 items-center gap-2 px-1">
+          <LogoMark />
+          <span className="font-serif text-xl font-semibold tracking-[-0.01em] text-brand-800">Elo Saúde</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+        <div className="flex items-center gap-1">
+          <span className="rounded border border-warn-300 px-1.5 py-0.5 text-xs font-semibold text-warn-800">
             Dados sintéticos
           </span>
-          <Link href="/configuracoes" aria-label="Configurações" className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100">
-            <GearIcon width={20} height={20} />
+          <Link
+            href="/configuracoes"
+            aria-label="Configurações"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-ink-600 transition-colors hover:bg-ink-100"
+          >
+            <GearIcon width={22} height={22} />
           </Link>
         </div>
       </header>
-      <main className="flex-1 px-4 pb-28 pt-4">{children}</main>
+      <main className="flex-1 px-4 pb-32 pt-5">{children}</main>
       <BottomNav />
     </div>
   );

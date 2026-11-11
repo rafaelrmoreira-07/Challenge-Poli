@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { DoctorSummary as Summary } from "@/lib/types";
-import { SparkIcon } from "./icons";
+import { ClipboardIcon } from "./icons";
 
 /**
  * Mostra o resumo clínico. `load` busca do cache ou gera; `cacheKey` muda
@@ -40,34 +40,39 @@ export function DoctorSummary({ load, cacheKey }: { load: () => Promise<Summary>
   return (
     <section className="card">
       <div className="flex items-center justify-between">
-        <h2 className="flex items-center gap-2 font-semibold text-slate-900">
-          <SparkIcon className="h-5 w-5 text-brand-600" /> Resumo clínico {data && data.geradoPor.startsWith("regras") ? "automático" : "por IA"}
+        <h2 className="flex items-center gap-2 font-serif text-xl font-semibold text-ink-900">
+          <ClipboardIcon className="h-5 w-5 text-brand-700" /> Resumo clínico
+          {data && (
+            <span className="rounded border border-ink-200 px-1.5 py-0.5 font-sans text-xs font-semibold text-ink-600">
+              {data.geradoPor.startsWith("regras") ? "por regras" : "gerado por IA"}
+            </span>
+          )}
         </h2>
         {data && !loading && (
-          <button type="button" onClick={reload} className="text-xs font-semibold text-brand-700">Atualizar</button>
+          <button type="button" onClick={reload} className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-brand-700">Atualizar</button>
         )}
       </div>
 
       {loading && (
         <div className="mt-3 space-y-2" aria-busy="true">
-          <p className="text-xs text-slate-500">Lendo exames, remédios, consultas e wearables…</p>
-          {[90, 100, 75, 85].map((w, i) => <div key={i} className="h-3 animate-pulse rounded bg-slate-200" style={{ width: `${w}%` }} />)}
+          <p className="text-xs text-ink-500">Lendo exames, remédios, consultas e wearables…</p>
+          {[90, 100, 75, 85].map((w, i) => <div key={i} className="h-3 animate-pulse rounded bg-ink-200" style={{ width: `${w}%` }} />)}
         </div>
       )}
       {error && !loading && (
-        <p className="mt-3 text-sm text-red-700">Não foi possível gerar o resumo. <button className="font-semibold underline" onClick={reload}>Tentar de novo</button></p>
+        <p className="mt-3 text-sm text-danger-700">Não foi possível gerar o resumo. <button className="font-semibold underline" onClick={reload}>Tentar de novo</button></p>
       )}
       {data && !loading && (
         <div className="mt-3 text-sm">
-          <p className="leading-relaxed text-slate-800">{data.resumo}</p>
+          <p className="text-[15px] leading-relaxed text-ink-800">{data.resumo}</p>
           {data.pontosDeAtencao.length > 0 && (
             <>
-              <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500">Pontos de atenção</h3>
+              <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-ink-500">Pontos de atenção</h3>
               <ol className="mt-1 space-y-2">
                 {data.pontosDeAtencao.map((p, i) => (
                   <li key={i} className="flex gap-2">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[11px] font-bold text-brand-700">{i + 1}</span>
-                    <p><strong>{p.titulo}.</strong> <span className="text-slate-700">{p.detalhe}</span></p>
+                    <span className="num mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-brand-200 bg-brand-50 text-xs font-bold text-brand-800">{i + 1}</span>
+                    <p><strong>{p.titulo}.</strong> <span className="text-ink-700">{p.detalhe}</span></p>
                   </li>
                 ))}
               </ol>
@@ -75,13 +80,13 @@ export function DoctorSummary({ load, cacheKey }: { load: () => Promise<Summary>
           )}
           {data.perguntasSugeridas.length > 0 && (
             <>
-              <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500">A considerar</h3>
-              <ul className="mt-1 list-disc space-y-1 pl-5 text-slate-700">
+              <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-ink-500">A considerar</h3>
+              <ul className="mt-1 list-disc space-y-1 pl-5 text-ink-700">
                 {data.perguntasSugeridas.map((q, i) => <li key={i}>{q}</li>)}
               </ul>
             </>
           )}
-          <p className="mt-4 text-[11px] text-slate-400">
+          <p className="mt-4 border-t border-ink-100 pt-3 text-xs text-ink-500">
             Gerado por {data.geradoPor}. Apoio à decisão: confira sempre os dados de origem abaixo.
           </p>
         </div>

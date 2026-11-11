@@ -1,49 +1,143 @@
 @import "tailwindcss";
 
+/*
+ * Identidade visual do Elo Saúde (ver docs/IDENTIDADE-VISUAL.md).
+ * Papel quente + tinta verde-pinho, títulos em serifa e status clínicos
+ * que nunca dependem só da cor (sempre ícone + texto).
+ */
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-brand-50: #effcf9;
-  --color-brand-100: #c9f5ec;
-  --color-brand-200: #94eadb;
-  --color-brand-500: #14a38b;
-  --color-brand-600: #0d8573;
-  --color-brand-700: #0f6a5d;
-  --color-brand-900: #0b3b35;
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
+
+  /* Fundo de papel */
+  --color-paper: #f5f2ec;
+
+  /* Neutros quentes (substituem o slate) */
+  --color-ink-50: #f8f6f2;
+  --color-ink-100: #efece6;
+  --color-ink-200: #e2ded5;
+  --color-ink-300: #cbc6bb;
+  --color-ink-400: #a19b8f;
+  --color-ink-500: #6b665c;
+  --color-ink-600: #545048;
+  --color-ink-700: #403d37;
+  --color-ink-800: #2c2a26;
+  --color-ink-900: #1c1b18;
+
+  /* Marca: verde-pinho */
+  --color-brand-50: #eef4f1;
+  --color-brand-100: #d7e7df;
+  --color-brand-200: #aecdbf;
+  --color-brand-300: #82b19d;
+  --color-brand-500: #2f7a63;
+  --color-brand-600: #1f5e4c;
+  --color-brand-700: #174a3c;
+  --color-brand-800: #10372d;
+  --color-brand-900: #0b2720;
+
+  /* Acento decorativo: argila (logo e anos da linha do tempo; nunca em status) */
+  --color-clay-50: #fbf1ec;
+  --color-clay-100: #f5ddd1;
+  --color-clay-500: #c8673e;
+  --color-clay-600: #a9532f;
+  --color-clay-700: #8a4326;
+
+  /* Consultas na linha do tempo */
+  --color-plum-100: #ece5f3;
+  --color-plum-700: #5b3f7a;
+
+  /* Status clínicos */
+  --color-danger-50: #fdf1f0;
+  --color-danger-100: #fadbd8;
+  --color-danger-200: #f2b8b2;
+  --color-danger-300: #e8968d;
+  --color-danger-500: #c9372c;
+  --color-danger-600: #b42318;
+  --color-danger-700: #912018;
+  --color-danger-800: #6f1a14;
+
+  --color-warn-50: #fdf6e7;
+  --color-warn-100: #fae8c2;
+  --color-warn-200: #f1d08a;
+  --color-warn-300: #e7b95a;
+  --color-warn-500: #c98a12;
+  --color-warn-600: #a86f0b;
+  --color-warn-700: #8a5a0a;
+  --color-warn-800: #6b4508;
+  --color-warn-900: #4d3206;
 }
 
 :root {
   color-scheme: light;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  background: #f4f6f8;
-  color: #0f172a;
+  background: var(--color-paper);
+  color: var(--color-ink-900);
   font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Foco sempre visível para teclado */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+button,
+summary,
+[role="button"] {
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Títulos de página em serifa */
+@utility page-title {
+  @apply font-serif text-[1.75rem] leading-tight font-semibold tracking-[-0.01em] text-ink-900;
+}
+
+/* Valores clínicos: algarismos de largura fixa para alinhar colunas */
+@utility num {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
 @utility card {
-  @apply rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70;
+  @apply rounded-xl border border-ink-200 bg-white p-4;
 }
 
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors duration-200 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50;
 }
 @utility btn-primary {
   @apply btn bg-brand-600 text-white hover:bg-brand-700;
 }
 @utility btn-secondary {
-  @apply btn bg-white text-slate-800 ring-1 ring-slate-300 hover:bg-slate-50;
+  @apply btn border border-ink-300 bg-white text-ink-800 hover:bg-ink-50;
 }
 @utility btn-danger {
-  @apply btn bg-white text-red-700 ring-1 ring-red-200 hover:bg-red-50;
+  @apply btn border border-danger-200 bg-white text-danger-700 hover:bg-danger-50;
 }
 
 @utility input {
-  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
+  @apply min-h-11 w-full rounded-lg border border-ink-300 bg-white px-3 py-2 text-base text-ink-900 outline-none placeholder:text-ink-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
 }
 
 @utility label {
-  @apply mb-1 block text-xs font-medium text-slate-600;
+  @apply mb-1 block text-sm font-medium text-ink-700;
 }

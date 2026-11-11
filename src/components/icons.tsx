@@ -59,8 +59,33 @@ export const StethoscopeIcon = (p: P) => (
 export const CameraIcon = (p: P) => (
   <svg {...base(p)}><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" /><circle cx="12" cy="13.5" r="3.5" /></svg>
 );
-export const SparkIcon = (p: P) => (
-  <svg {...base(p)}><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></svg>
+/** Marca do Elo Saúde: dois elos entrelaçados (o mesmo desenho de scripts/gerar-icones.mjs). */
+export const LogoMark = ({ className, ...p }: P) => (
+  <svg width={28} height={28} viewBox="0 0 32 32" fill="none" strokeWidth={3.2} strokeLinecap="round" aria-hidden className={className} {...p}>
+    <rect x="3" y="10" width="16" height="12" rx="6" stroke="var(--color-brand-600)" />
+    <rect x="13" y="10" width="16" height="12" rx="6" stroke="var(--color-clay-500)" />
+    <path d="M13 16a6 6 0 0 1 6-6" stroke="var(--color-brand-600)" />
+  </svg>
+);
+/** Documento sendo lido (leitura de laudo). */
+export const ScanIcon = (p: P) => (
+  <svg {...base(p)}><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" /><path d="M8 9h8M8 12h8M8 15h5" /></svg>
+);
+/** Prancheta clínica (resumo para o médico). */
+export const ClipboardIcon = (p: P) => (
+  <svg {...base(p)}><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3" /></svg>
+);
+export const ArrowUpIcon = (p: P) => (
+  <svg {...base(p)}><path d="M12 19V5M6 11l6-6 6 6" /></svg>
+);
+export const ArrowDownIcon = (p: P) => (
+  <svg {...base(p)}><path d="M12 5v14M6 13l6 6 6-6" /></svg>
+);
+export const CheckIcon = (p: P) => (
+  <svg {...base(p)}><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+);
+export const MinusIcon = (p: P) => (
+  <svg {...base(p)}><path d="M6 12h12" /></svg>
 );
 export const ShieldIcon = (p: P) => (
   <svg {...base(p)}><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" /><path d="m9 12 2 2 4-4" /></svg>

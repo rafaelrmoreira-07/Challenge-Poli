@@ -7,7 +7,7 @@ import { DoctorIcon, HomeIcon, PlusIcon, TimelineIcon, WatchIcon } from "./icons
 
 const ITEMS = [
   { href: "/", label: "Início", icon: HomeIcon, match: (p: string) => p === "/" },
-  { href: "/historico", label: "Histórico", icon: TimelineIcon, match: (p: string) => p.startsWith("/historico") || p.startsWith("/exames") },
+  { href: "/historico", label: "Histórico", icon: TimelineIcon, match: (p: string) => p.startsWith("/historico") || p.startsWith("/exames") || p.startsWith("/exame") },
   { href: "/enviar", label: "Enviar", icon: PlusIcon, match: (p: string) => p.startsWith("/enviar"), primary: true },
   { href: "/wearables", label: "Sinais", icon: WatchIcon, match: (p: string) => p.startsWith("/wearables") },
   { href: "/compartilhar", label: "Médico", icon: DoctorIcon, match: (p: string) => p.startsWith("/compartilhar") },
@@ -19,7 +19,7 @@ const ITEMS = [
  */
 export function BottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+    <nav aria-label="Principal" className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-200 bg-white pb-[env(safe-area-inset-bottom)]">
       <Suspense fallback={<NavItems pathname="" />}>
         <ActiveNavItems />
       </Suspense>
@@ -33,7 +33,7 @@ function ActiveNavItems() {
 
 function NavItems({ pathname }: { pathname: string }) {
   return (
-    <ul className="mx-auto flex max-w-md items-end justify-around px-2">
+    <ul className="mx-auto flex max-w-md items-stretch justify-around px-1">
       {ITEMS.map(({ href, label, icon: Icon, match, primary }) => {
         const active = pathname !== "" && match(pathname);
         return (
@@ -41,14 +41,16 @@ function NavItems({ pathname }: { pathname: string }) {
             <Link
               href={href}
               aria-current={active ? "page" : undefined}
-              className={`flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${active ? "text-brand-700" : "text-slate-500"}`}
+              className={`relative flex min-h-16 flex-col items-center justify-center gap-1 text-xs font-semibold transition-colors ${active ? "text-brand-700" : "text-ink-500 hover:text-ink-800"}`}
             >
+              {/* Indicador da aba ativa: fio no topo, além da cor e do aria-current */}
+              <span className={`absolute inset-x-4 top-0 h-[3px] rounded-b ${active ? "bg-brand-600" : "bg-transparent"}`} aria-hidden />
               {primary ? (
-                <span className="-mt-5 flex h-12 w-12 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg shadow-brand-600/30">
-                  <Icon />
+                <span className={`flex h-8 w-11 items-center justify-center rounded-lg ${active ? "bg-brand-700" : "bg-brand-600"} text-white`}>
+                  <Icon width={20} height={20} strokeWidth={2.2} />
                 </span>
               ) : (
-                <Icon />
+                <Icon width={24} height={24} strokeWidth={active ? 2.2 : 1.8} />
               )}
               {label}
             </Link>

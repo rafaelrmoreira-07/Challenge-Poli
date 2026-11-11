@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { getGeminiKey } from "@/lib/gemini";
-import { SparkIcon } from "./icons";
+import { ChevronRight, ScanIcon } from "./icons";
 
 function subscribe(cb: () => void) {
   window.addEventListener("elo-saude:gemini-key", cb);
@@ -23,11 +23,12 @@ export function AiStatusBanner() {
   const enabled = useAiEnabled();
   if (enabled !== false) return null;
   return (
-    <Link href="/configuracoes" className="mt-4 flex items-start gap-3 rounded-2xl bg-sky-50 p-3 text-sm text-sky-900 ring-1 ring-sky-200">
-      <SparkIcon className="mt-0.5 h-5 w-5 shrink-0 text-sky-600" />
-      <span>
-        <strong>IA desligada.</strong> Os laudos de exemplo funcionam com leitura pré-gravada. Para ler qualquer laudo e gerar o resumo do médico, informe uma chave da Gemini em <u>Configurações</u>.
+    <Link href="/configuracoes" className="mt-3 flex items-center gap-3 rounded-xl border border-ink-200 bg-ink-50 p-3 text-sm text-ink-700 transition-colors hover:bg-ink-100">
+      <ScanIcon className="h-5 w-5 shrink-0 text-ink-500" />
+      <span className="flex-1">
+        <strong className="text-ink-900">Leitura por IA desligada.</strong> Os laudos de exemplo usam leitura pré-gravada. Para ler qualquer laudo, informe uma chave da Gemini em Configurações.
       </span>
+      <ChevronRight width={18} height={18} className="shrink-0 text-ink-400" />
     </Link>
   );
 }

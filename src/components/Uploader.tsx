@@ -9,8 +9,8 @@ import { labStatus } from "@/lib/health";
 import { asset } from "@/lib/paths";
 import { getDbSnapshot, saveExam, type SaveExamInput } from "@/lib/store";
 import type { Extraction, ExtractedResult } from "@/lib/types";
-import { CameraIcon, FileIcon, SparkIcon } from "./icons";
-import { StatusBadge } from "./ui";
+import { CameraIcon, FileIcon, ScanIcon } from "./icons";
+import { SectionTitle, StatusBadge } from "./ui";
 
 type Phase =
   | { step: "idle"; error?: string; needsKey?: boolean }
@@ -92,7 +92,7 @@ export function Uploader() {
   return (
     <div>
       {phase.error && (
-        <p className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+        <p className="mb-3 rounded-xl bg-danger-50 px-3 py-2 text-sm text-danger-700 ring-1 ring-danger-200">
           {phase.error}
           {phase.needsKey && <> <Link href="/configuracoes" className="font-semibold underline">Abrir Configurações</Link></>}
         </p>
@@ -100,33 +100,33 @@ export function Uploader() {
       <input ref={fileRef} type="file" accept="application/pdf,image/*" className="hidden" onChange={onPick} />
       <input ref={camRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onPick} />
       <div className="grid grid-cols-2 gap-3">
-        <button type="button" onClick={() => camRef.current?.click()} className="card flex flex-col items-center gap-2 py-6 hover:ring-brand-300">
-          <CameraIcon className="h-8 w-8 text-brand-600" />
-          <span className="text-sm font-semibold">Fotografar</span>
-          <span className="text-[11px] text-slate-500">Exame em papel</span>
+        <button type="button" onClick={() => camRef.current?.click()} className="card flex flex-col items-center gap-2 py-6 transition-colors hover:border-brand-300 hover:bg-brand-50/40">
+          <CameraIcon className="h-8 w-8 text-brand-700" />
+          <span className="text-[15px] font-semibold">Fotografar</span>
+          <span className="text-sm text-ink-500">Exame em papel</span>
         </button>
-        <button type="button" onClick={() => fileRef.current?.click()} className="card flex flex-col items-center gap-2 py-6 hover:ring-brand-300">
-          <FileIcon className="h-8 w-8 text-brand-600" />
-          <span className="text-sm font-semibold">Escolher arquivo</span>
-          <span className="text-[11px] text-slate-500">PDF ou imagem, até 10 MB</span>
+        <button type="button" onClick={() => fileRef.current?.click()} className="card flex flex-col items-center gap-2 py-6 transition-colors hover:border-brand-300 hover:bg-brand-50/40">
+          <FileIcon className="h-8 w-8 text-brand-700" />
+          <span className="text-[15px] font-semibold">Escolher arquivo</span>
+          <span className="text-sm text-ink-500">PDF ou imagem, até 10 MB</span>
         </button>
       </div>
 
-      <h2 className="mb-2 mt-6 text-sm font-semibold uppercase tracking-wide text-slate-500">Laudos de exemplo (fictícios)</h2>
+      <SectionTitle>Laudos de exemplo (fictícios)</SectionTitle>
       <div className="space-y-2">
         {SAMPLES.map((s) => (
           <div key={s.file} className="card flex items-center gap-3 p-3">
-            <FileIcon className="shrink-0 text-sky-600" />
+            <FileIcon className="shrink-0 text-ink-500" />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">{s.title}</p>
-              <p className="text-[11px] text-slate-500">{s.desc}</p>
+              <p className="text-[15px] font-semibold">{s.title}</p>
+              <p className="text-sm text-ink-500">{s.desc}</p>
             </div>
-            <a href={asset(`/exemplos/${s.file}`)} target="_blank" rel="noopener" className="text-xs font-semibold text-slate-500">ver</a>
-            <button type="button" onClick={() => sendSample(s)} className="btn-primary px-3 py-1.5 text-xs">Enviar</button>
+            <a href={asset(`/exemplos/${s.file}`)} target="_blank" rel="noopener" className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-ink-600 underline underline-offset-4">ver</a>
+            <button type="button" onClick={() => sendSample(s)} className="btn-primary px-3">Enviar</button>
           </div>
         ))}
       </div>
-      <p className="mt-6 text-[11px] leading-relaxed text-slate-500">
+      <p className="mt-8 text-sm leading-relaxed text-ink-500">
         Com a IA ligada, o arquivo vai do seu navegador direto para a Gemini API (Google), só para leitura. O histórico fica
         salvo apenas neste navegador. Use dados sintéticos ou seus próprios; dados de outra pessoa só com o consentimento dela.
       </p>
@@ -146,10 +146,10 @@ function Reading({ filename, preview }: { filename: string; preview: string | nu
         // eslint-disable-next-line @next/next/no-img-element
         <img src={preview} alt="" className="mb-4 max-h-48 rounded-lg opacity-60 shadow" />
       )}
-      <SparkIcon className="h-10 w-10 animate-pulse text-brand-600" />
-      <p className="mt-3 font-semibold">{STAGES[i]}</p>
-      <p className="mt-1 text-xs text-slate-500">{filename}</p>
-      <div className="mt-4 h-1.5 w-48 overflow-hidden rounded-full bg-slate-200">
+      <ScanIcon className="h-10 w-10 animate-pulse text-brand-600" />
+      <p className="mt-3 font-semibold" aria-live="polite">{STAGES[i]}</p>
+      <p className="mt-1 text-xs text-ink-500">{filename}</p>
+      <div className="mt-4 h-1.5 w-48 overflow-hidden rounded-full bg-ink-200" role="progressbar" aria-label="Progresso da leitura" aria-valuemin={0} aria-valuemax={STAGES.length} aria-valuenow={i + 1}>
         <div className="h-full rounded-full bg-brand-500 transition-all duration-[2500ms]" style={{ width: `${((i + 1) / STAGES.length) * 90}%` }} />
       </div>
     </div>
@@ -223,25 +223,25 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
 
   return (
     <div>
-      <div className={`mb-3 rounded-xl px-3 py-2 text-sm ring-1 ${ex?.source === "gemini" ? "bg-brand-50 text-brand-900 ring-brand-200" : "bg-amber-50 text-amber-900 ring-amber-200"}`}>
+      <div className={`mb-3 rounded-xl px-3 py-2 text-sm ring-1 ${ex?.source === "gemini" ? "bg-brand-50 text-brand-900 ring-brand-200" : "bg-warn-50 text-warn-900 ring-warn-200"}`}>
         {ex?.source === "gemini" && <>A IA leu <strong>{rows.length} resultados</strong> ({ex.model}). Confira e corrija o que for preciso antes de salvar.</>}
         {ex?.source === "simulado" && <>Leitura pré-gravada deste laudo de exemplo (IA desligada ou indisponível). Com uma chave da Gemini em Configurações, a leitura é feita ao vivo.</>}
         {!ex && <>{phase.warning ?? "Não foi possível ler o laudo."} Você pode adicionar os resultados manualmente.</>}
       </div>
-      {ex?.patientName && <p className="mb-2 text-xs text-slate-500">Nome no laudo: {ex.patientName}</p>}
-      {ex?.notes && <p className="mb-2 text-xs text-slate-500">Observação da IA: {ex.notes}</p>}
+      {ex?.patientName && <p className="mb-2 text-xs text-ink-500">Nome no laudo: {ex.patientName}</p>}
+      {ex?.notes && <p className="mb-2 text-xs text-ink-500">Observação da IA: {ex.notes}</p>}
 
       {preview && (
         <div className="mb-3">
-          <button type="button" className="text-xs font-semibold text-brand-700" onClick={() => setShowOriginal((v) => !v)}>
+          <button type="button" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 underline underline-offset-4" onClick={() => setShowOriginal((v) => !v)}>
             {showOriginal ? "Esconder original" : "Comparar com o original"}
           </button>
           {showOriginal &&
             (isImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={preview} alt="Laudo original" className="mt-2 w-full rounded-lg ring-1 ring-slate-200" />
+              <img src={preview} alt="Laudo original" className="mt-2 w-full rounded-lg ring-1 ring-ink-200" />
             ) : (
-              <iframe src={preview} title="Laudo original" className="mt-2 h-96 w-full rounded-lg ring-1 ring-slate-200" />
+              <iframe src={preview} title="Laudo original" className="mt-2 h-96 w-full rounded-lg ring-1 ring-ink-200" />
             ))}
         </div>
       )}
@@ -267,17 +267,17 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
               <div className="flex items-center gap-2">
                 <input className="input flex-1 font-medium" value={r.name} onChange={(e) => update(r.id, { name: e.target.value })} aria-label="Exame" />
                 <StatusBadge status={st} />
-                <button type="button" onClick={() => setRows((rs) => rs.filter((x) => x.id !== r.id))} className="px-1 text-lg text-slate-400 hover:text-red-600" aria-label={`Remover ${r.name}`}>
+                <button type="button" onClick={() => setRows((rs) => rs.filter((x) => x.id !== r.id))} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-xl text-ink-500 transition-colors hover:bg-danger-50 hover:text-danger-700" aria-label={`Remover ${r.name || "resultado"}`}>
                   ×
                 </button>
               </div>
-              <div className="mt-2 grid grid-cols-4 gap-2">
+              <div className="mt-2 grid grid-cols-2 gap-2">
                 <label><span className="label">Valor</span><input className="input" inputMode="decimal" value={r.value} onChange={(e) => update(r.id, { value: e.target.value })} placeholder={r.valueText ?? ""} /></label>
                 <label><span className="label">Unidade</span><input className="input" value={r.unit} onChange={(e) => update(r.id, { unit: e.target.value })} /></label>
                 <label><span className="label">Ref. mín.</span><input className="input" inputMode="decimal" value={r.refLow} onChange={(e) => update(r.id, { refLow: e.target.value })} /></label>
                 <label><span className="label">Ref. máx.</span><input className="input" inputMode="decimal" value={r.refHigh} onChange={(e) => update(r.id, { refHigh: e.target.value })} /></label>
               </div>
-              {r.refText && <p className="mt-1.5 text-[11px] text-slate-500">No laudo: {r.refText}</p>}
+              {r.refText && <p className="mt-1.5 text-xs text-ink-500">No laudo: {r.refText}</p>}
             </div>
           );
         })}
@@ -290,8 +290,8 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
         </button>
       </div>
 
-      {error && <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">{error}</p>}
-      <div className="sticky bottom-20 mt-4 flex gap-2 rounded-2xl bg-[#f4f6f8]/90 py-2 backdrop-blur">
+      {error && <p className="mt-3 rounded-xl bg-danger-50 px-3 py-2 text-sm text-danger-700 ring-1 ring-danger-200">{error}</p>}
+      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] mt-4 flex gap-2 border-t border-ink-200 bg-paper py-3">
         <button type="button" className="btn-secondary flex-1" onClick={onCancel} disabled={pending}>Cancelar</button>
         <button type="button" className="btn-primary flex-[2]" onClick={submit} disabled={pending || !rows.length || !date}>
           {pending ? "Salvando…" : `Salvar ${rows.length} resultados`}

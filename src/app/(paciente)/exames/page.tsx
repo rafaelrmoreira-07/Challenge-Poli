@@ -6,7 +6,7 @@ import { ExamesView } from "@/components/views/ExamesView";
 export default function ExamesPage() {
   return (
     <div>
-      <h1 className="mb-3 text-2xl font-bold tracking-tight">Histórico</h1>
+      <h1 className="mb-3 page-title">Histórico</h1>
       <HistoryTabs active="exames" />
       <Suspense fallback={<Skeleton lines={6} />}>
         <ExamesView />

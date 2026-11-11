@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { HeartIcon } from "@/components/icons";
+import { LogoMark } from "@/components/icons";
 import { DoctorView } from "@/components/views/DoctorView";
 
 export const metadata: Metadata = {
@@ -10,17 +10,18 @@ export const metadata: Metadata = {
 
 export default function MedicoPage() {
   return (
-    <div className="min-h-dvh bg-[#f4f6f8]">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="min-h-dvh bg-paper">
+      <header className="border-b border-ink-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2 font-semibold text-brand-900">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white"><HeartIcon width={18} height={18} /></span>
-            Elo Saúde <span className="font-normal text-slate-400">· Visão do médico</span>
+          <div className="flex items-center gap-2">
+            <LogoMark />
+            <span className="font-serif text-xl font-semibold text-brand-800">Elo Saúde</span>
+            <span className="text-[15px] text-ink-500">· Visão do médico</span>
           </div>
-          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">Dados sintéticos</span>
+          <span className="rounded border border-warn-300 px-1.5 py-0.5 text-xs font-semibold text-warn-800">Dados sintéticos</span>
         </div>
       </header>
-      <Suspense fallback={<p className="p-8 text-center text-sm text-slate-500">Carregando histórico…</p>}>
+      <Suspense fallback={<p className="p-8 text-center text-sm text-ink-500">Carregando histórico…</p>}>
         <DoctorView />
       </Suspense>
     </div>

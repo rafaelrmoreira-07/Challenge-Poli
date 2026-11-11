@@ -11,7 +11,7 @@ export default function HistoricoPage() {
   const db = useDb();
   return (
     <div>
-      <h1 className="mb-3 text-2xl font-bold tracking-tight">Histórico</h1>
+      <h1 className="mb-3 page-title">Histórico</h1>
       <HistoryTabs active="timeline" />
       {db ? <TimelineList events={buildTimeline(db, computeAlerts(db), (id) => `/exames/?doc=${id}`)} /> : <Skeleton lines={6} />}
     </div>
