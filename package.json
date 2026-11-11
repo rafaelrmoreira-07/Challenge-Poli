@@ -10,7 +10,7 @@
     "exemplos": "node scripts/gerar-exemplos.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "icones": "node scripts/gerar-icones.mjs",
-    "build:pages": "NEXT_PUBLIC_BASE_PATH=/Challenge next build"
+    "build:pages": "NEXT_PUBLIC_BASE_PATH=/Challenge-Poli next build"
   },
   "dependencies": {
     "next": "16.4.5",

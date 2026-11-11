@@ -1,5 +1,5 @@
 /**
- * Prefixo do site publicado (ex.: "/Challenge" no GitHub Pages). O <Link> do
+ * Prefixo do site publicado (ex.: "/Challenge-Poli" no GitHub Pages). O <Link> do
  * Next já aplica o basePath; isto é para fetch() e URLs montadas à mão.
  */
 export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";

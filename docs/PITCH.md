@@ -2,8 +2,8 @@
 
 Personagem: **Carlos, 58 anos** (sintético). Hipertenso, com colesterol alto, exames espalhados por quatro laboratórios desde 2016 e um relógio no pulso.
 
-Site: https://suzetemirandasilva5601-cpu.github.io/Challenge/
-Modo apresentação (para projetar): https://suzetemirandasilva5601-cpu.github.io/Challenge/demo/
+Site: https://suzetemirandasilva5601-cpu.github.io/Challenge-Poli/
+Modo apresentação (para projetar): https://suzetemirandasilva5601-cpu.github.io/Challenge-Poli/demo/
 
 ## Antes de subir no palco
 

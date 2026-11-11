@@ -2,8 +2,8 @@
 
 Protótipo para o desafio da Rivio (demo em 14/11/2026, Gama House). Usa IA para juntar o histórico de saúde de uma pessoa, do exame em papel de dez anos atrás aos dados dos wearables, e organizar tudo para ela e para o médico dela.
 
-**Site publicado:** https://suzetemirandasilva5601-cpu.github.io/Challenge/
-**Modo apresentação:** https://suzetemirandasilva5601-cpu.github.io/Challenge/demo/
+**Site publicado (depois de ativar o GitHub Pages, veja CONTRIBUTING):** https://suzetemirandasilva5601-cpu.github.io/Challenge-Poli/
+**Modo apresentação:** https://suzetemirandasilva5601-cpu.github.io/Challenge-Poli/demo/
 
 > **Todos os dados são sintéticos.** O paciente "Carlos Mendes" e os laudos em `public/exemplos/` são fictícios.
 
@@ -31,7 +31,7 @@ npm install
 npm run dev                 # http://localhost:3000
 ```
 
-Build estático: `npm run build` gera `out/`, e `npm start` serve essa pasta. Para o GitHub Pages use `npm run build:pages` (prefixo `/Challenge`).
+Build estático: `npm run build` gera `out/`, e `npm start` serve essa pasta. Para o GitHub Pages use `npm run build:pages` (prefixo `/Challenge-Poli`).
 
 Outros comandos: `npm run lint`, `npm run typecheck`, `npm run exemplos` (regera os laudos fictícios), `npm run icones`.
 
@@ -46,5 +46,6 @@ npm run build:pages
 
 ## Documentação
 
+- [CONTRIBUTING.md](CONTRIBUTING.md): como clonar, estrutura das pastas, fluxo de branches e regras do grupo.
 - [docs/ARQUITETURA.md](docs/ARQUITETURA.md): arquitetura, regras de alerta, privacidade e o que falta para produção.
 - [docs/PITCH.md](docs/PITCH.md): roteiro da apresentação de 10 minutos com a demo ao vivo.
