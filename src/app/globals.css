@@ -97,6 +97,30 @@ summary,
   cursor: pointer;
 }
 
+/* Aviso de mensagem nova (desce do topo) e "digitando…" da conversa */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+.toast-in {
+  animation: toast-in 0.25s ease-out;
+}
+@keyframes typing-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+.typing-dot {
+  animation: typing-dot 1.2s infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

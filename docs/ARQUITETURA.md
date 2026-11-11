@@ -11,6 +11,7 @@ Um site web mobile-first para o paciente (instalável como app) e uma tela deskt
 | Wearables | Regras de alerta e gráficos | Série de 90 dias gerada por script; botão que injeta episódios de ritmo irregular |
 | Consentimento e visão do médico | Escopo, prazo, revogação e registro de acesso | Sem login de médico ou paciente |
 | Resumo clínico por IA | Sim, Gemini | Resumo por regras sem chave ou se a IA cair |
+| Conversa com o Elo (estilo WhatsApp) | Avisos de alerta, perguntas sobre exames e medições, envio de laudo e relatório para o médico | Roda dentro do app, sem WhatsApp de verdade; respostas por regras |
 
 ## Visão geral
 
@@ -92,3 +93,15 @@ Os alertas indicam quando procurar atendimento. Eles não fazem diagnóstico, e 
 6. **Regulatório:** avaliar o enquadramento dos alertas como software médico na ANVISA, e revisão clínica das regras.
 
 A primeira versão com servidor (Next.js com rotas de API, banco em arquivo e links de médico validados no servidor) está no histórico do git, no commit `5b3e9cd`.
+
+## Conversa com o Elo
+
+Chat dentro do app, no estilo do WhatsApp (`/conversa`, botão de balão no cabeçalho). Não usa o WhatsApp de verdade: roda no navegador, como o resto do protótipo.
+
+- `lib/chat.ts`: mensagens salvas no navegador (`localStorage`, chave `elo-saude:chat:v1`) e a lista de alertas já avisados. Restaurar a demonstração apaga a conversa.
+- `lib/chatbot.ts`: respostas por palavra-chave, sem IA na conversa. Cada resposta vem dos dados do histórico: alertas, exames alterados, um exame pelo nome ("como está meu colesterol LDL?"), medições dos últimos 7 dias, remédios e acessos de médicos. Sintomas de emergência ("dor no peito", "falta de ar"...) sempre recebem a orientação de ligar 192 antes de qualquer outra coisa.
+- **Alertas:** `components/ChatNotifier.tsx` compara os alertas atuais com os já avisados. Alerta novo vira mensagem na conversa e um aviso no topo da tela. Na primeira visita, os alertas existentes entram na conversa sem aviso (só o contador).
+- **Envio de laudo:** o arquivo passa pela mesma leitura da tela Adicionar (`extractLabReport`). O Elo mostra todos os valores lidos e só salva quando o paciente toca em "Salvar no histórico". O arquivo esperando confirmação fica só na memória: recarregar a página descarta.
+- **Relatório para o médico:** o Elo pergunta o nome do médico e o prazo, cria o acesso com `createShare` (todos os tipos de dado) e devolve o link, com botão para revogar.
+
+Para virar WhatsApp de verdade: WhatsApp Business Cloud API (conta Meta verificada, número próprio, templates aprovados), um servidor para o webhook, os dados do paciente num banco com login e vínculo do número de WhatsApp à conta, e cuidados de LGPD para dado de saúde (consentimento, criptografia, registro de acesso). As regras de `lib/chatbot.ts` podem ser reaproveitadas no servidor.

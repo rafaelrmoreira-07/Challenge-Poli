@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { ageFrom } from "@/lib/dates";
-import { ACCEPTED_TYPES, extractLabReport, MAX_UPLOAD_BYTES, NoKeyError } from "@/lib/extraction";
+import { ACCEPTED_TYPES, extractLabReport, fileType, MAX_UPLOAD_BYTES, NoKeyError } from "@/lib/extraction";
 import { labStatus } from "@/lib/health";
 import { asset } from "@/lib/paths";
 import { getDbSnapshot, saveExam, type SaveExamInput } from "@/lib/store";
@@ -16,13 +16,6 @@ type Phase =
   | { step: "idle"; error?: string; needsKey?: boolean }
   | { step: "reading"; filename: string }
   | { step: "review"; file: File; extraction: Extraction | null; warning?: string };
-
-/** Navegadores às vezes não informam o tipo (ex.: HEIC); deduz pela extensão. */
-function fileType(f: File): string {
-  if (f.type) return f.type;
-  const ext = f.name.split(".").pop()?.toLowerCase();
-  return { pdf: "application/pdf", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", heic: "image/heic", heif: "image/heif" }[ext ?? ""] ?? "";
-}
 
 const SAMPLES = [
   { file: "laudo-vida-2026-11.pdf", type: "application/pdf", title: "PDF do laboratório", desc: "Laudo de nov/2026 com 14 exames" },

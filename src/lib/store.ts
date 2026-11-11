@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { analyteInfo, resolveAnalyteKey } from "./analytes";
+import { resetChat } from "./chat";
 import { addDays, isValidISODate, todayISO } from "./dates";
 import { createSeedDb, extendWearablesToToday } from "./seed";
 import { SCOPES, type Db, type DoctorSummary, type ExtractionSource, type Scope } from "./types";
@@ -212,6 +213,7 @@ export async function resetDemo() {
   update((db) => {
     Object.assign(db, createSeedDb());
   });
+  resetChat();
   try {
     await idbRun("readwrite", (s) => s.clear());
   } catch {

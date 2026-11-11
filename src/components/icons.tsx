@@ -1,12 +1,16 @@
 import type { SVGProps } from "react";
 import {
   ArrowDownIcon as PhArrowDown,
+  ArrowLeftIcon as PhArrowLeft,
   ArrowUpIcon as PhArrowUp,
   CameraIcon as PhCamera,
   CaretRightIcon as PhCaretRight,
+  ChatCircleTextIcon as PhChat,
   CheckIcon as PhCheck,
+  ChecksIcon as PhChecks,
   ClipboardTextIcon as PhClipboardText,
   ClockCounterClockwiseIcon as PhClock,
+  CopyIcon as PhCopy,
   DropIcon as PhDrop,
   FileTextIcon as PhFileText,
   GaugeIcon as PhGauge,
@@ -16,6 +20,9 @@ import {
   HouseIcon as PhHouse,
   MinusIcon as PhMinus,
   MoonIcon as PhMoon,
+  PaperclipIcon as PhPaperclip,
+  PaperPlaneRightIcon as PhSend,
+  PhoneIcon as PhPhone,
   PillIcon as PhPill,
   PlusIcon as PhPlus,
   ScanIcon as PhScan,
@@ -26,6 +33,7 @@ import {
   WarningIcon as PhWarning,
   WarningOctagonIcon as PhWarningOctagon,
   WatchIcon as PhWatch,
+  XIcon as PhX,
 } from "@phosphor-icons/react/ssr";
 import type { Icon as PhIcon, IconWeight } from "@phosphor-icons/react/lib";
 
@@ -83,6 +91,16 @@ export const CheckIcon = wrap(PhCheck, "bold");
 export const MinusIcon = wrap(PhMinus, "bold");
 export const ShieldIcon = wrap(PhShieldCheck);
 export const ChevronRight = wrap(PhCaretRight);
+
+// Conversa
+export const ChatIcon = wrap(PhChat);
+export const SendIcon = wrap(PhSend, "fill");
+export const PaperclipIcon = wrap(PhPaperclip);
+export const BackIcon = wrap(PhArrowLeft);
+export const ReadIcon = wrap(PhChecks, "bold");
+export const CopyIcon = wrap(PhCopy);
+export const PhoneIcon = wrap(PhPhone);
+export const CloseIcon = wrap(PhX);
 
 /** Marca do Elo Saúde: dois elos entrelaçados (o mesmo desenho de scripts/gerar-icones.mjs). */
 export const LogoMark = ({ className, ...p }: SVGProps<SVGSVGElement>) => (
