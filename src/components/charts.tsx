@@ -24,6 +24,26 @@ const fullFmt = (t: number) =>
   new Date(t).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
 const nf = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
+/**
+ * Paleta dos gráficos, alinhada aos tokens de src/app/globals.css.
+ * Séries do mesmo gráfico se distinguem também pelo traço (sólido/tracejado),
+ * nunca só pela cor.
+ */
+export const CHART = {
+  ink: "#1f5e4c",
+  out: "#b42318",
+  warn: "#a86f0b",
+  band: "#2f7a63",
+  med: "#5b3f7a",
+  grid: "#e2ded5",
+  axis: "#6b665c",
+  blue: "#2f5d8a",
+  plum: "#5b3f7a",
+  sage: "#82b19d",
+  night: "#3e4c7a",
+} as const;
+const tooltipStyle = { borderRadius: 8, fontSize: 13, border: "1px solid #e2ded5", boxShadow: "none" };
+
 export interface TrendPoint {
   date: string;
   value: number;
@@ -61,26 +81,27 @@ export function LabTrendChart({
     <div style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 16, right: 12, bottom: 0, left: -12 }}>
-          <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid stroke={CHART.grid} strokeDasharray="3 3" vertical={false} />
           {(refLow != null || refHigh != null) && (
             <ReferenceArea
               y1={refLow ?? yMin}
               y2={refHigh ?? yMax}
-              fill="#10b981"
-              fillOpacity={0.1}
-              stroke="#10b981"
-              strokeOpacity={0.3}
+              fill={CHART.band}
+              fillOpacity={0.08}
+              stroke={CHART.band}
+              strokeOpacity={0.35}
               strokeDasharray="4 4"
               ifOverflow="extendDomain"
+              label={{ value: "faixa de referência", position: "insideBottomRight", fill: CHART.band, fontSize: 11 }}
             />
           )}
           {markers.map((m) => (
             <ReferenceLine
               key={m.date + m.label}
               x={ts(m.date)}
-              stroke="#6366f1"
-              strokeDasharray="4 3"
-              label={{ value: m.label, position: "insideTopLeft", fill: "#4f46e5", fontSize: 10 }}
+              stroke={CHART.med}
+              strokeDasharray="2 3"
+              label={{ value: m.label, position: "insideTopLeft", fill: CHART.med, fontSize: 11 }}
             />
           ))}
           <XAxis
@@ -89,25 +110,30 @@ export function LabTrendChart({
             scale="time"
             domain={[tMin - span * 0.04, tMax + span * 0.04]}
             tickFormatter={span > 86_400_000 * 500 ? yearFmt : dayFmt}
-            tick={{ fontSize: 11, fill: "#64748b" }}
+            tick={{ fontSize: 11, fill: CHART.axis }}
             tickCount={6}
           />
-          <YAxis domain={[yMin, yMax]} tick={{ fontSize: 11, fill: "#64748b" }} width={52} tickFormatter={nf} />
+          <YAxis domain={[yMin, yMax]} tick={{ fontSize: 11, fill: CHART.axis }} width={52} tickFormatter={nf} />
           <Tooltip
             labelFormatter={(t) => fullFmt(Number(t))}
             formatter={(v) => [`${nf(Number(v))} ${unit}`, "Resultado"]}
-            contentStyle={{ borderRadius: 12, fontSize: 12 }}
+            contentStyle={tooltipStyle}
           />
           <Line
             type="monotone"
             dataKey="value"
-            stroke="#0d8573"
+            stroke={CHART.ink}
             strokeWidth={2.5}
             isAnimationActive={false}
             dot={(props) => {
               const { cx, cy, payload, index } = props as { cx: number; cy: number; payload: { value: number }; index: number };
               return (
-                <circle key={index} cx={cx} cy={cy} r={5} fill={out(payload.value) ? "#dc2626" : "#0d8573"} stroke="#fff" strokeWidth={2} />
+                out(payload.value) ? (
+                  // Fora da faixa: ponto maior, vermelho e com contorno (forma + cor)
+                  <circle key={index} cx={cx} cy={cy} r={6} fill={CHART.out} stroke="#fff" strokeWidth={2.5} />
+                ) : (
+                  <circle key={index} cx={cx} cy={cy} r={4.5} fill="#fff" stroke={CHART.ink} strokeWidth={2.5} />
+                )
               );
             }}
           />
@@ -124,7 +150,7 @@ export function Sparkline({ values, bad }: { values: number[]; bad?: boolean }) 
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 4, right: 2, bottom: 4, left: 2 }}>
           <YAxis hide domain={["dataMin", "dataMax"]} />
-          <Line type="monotone" dataKey="v" stroke={bad ? "#dc2626" : "#0d8573"} strokeWidth={2} dot={false} isAnimationActive={false} />
+          <Line type="monotone" dataKey="v" stroke={bad ? CHART.out : CHART.ink} strokeWidth={2} dot={false} isAnimationActive={false} />
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -137,6 +163,8 @@ export interface WearableSeries {
   key: Metric;
   name: string;
   color: string;
+  /** Traço tracejado para diferenciar séries sem depender da cor. */
+  dashed?: boolean;
 }
 
 export function WearableChart({
@@ -164,14 +192,24 @@ export function WearableChart({
 
   return (
     <div>
-      <div className="mb-2 flex justify-end gap-1" role="group" aria-label="Período">
+      <div className="mb-2 flex items-center justify-end gap-1" role="group" aria-label="Período">
+        {series.length > 1 && (
+          <ul className="mr-auto flex flex-wrap gap-x-3 pl-2 text-xs text-ink-600">
+            {series.map((s) => (
+              <li key={s.key} className="flex items-center gap-1.5">
+                <svg width="18" height="6" aria-hidden><line x1="0" y1="3" x2="18" y2="3" stroke={s.color} strokeWidth="2.5" strokeDasharray={s.dashed ? "4 3" : undefined} /></svg>
+                {s.name}
+              </li>
+            ))}
+          </ul>
+        )}
         {([14, 30, 90] as const).map((r) => (
           <button
             key={r}
             type="button"
             onClick={() => setRange(r)}
             aria-pressed={range === r}
-            className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${range === r ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-600"}`}
+            className={`min-h-8 min-w-11 rounded-md border px-2 text-xs font-semibold transition-colors ${range === r ? "border-brand-600 bg-brand-600 text-white" : "border-ink-200 bg-white text-ink-600 hover:bg-ink-50"}`}
           >
             {r}d
           </button>
@@ -180,28 +218,28 @@ export function WearableChart({
       <div style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
           <Chart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
-            <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="t" type="category" tickFormatter={(t) => dayFmt(Number(t))} tick={{ fontSize: 10, fill: "#64748b" }} minTickGap={24} />
-            <YAxis domain={domain ?? ["auto", "auto"]} tick={{ fontSize: 10, fill: "#64748b" }} width={48} />
+            <CartesianGrid stroke={CHART.grid} strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="t" type="category" tickFormatter={(t) => dayFmt(Number(t))} tick={{ fontSize: 11, fill: CHART.axis }} minTickGap={24} />
+            <YAxis domain={domain ?? ["auto", "auto"]} tick={{ fontSize: 11, fill: CHART.axis }} width={48} />
             <Tooltip
               labelFormatter={(t) => fullFmt(Number(t))}
               formatter={(v, n) => [`${nf(Number(v))} ${unit}`, String(n)]}
-              contentStyle={{ borderRadius: 12, fontSize: 12 }}
+              contentStyle={tooltipStyle}
             />
             {refs.map((r) => (
               <ReferenceLine
                 key={r.label}
                 y={r.y}
-                stroke={r.color ?? "#dc2626"}
+                stroke={r.color ?? CHART.out}
                 strokeDasharray="4 3"
-                label={{ value: r.label, position: "insideTopRight", fill: r.color ?? "#dc2626", fontSize: 10 }}
+                label={{ value: r.label, position: "insideTopRight", fill: r.color ?? CHART.out, fontSize: 11 }}
               />
             ))}
             {series.map((s) =>
               kind === "bar" ? (
-                <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color} radius={[3, 3, 0, 0]} isAnimationActive={false} />
+                <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color} radius={[2, 2, 0, 0]} isAnimationActive={false} />
               ) : (
-                <Line key={s.key} type="monotone" dataKey={s.key} name={s.name} stroke={s.color} strokeWidth={2} dot={false} isAnimationActive={false} />
+                <Line key={s.key} type="monotone" dataKey={s.key} name={s.name} stroke={s.color} strokeWidth={2.25} strokeDasharray={s.dashed ? "5 4" : undefined} dot={false} isAnimationActive={false} />
               ),
             )}
           </Chart>

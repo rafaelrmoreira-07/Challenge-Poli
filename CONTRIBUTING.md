@@ -36,7 +36,7 @@ docs/                 ARQUITETURA.md e PITCH.md
 scripts/              geradores de laudos de exemplo e ícones
 ```
 
-Leia [docs/ARQUITETURA.md](docs/ARQUITETURA.md) antes de mudar regras de alerta ou o fluxo de consentimento.
+Leia [docs/ARQUITETURA.md](docs/ARQUITETURA.md) antes de mudar regras de alerta ou o fluxo de consentimento, e [docs/IDENTIDADE-VISUAL.md](docs/IDENTIDADE-VISUAL.md) antes de mexer em cores, fontes ou componentes visuais.
 
 ## 3. Fluxo de trabalho
 

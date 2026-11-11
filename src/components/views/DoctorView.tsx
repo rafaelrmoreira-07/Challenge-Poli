@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { LabTrendChart, WearableChart } from "@/components/charts";
+import { CHART, LabTrendChart, WearableChart } from "@/components/charts";
 import { DoctorSummary } from "@/components/DoctorSummary";
 import { ShieldIcon } from "@/components/icons";
 import { AlertCard, StatusBadge } from "@/components/ui";
@@ -53,7 +53,7 @@ export function DoctorView() {
     }
   }, [local, token]);
 
-  if (!db || (!local && fromLink === null)) return <p className="p-8 text-center text-sm text-slate-500">Carregando histórico…</p>;
+  if (!db || (!local && fromLink === null)) return <p className="p-8 text-center text-sm text-ink-500">Carregando histórico…</p>;
 
   if (local) {
     const st = shareState(local);
@@ -85,9 +85,9 @@ export function DoctorView() {
 function Denied({ reason }: { reason: keyof typeof DENIED }) {
   return (
     <div className="mx-auto mt-16 max-w-md px-4 text-center">
-      <ShieldIcon className="mx-auto h-12 w-12 text-slate-400" />
-      <h1 className="mt-3 text-xl font-bold">Acesso indisponível</h1>
-      <p className="mt-1 text-sm text-slate-600">{DENIED[reason]}</p>
+      <ShieldIcon className="mx-auto h-12 w-12 text-ink-500" />
+      <h1 className="mt-3 page-title">Acesso indisponível</h1>
+      <p className="mt-1 text-[15px] text-ink-600">{DENIED[reason]}</p>
     </div>
   );
 }
@@ -120,20 +120,27 @@ function Dashboard({
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-5">
-      <section className="card flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <section className="card flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{p.name}</h1>
-          <p className="text-sm text-slate-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-500">Paciente</p>
+          <h1 className="page-title mt-0.5">{p.name}</h1>
+          <p className="text-[15px] text-ink-600">
             {p.sex === "F" ? "Feminino" : "Masculino"} · {ageFrom(p.birthDate)} anos · nasc. {formatDate(p.birthDate)}
             {p.bloodType ? ` · tipo ${p.bloodType}` : ""}
           </p>
-          <p className="mt-1 text-sm">
-            <span className="font-semibold text-red-700">Alergias:</span> {p.allergies.join(", ") || "nenhuma registrada"}
-            {has("medicamentos") && <> · <span className="font-semibold">Em uso:</span> {activeMeds.map((m) => `${m.name} ${m.dose}`).join(", ") || "nenhum"}</>}
-          </p>
+          <dl className="mt-3 grid gap-1.5 text-[15px] sm:grid-cols-[auto_1fr] sm:gap-x-4">
+            <dt className="inline-flex w-fit items-center rounded border border-danger-200 bg-danger-50 px-1.5 text-sm font-bold uppercase tracking-[0.06em] text-danger-700">Alergias</dt>
+            <dd className="font-semibold text-ink-900">{p.allergies.join(", ") || "nenhuma registrada"}</dd>
+            {has("medicamentos") && (
+              <>
+                <dt className="text-sm font-bold uppercase tracking-[0.06em] text-ink-600">Em uso</dt>
+                <dd className="text-ink-800">{activeMeds.map((m) => `${m.name} ${m.dose}`).join(", ") || "nenhum"}</dd>
+              </>
+            )}
+          </dl>
         </div>
-        <div className="flex gap-2 rounded-xl bg-brand-50 p-3 text-xs text-brand-900 md:max-w-sm">
-          <ShieldIcon className="h-5 w-5 shrink-0 text-brand-600" />
+        <div className="flex gap-3 rounded-lg border border-brand-100 bg-brand-50 p-3 text-sm text-brand-900 md:max-w-sm">
+          <ShieldIcon className="h-5 w-5 shrink-0 text-brand-700" />
           <p>
             Acesso autorizado pelo paciente para <strong>{share.doctorName}</strong> até {formatDateTime(share.expiresAt)}.
             Escopo: {share.scopes.map((s) => SCOPE_LABELS[s].toLowerCase()).join(", ")}.
@@ -148,7 +155,7 @@ function Dashboard({
 
           {data.alerts.length > 0 && (
             <section>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">Alertas automáticos</h2>
+              <DocH2>Alertas automáticos</DocH2>
               <div className="grid gap-3 md:grid-cols-2">
                 {data.alerts.map((a) => <AlertCard key={a.id} alert={a} cta={false} />)}
               </div>
@@ -157,14 +164,14 @@ function Dashboard({
 
           {featured.length > 0 && (
             <section>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">Evolução dos exames</h2>
+              <DocH2>Evolução dos exames</DocH2>
               <div className="grid gap-3 md:grid-cols-2">
                 {featured.map((s) => (
                   <div key={s.key} className="card px-2 pb-2">
                     <div className="flex items-center justify-between px-2">
-                      <p className="text-sm font-semibold">{s.name}</p>
-                      <span className="flex items-center gap-1.5 text-sm">
-                        <strong>{fmt(s.latest.value!)}</strong> <span className="text-xs text-slate-500">{s.unit}</span>
+                      <p className="text-[15px] font-semibold">{s.name}</p>
+                      <span className="num flex items-center gap-1.5 text-[15px]">
+                        <strong>{fmt(s.latest.value!)}</strong> <span className="text-xs text-ink-500">{s.unit}</span>
                         <StatusBadge status={s.status} />
                       </span>
                     </div>
@@ -184,31 +191,32 @@ function Dashboard({
 
           {w && (
             <section>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
-                Wearables · médias de 7 dias: FC repouso {w.restingHr} bpm · sono {fmt(w.sleepHours)} h · SpO2 mín. {w.spo2Min}% · PA {w.systolic}/{w.diastolic}
-              </h2>
+              <DocH2>Wearables</DocH2>
+              <p className="num -mt-1 mb-3 text-sm text-ink-600">
+                Médias de 7 dias: FC repouso <strong>{w.restingHr} bpm</strong> · sono <strong>{fmt(w.sleepHours)} h</strong> · SpO2 mín. <strong>{w.spo2Min}%</strong> · PA <strong>{w.systolic}/{w.diastolic}</strong>
+              </p>
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="card px-2">
-                  <p className="px-2 text-sm font-semibold">Ritmo irregular (episódios/dia)</p>
-                  <WearableChart days={data.wearableDays} unit="episódios" kind="bar" domain={[0, "auto"]} defaultRange={90} height={150} series={[{ key: "irregularRhythmEvents", name: "Episódios", color: "#dc2626" }]} />
+                  <p className="px-2 pt-1 text-[15px] font-semibold">Ritmo irregular (episódios/dia)</p>
+                  <WearableChart days={data.wearableDays} unit="episódios" kind="bar" domain={[0, "auto"]} defaultRange={90} height={150} series={[{ key: "irregularRhythmEvents", name: "Episódios", color: CHART.out }]} />
                 </div>
                 <div className="card px-2">
-                  <p className="px-2 text-sm font-semibold">FC de repouso</p>
-                  <WearableChart days={data.wearableDays} unit="bpm" height={150} series={[{ key: "restingHr", name: "FC repouso", color: "#e11d48" }]} />
+                  <p className="px-2 pt-1 text-[15px] font-semibold">FC de repouso</p>
+                  <WearableChart days={data.wearableDays} unit="bpm" height={150} series={[{ key: "restingHr", name: "FC repouso", color: CHART.ink }]} />
                 </div>
                 <div className="card px-2">
-                  <p className="px-2 text-sm font-semibold">SpO2 mínima noturna</p>
-                  <WearableChart days={data.wearableDays} unit="%" domain={[80, 100]} height={150} refs={[{ y: 90, label: "90%" }]} series={[{ key: "spo2Min", name: "SpO2", color: "#0284c7" }]} />
+                  <p className="px-2 pt-1 text-[15px] font-semibold">SpO2 mínima noturna</p>
+                  <WearableChart days={data.wearableDays} unit="%" domain={[80, 100]} height={150} refs={[{ y: 90, label: "90%" }]} series={[{ key: "spo2Min", name: "SpO2", color: CHART.blue }]} />
                 </div>
                 <div className="card px-2">
-                  <p className="px-2 text-sm font-semibold">Pressão arterial (medidor domiciliar)</p>
+                  <p className="px-2 pt-1 text-[15px] font-semibold">Pressão arterial (medidor domiciliar)</p>
                   <WearableChart
                     days={data.wearableDays}
                     unit="mmHg"
                     domain={[60, 160]}
                     height={150}
-                    refs={[{ y: 130, label: "130", color: "#d97706" }, { y: 80, label: "80", color: "#d97706" }]}
-                    series={[{ key: "systolic", name: "Sistólica", color: "#7c3aed" }, { key: "diastolic", name: "Diastólica", color: "#a78bfa" }]}
+                    refs={[{ y: 130, label: "130", color: CHART.warn }, { y: 80, label: "80", color: CHART.warn }]}
+                    series={[{ key: "systolic", name: "Sistólica", color: CHART.plum }, { key: "diastolic", name: "Diastólica", color: CHART.plum, dashed: true }]}
                   />
                 </div>
               </div>
@@ -219,16 +227,16 @@ function Dashboard({
         <aside className="space-y-4">
           {series.length > 0 && (
             <section className="card p-0">
-              <h2 className="px-4 pt-3 text-sm font-semibold">Últimos resultados</h2>
-              <table className="mt-2 w-full text-xs">
-                <tbody className="divide-y divide-slate-100">
+              <h2 className="px-4 pt-3 font-serif text-lg font-semibold">Últimos resultados</h2>
+              <table className="num mt-2 w-full text-sm">
+                <tbody className="divide-y divide-ink-100">
                   {series.map((s) => (
                     <tr key={s.key}>
-                      <td className="py-1.5 pl-4 pr-2">
+                      <td className="py-2 pl-4 pr-2">
                         {s.name}
-                        <span className="block text-[10px] text-slate-400">{formatDate(s.latest.date)} · ref. {formatRef(s.latest)}</span>
+                        <span className="block text-xs text-ink-500">{formatDate(s.latest.date)} · ref. {formatRef(s.latest)}</span>
                       </td>
-                      <td className="whitespace-nowrap pr-2 text-right font-semibold">{s.latest.value != null ? fmt(s.latest.value) : s.latest.valueText} <span className="font-normal text-slate-400">{s.unit}</span></td>
+                      <td className="whitespace-nowrap pr-2 text-right font-semibold">{s.latest.value != null ? fmt(s.latest.value) : s.latest.valueText} <span className="font-normal text-ink-500">{s.unit}</span></td>
                       <td className="pr-4 text-right"><StatusBadge status={s.status} /></td>
                     </tr>
                   ))}
@@ -239,10 +247,10 @@ function Dashboard({
 
           {has("medicamentos") && (
             <section className="card">
-              <h2 className="text-sm font-semibold">Medicamentos</h2>
-              <ul className="mt-2 space-y-1.5 text-xs">
+              <h2 className="font-serif text-lg font-semibold">Medicamentos</h2>
+              <ul className="mt-2 space-y-1.5 text-sm">
                 {data.medications.map((m) => (
-                  <li key={m.id} className={m.endDate ? "text-slate-400" : ""}>
+                  <li key={m.id} className={m.endDate ? "text-ink-500" : ""}>
                     <strong>{m.name} {m.dose}</strong> · {m.frequency} · desde {formatDate(m.startDate)}
                     {m.endDate ? ` até ${formatDate(m.endDate)}` : ""}{m.reason ? ` · ${m.reason}` : ""}
                   </li>
@@ -253,13 +261,13 @@ function Dashboard({
 
           {timeline.length > 0 && (
             <section className="card">
-              <h2 className="text-sm font-semibold">Consultas e laudos</h2>
-              <ol className="mt-2 space-y-2 text-xs">
+              <h2 className="font-serif text-lg font-semibold">Consultas e laudos</h2>
+              <ol className="mt-2 space-y-2.5 text-sm">
                 {timeline.map((e) => {
                   const doc = e.kind === "exame" ? docs.get(e.id.replace(/^doc-/, "")) : undefined;
                   return (
-                    <li key={e.id} className="border-l-2 border-slate-200 pl-3">
-                      <p className="text-[10px] font-medium text-slate-400">{formatDate(e.date)}</p>
+                    <li key={e.id} className="border-l-2 border-ink-200 pl-3">
+                      <p className="num text-xs font-semibold uppercase tracking-[0.06em] text-ink-500">{formatDate(e.date)}</p>
                       <p className="font-semibold">
                         {doc?.storedAs && openDoc ? (
                           <button type="button" onClick={() => openDoc(doc.storedAs!)} className="text-left text-brand-700 underline">{e.title}</button>
@@ -267,7 +275,7 @@ function Dashboard({
                           e.title
                         )}
                       </p>
-                      {e.detail && <p className="text-slate-600">{e.detail}</p>}
+                      {e.detail && <p className="text-ink-600">{e.detail}</p>}
                     </li>
                   );
                 })}
@@ -277,18 +285,27 @@ function Dashboard({
 
           {has("vacinas") && (
             <section className="card">
-              <h2 className="text-sm font-semibold">Vacinas</h2>
-              <ul className="mt-2 space-y-1 text-xs">
+              <h2 className="font-serif text-lg font-semibold">Vacinas</h2>
+              <ul className="mt-2 space-y-1 text-sm">
                 {[...data.vaccines].reverse().map((v) => <li key={v.id}><strong>{v.name}</strong> · {formatDate(v.date)}{v.dose ? ` · ${v.dose}` : ""}</li>)}
               </ul>
             </section>
           )}
         </aside>
       </div>
-      <p className="mt-8 text-center text-[11px] text-slate-400">
+      <p className="mt-10 border-t border-ink-200 pt-4 text-center text-xs text-ink-500">
         Dados informados pelo paciente e por dispositivos de consumo. Os alertas não são diagnóstico.
         {fromLink ? " Os laudos originais ficam no aparelho do paciente." : " Laudos lidos por IA trazem link para o original."}
       </p>
     </main>
+  );
+}
+
+function DocH2({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-3 flex items-center gap-3">
+      <h2 className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-ink-600">{children}</h2>
+      <span className="h-px flex-1 bg-ink-200" aria-hidden />
+    </div>
   );
 }

@@ -5,15 +5,15 @@ export function HistoryTabs({ active }: { active: "timeline" | "exames" }) {
     <Link
       href={href}
       aria-current={active === key ? "page" : undefined}
-      className={`flex-1 rounded-lg py-1.5 text-center text-sm font-semibold ${active === key ? "bg-white text-brand-700 shadow-sm" : "text-slate-600"}`}
+      className={`-mb-px flex min-h-11 flex-1 items-center justify-center border-b-[3px] text-[15px] font-semibold transition-colors ${active === key ? "border-brand-600 text-brand-800" : "border-transparent text-ink-500 hover:text-ink-800"}`}
     >
       {label}
     </Link>
   );
   return (
-    <div className="mb-4 flex gap-1 rounded-xl bg-slate-200/70 p-1">
+    <nav aria-label="Seções do histórico" className="mb-5 flex border-b border-ink-200">
       {tab("timeline", "/historico", "Linha do tempo")}
       {tab("exames", "/exames", "Exames")}
-    </div>
+    </nav>
   );
 }
