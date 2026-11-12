@@ -1,0 +1,31 @@
+3:"$Sreact.fragment"
+4:"/Challenge-Poli/_next/static/chunks/3qfy96eoyh-ek.js"
+5:I[39756,["$4"],"default"]
+6:I[37457,["$4"],"default"]
+b:"/Challenge-Poli/_next/static/chunks/3em8y_z_h_0e6.js"
+c:"/Challenge-Poli/_next/static/chunks/1uc5rs56z8zsi.js"
+d:"/Challenge-Poli/_next/static/chunks/21xmil6rbcj0h.js"
+e:"/Challenge-Poli/_next/static/chunks/41yx98j2sdgd0.js"
+f:I[1451,["$4","$b","$c","$d","$e"],"Uploader"]
+10:I[97367,["$4"],"OutletBoundary"]
+11:"$Sreact.suspense"
+14:"ViewportBoundary"
+15:I[97367,["$4"],"$14"]
+16:"MetadataBoundary"
+17:I[97367,["$4"],"$16"]
+18:I[27201,["$4"],"IconMark"]
+8:X
+8:C
+9:X
+a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$3","c",{"children":[["$","div",null,{"children":[["$","h1",null,{"className":"page-title","children":"Enviar exame"}],["$","p",null,{"className":"mb-4 mt-1 text-sm text-ink-600","children":"Fotografe um laudo em papel ou envie o PDF do laboratório. A IA lê cada resultado com a faixa de referência, e você confere antes de salvar."}],["$","$Lf",null,{}]]}],[["$","script","script-0",{"src":"/Challenge-Poli/_next/static/chunks/41yx98j2sdgd0.js","async":true}]],["$","$L10",null,{"children":["$","$11",null,{"name":"Next.MetadataOutlet","children":"$@12"}]}]]}],"p":"$@13","v":null,"s":"$9"}}]]
+2:[["children",{"s":"enviar","h":64,"d":{"r":["$","$3","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+1:[["children",{"s":"(paciente)","h":32,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":80,"c":"$Q1"},"h":{"r":["$","$3","h",{"children":[null,["$","$L15",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","2",{"name":"theme-color","content":"#1f5e4c"}]]}],["$","$L17",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$11",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Elo Saúde · seu histórico de saúde em um só lugar"}],["$","meta","1",{"name":"description","content":"Hub de saúde pessoal: exames, consultas, remédios, vacinas e wearables organizados por IA, para você e para o seu médico."}],["$","meta","2",{"name":"application-name","content":"Elo Saúde"}],["$","link","3",{"rel":"manifest","href":"/Challenge-Poli/manifest.webmanifest"}],["$","link","4",{"rel":"icon","href":"/Challenge-Poli/icon.png?icon.02vb-6s8ks4se.png","sizes":"512x512","type":"image/png"}],["$","link","5",{"rel":"apple-touch-icon","href":"/Challenge-Poli/apple-icon.png?apple-icon.0l1kq4ixw2dts.png","sizes":"180x180","type":"image/png"}],["$","$L18","6",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@19","v":null,"s":"$9"}},"a":"$@1a","u":"$@1b","b":"ys7ml5BEkCw5fYAnE4E33"}
+12:null
+1b:true
+9:300
+9:C
+1a:0
+7:"$undefined"
+19:"$undefined"
+13:"$undefined"

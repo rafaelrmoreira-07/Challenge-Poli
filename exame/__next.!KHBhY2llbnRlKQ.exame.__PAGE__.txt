@@ -1,0 +1,32 @@
+3:"$Sreact.fragment"
+4:"/Challenge-Poli/_next/static/chunks/3qfy96eoyh-ek.js"
+5:I[39756,["$4"],"default"]
+6:I[37457,["$4"],"default"]
+b:"$Sreact.suspense"
+c:"/Challenge-Poli/_next/static/chunks/3em8y_z_h_0e6.js"
+d:"/Challenge-Poli/_next/static/chunks/1uc5rs56z8zsi.js"
+e:"/Challenge-Poli/_next/static/chunks/21xmil6rbcj0h.js"
+f:"/Challenge-Poli/_next/static/chunks/3o3dghnmrk-xv.js"
+10:"/Challenge-Poli/_next/static/chunks/0pzlh3pwyue__.js"
+11:I[19829,["$4","$c","$d","$e","$f","$10"],"ExameView"]
+12:I[97367,["$4"],"OutletBoundary"]
+15:"ViewportBoundary"
+16:I[97367,["$4"],"$15"]
+17:"MetadataBoundary"
+18:I[97367,["$4"],"$17"]
+19:I[27201,["$4"],"IconMark"]
+8:X
+8:C
+9:X
+a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$3","c",{"children":[["$","$b",null,{"fallback":["$","div",null,{"className":"space-y-3","aria-busy":"true","aria-label":"Carregando","children":[["$","div","0",{"className":"h-20 animate-pulse rounded-xl bg-ink-200/60"}],["$","div","1",{"className":"h-20 animate-pulse rounded-xl bg-ink-200/60"}],["$","div","2",{"className":"h-20 animate-pulse rounded-xl bg-ink-200/60"}],["$","div","3",{"className":"h-20 animate-pulse rounded-xl bg-ink-200/60"}]]}],"children":["$","$L11",null,{}]}],[["$","script","script-0",{"src":"/Challenge-Poli/_next/static/chunks/3o3dghnmrk-xv.js","async":true}],["$","script","script-1",{"src":"/Challenge-Poli/_next/static/chunks/0pzlh3pwyue__.js","async":true}]],["$","$L12",null,{"children":["$","$b",null,{"name":"Next.MetadataOutlet","children":"$@13"}]}]]}],"p":"$@14","v":null,"s":"$9"}}]]
+2:[["children",{"s":"exame","h":64,"d":{"r":["$","$3","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+1:[["children",{"s":"(paciente)","h":32,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":80,"c":"$Q1"},"h":{"r":["$","$3","h",{"children":[null,["$","$L16",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","2",{"name":"theme-color","content":"#1f5e4c"}]]}],["$","$L18",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Elo Saúde · seu histórico de saúde em um só lugar"}],["$","meta","1",{"name":"description","content":"Hub de saúde pessoal: exames, consultas, remédios, vacinas e wearables organizados por IA, para você e para o seu médico."}],["$","meta","2",{"name":"application-name","content":"Elo Saúde"}],["$","link","3",{"rel":"manifest","href":"/Challenge-Poli/manifest.webmanifest"}],["$","link","4",{"rel":"icon","href":"/Challenge-Poli/icon.png?icon.02vb-6s8ks4se.png","sizes":"512x512","type":"image/png"}],["$","link","5",{"rel":"apple-touch-icon","href":"/Challenge-Poli/apple-icon.png?apple-icon.0l1kq4ixw2dts.png","sizes":"180x180","type":"image/png"}],["$","$L19","6",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1a","v":null,"s":"$9"}},"a":"$@1b","u":"$@1c","b":"ys7ml5BEkCw5fYAnE4E33"}
+13:null
+1c:true
+9:300
+9:C
+1b:0
+7:"$undefined"
+1a:"$undefined"
+14:"$undefined"
