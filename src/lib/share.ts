@@ -15,7 +15,10 @@ type DataPart = Pick<Db, "patient" | "documents" | "labResults" | "encounters" |
 export function scopedData(db: DataPart, scopes: Scope[]) {
   const has = (s: Scope) => scopes.includes(s);
   const full = { ...db, shares: [], version: 1 as const, createdAt: "" };
-  const alerts = computeAlerts(full).filter((a) => (a.kind === "exames" ? has("exames") : has("wearables")));
+  // Insight que junta exame e relógio só aparece se o paciente liberou as duas fontes.
+  const alerts = computeAlerts(full).filter((a) =>
+    a.kind === "exames" ? has("exames") : a.kind === "cruzado" ? has("wearables") && (a.id === "cruzado-apneia-pressao" || has("exames")) : has("wearables"),
+  );
   return {
     patient: db.patient,
     labResults: has("exames") ? db.labResults : [],

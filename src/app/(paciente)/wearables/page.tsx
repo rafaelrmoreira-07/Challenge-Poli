@@ -5,7 +5,7 @@ import { CHART, WearableChart } from "@/components/charts";
 import { WatchIcon } from "@/components/icons";
 import { AlertCard, Disclaimer, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
-import { computeAlerts, fmt, wearableSnapshot } from "@/lib/health";
+import { computeAlerts, fmt, hasBloodPressure, wearableSnapshot } from "@/lib/health";
 import { simulateIrregularRhythm, useDb } from "@/lib/store";
 
 export default function WearablesPage() {
@@ -19,8 +19,20 @@ export default function WearablesPage() {
 }
 
 function Wearables({ db }: { db: NonNullable<ReturnType<typeof useDb>> }) {
-  const alerts = computeAlerts(db).filter((a) => a.kind !== "exames");
+  const alerts = computeAlerts(db).filter((a) => a.kind !== "exames" && a.kind !== "cruzado");
   const days = db.wearableDays;
+  if (!days.length)
+    return (
+      <div className="tile mt-2 flex flex-col items-center px-6 py-10 text-center">
+        <WatchIcon width={40} className="text-faint" />
+        <p className="mt-3 text-lg font-medium text-ink">Nenhum relógio ou anel conectado</p>
+        <p className="mt-1 max-w-sm text-[15px] text-muted">
+          Quando houver um aparelho, batimento, sono, saturação e atividade aparecem aqui, junto dos exames. Até lá, exames, remédios e
+          vacinas funcionam normalmente.
+        </p>
+      </div>
+    );
+  const bp = hasBloodPressure(days);
   const w = wearableSnapshot(days);
   const irregular = days.filter((d) => d.irregularRhythmEvents > 0).reverse();
 
@@ -51,7 +63,7 @@ function Wearables({ db }: { db: NonNullable<ReturnType<typeof useDb>> }) {
         <WearableChart days={days} unit="bpm" series={[{ key: "restingHr", name: "Repouso", color: CHART.ink }]} />
       </Chart>
 
-      <Chart title="Pressão arterial" value={w.systolic} second={w.diastolic} unit="mmHg, média de 7 dias" warn={w.systolic >= 130 || w.diastolic >= 80}>
+      {bp && <Chart title="Pressão arterial" value={w.systolic} second={w.diastolic} unit="mmHg, média de 7 dias" warn={w.systolic >= 130 || w.diastolic >= 80}>
         <WearableChart
           days={days}
           unit="mmHg"
@@ -59,7 +71,7 @@ function Wearables({ db }: { db: NonNullable<ReturnType<typeof useDb>> }) {
           refs={[{ y: 130, label: "130", color: CHART.warn }, { y: 80, label: "80", color: CHART.warn }]}
           series={[{ key: "systolic", name: "Sistólica", color: CHART.plum }, { key: "diastolic", name: "Diastólica", color: CHART.plum, dashed: true }]}
         />
-      </Chart>
+      </Chart>}
 
       <Chart title="Saturação mínima à noite" value={w.spo2Min} unit="%, menor valor em 7 dias" warn={w.spo2Min < 90}>
         <WearableChart days={days} unit="%" domain={[80, 100]} refs={[{ y: 90, label: "90%" }]} series={[{ key: "spo2Min", name: "Saturação", color: CHART.blue }]} />

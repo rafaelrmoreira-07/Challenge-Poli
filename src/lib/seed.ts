@@ -10,7 +10,7 @@ import type { Db, LabResult, SourceDocument, WearableDay } from "./types";
  */
 
 /** PRNG determinístico (mulberry32) para a demo ser reprodutível. */
-function rng(seed: number) {
+export function rng(seed: number) {
   return () => {
     seed |= 0;
     seed = (seed + 0x6d2b79f5) | 0;
@@ -30,6 +30,9 @@ const LAB_HISTORY: Panel[] = [
   { date: "2022-04-11", lab: "Laboratório Vida Diagnósticos", values: { glicose: 104, hba1c: 5.8, colesterol_total: 190, ldl: 118, hdl: 42, triglicerides: 160, creatinina: 1.1, vitamina_d: 24, tgo: 27, tgp: 33 } },
   { date: "2023-03-02", lab: "Laboratório Vida Diagnósticos", values: { glicose: 108, hba1c: 5.9, colesterol_total: 182, ldl: 112, hdl: 43, triglicerides: 155, creatinina: 1.1, potassio: 4.4, vitamina_d: 31, tsh: 2.4 } },
   { date: "2025-05-19", lab: "LabNorte Análises", values: { glicose: 112, hba1c: 6.0, colesterol_total: 192, ldl: 121, hdl: 42, triglicerides: 170, creatinina: 1.12, potassio: 4.6, vitamina_d: 28, psa: 1.4 } },
+  // Hemograma de rotina em setembro. Ao enviar o laudo de 03/11/2026,
+  // o app avisa que hemograma, creatinina e potássio foram repetidos em menos de 60 dias.
+  { date: "2026-09-24", lab: "Clínica São Lucas", values: { hemoglobina: 15.0, leucocitos: 6900, plaquetas: 238000, creatinina: 1.1, potassio: 4.5 } },
 ];
 
 function seedLabs(): { documents: SourceDocument[]; labResults: LabResult[] } {
@@ -65,7 +68,7 @@ function seedLabs(): { documents: SourceDocument[]; labResults: LabResult[] } {
   return { documents, labResults };
 }
 
-function seedWearables(today: string): WearableDay[] {
+export function seedWearables(today: string): WearableDay[] {
   const r = rng(20261114);
   const noise = (amp: number) => (r() * 2 - 1) * amp;
   const days: WearableDay[] = [];
@@ -98,6 +101,7 @@ export function createSeedDb(now = new Date()): Db {
   const { documents, labResults } = seedLabs();
   return {
     version: 1,
+    personaId: "carlos",
     createdAt: now.toISOString(),
     patient: {
       id: "paciente-demo",
@@ -140,11 +144,11 @@ export function createSeedDb(now = new Date()): Db {
 }
 
 /** Mantém a série dos wearables terminando em "hoje", mesmo dias depois do seed. */
-export function extendWearablesToToday(db: Db, now = new Date()): boolean {
+export function extendWearablesToToday(db: Db, now = new Date(), generate: (today: string) => WearableDay[] = seedWearables): boolean {
   const today = todayISO(now);
   const last = db.wearableDays.at(-1)?.date;
   if (!last || last >= today) return false;
-  const fresh = seedWearables(today);
+  const fresh = generate(today);
   const byDate = new Map(db.wearableDays.map((d) => [d.date, d]));
   for (const d of fresh) if (!byDate.has(d.date) && d.date > last) byDate.set(d.date, { ...d, irregularRhythmEvents: 0 });
   db.wearableDays = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)).slice(-120);

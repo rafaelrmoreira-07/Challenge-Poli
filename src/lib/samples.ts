@@ -19,6 +19,7 @@ export interface SampleExtraction {
     ref_min: number | null;
     ref_max: number | null;
     ref_texto: string | null;
+    confianca?: string | null;
   }[];
 }
 

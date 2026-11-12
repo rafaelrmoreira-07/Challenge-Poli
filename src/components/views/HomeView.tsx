@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AiStatusBanner } from "@/components/AiStatus";
 import { ExamSearch } from "@/components/ExamSearch";
-import { AlertIcon, ChevronDown, DropIcon, GaugeIcon, HeartIcon, MoonIcon } from "@/components/icons";
+import { AlertIcon, ChevronDown, DropIcon, GaugeIcon, HeartIcon, MoonIcon, WatchIcon } from "@/components/icons";
 import { AlertCard, Disclaimer, RowLink, SectionLink, SectionTitle, Skeleton, Spark, StatusBadge } from "@/components/ui";
 import NumberFlow from "@number-flow/react";
 import { ageFrom, formatDate } from "@/lib/dates";
-import { analyteSeries, computeAlerts, fmt, formatRef, wearableSnapshot } from "@/lib/health";
+import { analyteSeries, computeAlerts, fmt, formatRef, hasBloodPressure, wearableSnapshot } from "@/lib/health";
+import { PERSONAS } from "@/lib/personas";
 import { resetDemo, simulateIrregularRhythm, useDb } from "@/lib/store";
 import type { WearableDay } from "@/lib/types";
 
@@ -23,7 +24,12 @@ export function HomeView() {
   if (!db) return <Skeleton lines={5} />;
 
   const p = db.patient;
-  const alerts = computeAlerts(db);
+  const all = computeAlerts(db);
+  const insights = all.filter((a) => a.kind === "cruzado");
+  const alerts = all.filter((a) => a.kind !== "cruzado");
+  const hasWearables = db.wearableDays.length > 0;
+  const hasBp = hasBloodPressure(db.wearableDays);
+  const hasExams = db.labResults.length > 0;
   const w = wearableSnapshot(db.wearableDays);
   const last14 = db.wearableDays.slice(-14);
   const altered = analyteSeries(db.labResults).filter((s) => s.status === "alto" || s.status === "baixo");
@@ -60,6 +66,15 @@ export function HomeView() {
 
       <AiStatusBanner />
 
+      {insights.length > 0 && (
+        <>
+          <SectionTitle>Dados que se conectam</SectionTitle>
+          <div className="space-y-2">
+            {insights.map((a, i) => <AlertCard key={a.id} alert={a} defaultOpen={i === 0} />)}
+          </div>
+        </>
+      )}
+
       <SectionTitle>{alerts.length ? `Alertas (${alerts.length})` : "Alertas"}</SectionTitle>
       {alerts.length ? (
         <div className="space-y-2">
@@ -74,7 +89,18 @@ export function HomeView() {
         <Link href="/compartilhar" className="btn-secondary">Montar relatório para o médico</Link>
       </div>
 
-      <SectionTitle action={<SectionLink href="/wearables">Ver gráficos</SectionLink>}>Sinais dos últimos 7 dias</SectionTitle>
+      <SectionTitle action={hasWearables ? <SectionLink href="/wearables">Ver gráficos</SectionLink> : undefined}>Sinais dos últimos 7 dias</SectionTitle>
+      {!hasWearables ? (
+        <div className="tile flex items-start gap-3">
+          <WatchIcon width={26} className="mt-0.5 shrink-0 text-faint" />
+          <div>
+            <p className="text-[15px] font-medium text-ink">Nenhum relógio ou anel conectado</p>
+            <p className="mt-0.5 text-[15px] text-muted">
+              Exames, remédios e vacinas funcionam do mesmo jeito. Quando houver um relógio, batimento, sono e atividade entram neste mesmo histórico.
+            </p>
+          </div>
+        </div>
+      ) : (
       <div className="grid grid-cols-2 gap-2">
         <Vital icon={<HeartIcon />} label="Batimentos em repouso" unit="bpm" note="média" days={last14} metric="restingHr">
           <NumberFlow value={w.restingHr} locales="pt-BR" />
@@ -85,12 +111,19 @@ export function HomeView() {
         <Vital icon={<DropIcon />} label="Saturação mínima" unit="%" note={spo2Low ? "abaixo de 90%" : "menor valor"} warn={spo2Low} days={last14} metric="spo2Min">
           <NumberFlow value={w.spo2Min} locales="pt-BR" />
         </Vital>
-        <Vital icon={<GaugeIcon />} label="Pressão" unit="mmHg" note={bpHigh ? "acima de 130/80" : "média"} warn={bpHigh} days={last14} metric="systolic">
-          <NumberFlow value={w.systolic} locales="pt-BR" />
-          <span>/</span>
-          <NumberFlow value={w.diastolic} locales="pt-BR" />
-        </Vital>
+        {hasBp ? (
+          <Vital icon={<GaugeIcon />} label="Pressão" unit="mmHg" note={bpHigh ? "acima de 130/80" : "média"} warn={bpHigh} days={last14} metric="systolic">
+            <NumberFlow value={w.systolic} locales="pt-BR" />
+            <span>/</span>
+            <NumberFlow value={w.diastolic} locales="pt-BR" />
+          </Vital>
+        ) : (
+          <Vital icon={<WatchIcon />} label="Passos" unit="por dia" note="média" days={last14} metric="steps">
+            <NumberFlow value={w.steps} locales="pt-BR" />
+          </Vital>
+        )}
       </div>
+      )}
 
       <SectionTitle action={<SectionLink href="/exames">Todos os exames</SectionLink>}>Exames alterados</SectionTitle>
       <div className="mb-3">
@@ -118,8 +151,12 @@ export function HomeView() {
             </li>
           ))}
         </ul>
-      ) : (
+      ) : hasExams ? (
         <p className="tile text-[15px] text-muted">Seus últimos resultados estão dentro da referência.</p>
+      ) : (
+        <p className="tile text-[15px] text-muted">
+          Você ainda não enviou exames. <Link href="/enviar" className="btn-quiet">Enviar o primeiro</Link>
+        </p>
       )}
 
       <details className="group mt-12 rounded-2xl border border-dashed border-line-strong">
@@ -128,7 +165,22 @@ export function HomeView() {
           <ChevronDown width={18} className="transition-transform group-open:-scale-y-100" />
         </summary>
         <div className="flex flex-col gap-2 px-4 pb-4">
-          <button className="btn-secondary" onClick={() => simulateIrregularRhythm()}>
+          <label className="block">
+            <span className="label">Persona (dados sintéticos)</span>
+            <select
+              className="input"
+              value={db.personaId ?? "carlos"}
+              onChange={async (e) => {
+                const id = e.target.value as (typeof PERSONAS)[number]["id"];
+                if (!confirm(`Trocar para "${PERSONAS.find((x) => x.id === id)?.name}"? Os exames enviados e os acessos criados serão apagados.`)) return;
+                await resetDemo(id);
+                router.push("/");
+              }}
+            >
+              {PERSONAS.map((x) => <option key={x.id} value={x.id}>{x.name}: {x.resumo}</option>)}
+            </select>
+          </label>
+          <button className="btn-secondary" disabled={!hasWearables} onClick={() => simulateIrregularRhythm()}>
             Simular batimentos irregulares no relógio
           </button>
           <button

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { LabStatus } from "@/lib/health";
 import type { HealthAlert } from "@/lib/types";
-import { AlertIcon, ArrowDownIcon, ArrowUpIcon, CheckIcon, ChevronDown, ChevronRight, MinusIcon, UrgentIcon } from "./icons";
+import { AlertIcon, ArrowDownIcon, ArrowUpIcon, CheckIcon, ChevronDown, ChevronRight, InsightIcon, MinusIcon, UrgentIcon } from "./icons";
 
 /**
  * Status de um resultado, nos termos dos laudos. Sempre ícone + texto.
@@ -63,16 +63,21 @@ export function SectionLink({ href, children }: { href: string; children: React.
  */
 export function AlertCard({ alert, open: alwaysOpen, cta = true, defaultOpen = false }: { alert: HealthAlert; open?: boolean; cta?: boolean; defaultOpen?: boolean }) {
   const urgent = alert.severity === "procure_medico";
+  // "Juntando seus dados": dois fatos de fontes diferentes (relógio + exame), lado a lado
+  const insight = alert.kind === "cruzado";
   const [open, setOpen] = useState(defaultOpen);
   const isOpen = alwaysOpen || open;
-  const Icon = urgent ? UrgentIcon : AlertIcon;
+  const Icon = insight ? InsightIcon : urgent ? UrgentIcon : AlertIcon;
+  const tone = insight ? "bg-navy-50 text-ink" : urgent ? "bg-danger-soft text-danger" : "bg-warn-soft text-warn";
   const head = (
     <>
-      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${urgent ? "bg-danger-soft text-danger" : "bg-warn-soft text-warn"}`}>
+      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tone}`}>
         <Icon width={22} />
       </span>
       <span className="min-w-0 flex-1 text-left">
-        <span className={`block text-sm font-medium ${urgent ? "text-danger" : "text-warn"}`}>{urgent ? "Procure um médico" : "Atenção"}</span>
+        <span className={`block text-sm font-medium ${insight ? "text-ink-soft" : urgent ? "text-danger" : "text-warn"}`}>
+          {insight ? "Juntando seus dados" : urgent ? "Procure um médico" : "Atenção"}
+        </span>
         <span className="block text-[17px] font-medium leading-snug text-ink">{alert.title}</span>
       </span>
     </>
@@ -101,7 +106,14 @@ export function AlertCard({ alert, open: alwaysOpen, cta = true, defaultOpen = f
                 {alert.evidence.map((e) => <li key={e}>· {e}</li>)}
               </ul>
             )}
-            {cta && (
+            {cta && insight && alert.links && alert.links.length > 0 && (
+              <div className="mt-4 flex flex-col gap-2">
+                {alert.links.map((l) => (
+                  <Link key={l.href} href={l.href} className="btn-secondary">{l.label}</Link>
+                ))}
+              </div>
+            )}
+            {cta && !insight && (
               <div className="mt-4 flex flex-col gap-2">
                 {urgent && <Link href="/compartilhar" className="btn-primary">Montar relatório para o médico</Link>}
                 {alert.kind !== "exames" ? (

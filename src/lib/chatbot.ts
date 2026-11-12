@@ -5,7 +5,7 @@ import { getChatSnapshot, markActionsDone, menuActions, alertDraft, setFlow, typ
 import { ageFrom, formatDate } from "./dates";
 import { buildDoctorLink } from "./doctor";
 import { ACCEPTED_TYPES, extractLabReport, fileType, MAX_UPLOAD_BYTES, NoKeyError } from "./extraction";
-import { analyteSeries, computeAlerts, fmt, formatRef, labStatus, wearableSnapshot, type LabStatus } from "./health";
+import { analyteSeries, computeAlerts, fmt, formatRef, hasBloodPressure, labStatus, wearableSnapshot, type LabStatus } from "./health";
 import { absoluteUrl } from "./paths";
 import { shareState } from "./share";
 import { createShare, getDbSnapshot, revokeShare, saveExam } from "./store";
@@ -209,7 +209,7 @@ async function describeVitals(say: Say) {
       "Suas medições dos últimos 7 dias:",
       "",
       `• Batimentos em repouso: *${w.restingHr} bpm* (média)`,
-      `• Pressão: *${w.systolic}/${w.diastolic} mmHg* (média)${bpHigh ? ", acima da meta de 130/80" : ""}`,
+      ...(hasBloodPressure(db.wearableDays) ? [`• Pressão: *${w.systolic}/${w.diastolic} mmHg* (média)${bpHigh ? ", acima da meta de 130/80" : ""}`] : []),
       `• Saturação mínima: *${w.spo2Min}%*${w.spo2Min < 90 ? ", abaixo de 90%" : ""}`,
       `• Sono: *${fmt(w.sleepHours)} h* por noite`,
       `• Passos: *${w.steps.toLocaleString("pt-BR")}* por dia`,

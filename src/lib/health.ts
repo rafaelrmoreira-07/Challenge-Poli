@@ -115,10 +115,11 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
     });
   }
 
-  // 3. Pressão arterial
-  if (last30.length >= 14) {
-    const sys = Math.round(avg(last30.map((d) => d.systolic)));
-    const dia = Math.round(avg(last30.map((d) => d.diastolic)));
+  // 3. Pressão arterial (só se houver medidor: dias sem medição têm pressão 0)
+  const bp30 = last30.filter((d) => d.systolic > 0);
+  if (bp30.length >= 14) {
+    const sys = Math.round(avg(bp30.map((d) => d.systolic)));
+    const dia = Math.round(avg(bp30.map((d) => d.diastolic)));
     const onMed = db.medications.some((m) => !m.endDate && /losartana|enalapril|anlodipino|hidroclorotiazida|valsartana/i.test(m.name));
     if (sys >= 130 || dia >= 80) {
       const high = sys >= 140 || dia >= 90;
@@ -132,20 +133,15 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
           ? "Mostre estas medidas ao médico que trata sua pressão. Pode ser preciso ajustar o remédio."
           : "Marque uma consulta para avaliar a pressão.",
         specialty: "Clínica médica ou cardiologia",
-        evidence: [`${last30.length} medições em 30 dias`, `Média: ${sys}/${dia} mmHg`],
+        evidence: [`${bp30.length} medições em 30 dias`, `Média: ${sys}/${dia} mmHg`],
       });
     }
   }
 
   // 4. Frequência cardíaca de repouso subindo
-  const last7 = lastDays(days, 7, today);
-  const baseline = days.filter((d) => {
-    const ago = daysBetween(d.date, today);
-    return ago >= 14 && ago < 60;
-  });
-  if (last7.length >= 5 && baseline.length >= 20) {
-    const now = avg(last7.map((d) => d.restingHr));
-    const base = avg(baseline.map((d) => d.restingHr));
+  const hrTrend = restingHrTrend(days, today);
+  if (hrTrend) {
+    const { now, base } = hrTrend;
     if (now - base >= 5) {
       alerts.push({
         id: "fc_repouso",
@@ -175,8 +171,128 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
     });
   }
 
+  alerts.push(...crossInsights(db, alerts, today));
+
   const sev = { procure_medico: 0, atencao: 1 } as const;
   return alerts.sort((a, b) => sev[a.severity] - sev[b.severity]);
+}
+
+/** Média de FC de repouso da última semana contra a de 2 a 8 semanas atrás. */
+export function restingHrTrend(days: WearableDay[], today = todayISO()): { now: number; base: number } | null {
+  const last7 = lastDays(days, 7, today);
+  const baseline = days.filter((d) => {
+    const ago = daysBetween(d.date, today);
+    return ago >= 14 && ago < 60;
+  });
+  if (last7.length < 5 || baseline.length < 20) return null;
+  return { now: avg(last7.map((d) => d.restingHr)), base: avg(baseline.map((d) => d.restingHr)) };
+}
+
+/** Há medidor de pressão nesta série? (dias sem medição guardam pressão 0) */
+export function hasBloodPressure(days: WearableDay[]): boolean {
+  return days.some((d) => d.systolic > 0);
+}
+
+/**
+ * "Juntando seus dados": conecta um sinal dos wearables com um exame (ou dois
+ * sinais) que costumam ser avaliados juntos. Regras fixas e explicáveis, sem IA,
+ * para funcionarem sempre na demonstração. Nunca dizem o que a pessoa tem:
+ * só mostram os dois fatos lado a lado e orientam levar ao médico.
+ */
+function crossInsights(db: Db, alerts: HealthAlert[], today: string): HealthAlert[] {
+  const active = new Set(alerts.map((a) => a.kind));
+  const latestOut = (key: string, dir: "alto" | "baixo") => {
+    const r = db.labResults
+      .filter((x) => x.analyteKey === key && x.value != null)
+      .sort((a, b) => b.date.localeCompare(a.date))[0];
+    return r && labStatus(r) === dir && daysBetween(r.date, today) <= 365 ? r : null;
+  };
+  const labFact = (r: LabResult, dir: string) =>
+    `seu último ${r.name} (${formatDate(r.date)}) estava ${dir} da referência do laudo: ${fmt(r.value!)} ${r.unit}`;
+  const examLink = (r: LabResult) => ({ label: `Ver ${r.name}`, href: `/exame/?a=${encodeURIComponent(r.analyteKey)}` });
+  const signals = { label: "Ver sinais do relógio", href: "/wearables" };
+  const out: HealthAlert[] = [];
+
+  const hr = restingHrTrend(db.wearableDays, today);
+  if (active.has("fc_repouso") && hr) {
+    const hrFact = `seus batimentos em repouso subiram de ${Math.round(hr.base)} para ${Math.round(hr.now)} bpm nas últimas semanas`;
+    const thyroid = latestOut("tsh", "baixo") ?? latestOut("t4_livre", "alto");
+    const anemia = latestOut("hemoglobina", "baixo");
+    const lab = thyroid ?? anemia;
+    if (lab) {
+      const dir = labStatus(lab) === "baixo" ? "abaixo" : "acima";
+      out.push({
+        id: `cruzado-fc-${lab.analyteKey}`,
+        kind: "cruzado",
+        severity: "atencao",
+        title: thyroid ? "Batimentos em repouso e exame da tireoide" : "Batimentos em repouso e hemoglobina",
+        message: `Separados, cada dado pode passar despercebido. Juntos: ${hrFact}, e ${labFact(lab, dir)}.`,
+        recommendation: "Esses dois dados costumam ser avaliados juntos. Leve os dois ao seu médico na próxima consulta, sem esperar o próximo check-up.",
+        evidence: [`Relógio: média de ${Math.round(hr.now)} bpm na última semana, contra ${Math.round(hr.base)} bpm de 2 a 8 semanas atrás`, `Exame: ${lab.name} ${fmt(lab.value!)} ${lab.unit} em ${formatDate(lab.date)}${lab.lab ? ` (${lab.lab})` : ""}, referência ${formatRef(lab)}`],
+        links: [signals, examLink(lab)],
+      });
+    }
+  }
+
+  if (active.has("ritmo_irregular")) {
+    const lab = latestOut("tsh", "baixo") ?? latestOut("potassio", "baixo") ?? latestOut("potassio", "alto");
+    if (lab) {
+      const dir = labStatus(lab) === "baixo" ? "abaixo" : "acima";
+      out.push({
+        id: `cruzado-ritmo-${lab.analyteKey}`,
+        kind: "cruzado",
+        severity: "atencao",
+        title: `Ritmo irregular e ${lab.name}`,
+        message: `O relógio registrou batimentos irregulares nos últimos 14 dias, e ${labFact(lab, dir)}.`,
+        recommendation: "Mostre os dois dados juntos ao cardiologista: o exame ajuda a entender o registro do relógio.",
+        evidence: [`Exame: ${lab.name} ${fmt(lab.value!)} ${lab.unit} em ${formatDate(lab.date)}, referência ${formatRef(lab)}`],
+        links: [signals, examLink(lab)],
+      });
+    }
+  }
+
+  const bp = alerts.find((a) => a.kind === "pressao");
+  if (active.has("apneia") && bp) {
+    out.push({
+      id: "cruzado-apneia-pressao",
+      kind: "cruzado",
+      severity: "atencao",
+      title: "Sono e pressão arterial",
+      message: `O relógio registrou noites com oxigenação baixa e pausas na respiração, e o medidor mostra a pressão acima da meta${/remédio/.test(bp.message) ? " mesmo com remédio" : ""}.`,
+      recommendation: "Esses dois achados costumam ser avaliados juntos. Conte os dois ao médico que acompanha sua pressão.",
+      evidence: [...(alerts.find((a) => a.kind === "apneia")?.evidence.slice(0, 1) ?? []), ...bp.evidence.slice(1)],
+      links: [signals],
+    });
+  }
+  return out;
+}
+
+export interface RepeatCheck {
+  /** Mesmo laudo (data e laboratório) já está salvo. */
+  duplicate: boolean;
+  /** Exames que a pessoa já fez há menos de 60 dias antes desta coleta. */
+  repeats: { name: string; prevDate: string; days: number }[];
+}
+
+/** Compara um laudo novo com o histórico, antes de salvar. */
+export function checkRepeats(db: Pick<Db, "labResults" | "documents">, examDate: string, lab: string, analyteKeys: string[]): RepeatCheck {
+  const empty = { duplicate: false, repeats: [] };
+  if (!examDate || !analyteKeys.length) return empty;
+  const keys = new Set(analyteKeys.filter(Boolean));
+  const sameLab = (l?: string) => !lab.trim() || !l || l.trim().toLowerCase() === lab.trim().toLowerCase();
+  const sameDay = db.labResults.filter((r) => r.date === examDate && keys.has(r.analyteKey) && sameLab(r.lab));
+  if (new Set(sameDay.map((r) => r.analyteKey)).size >= Math.max(1, Math.ceil(keys.size / 2))) return { duplicate: true, repeats: [] };
+
+  const repeats: RepeatCheck["repeats"] = [];
+  for (const key of keys) {
+    const prev = db.labResults
+      .filter((r) => r.analyteKey === key && r.date < examDate)
+      .sort((a, b) => b.date.localeCompare(a.date))[0];
+    if (!prev) continue;
+    const days = daysBetween(prev.date, examDate);
+    if (days > 0 && days < 60) repeats.push({ name: analyteInfo(key)?.name ?? prev.name, prevDate: prev.date, days });
+  }
+  return { duplicate: false, repeats };
 }
 
 export function wearableSnapshot(days: WearableDay[], today = todayISO()) {
