@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { toast } from "sonner";
+import { BedIcon, ChevronRight } from "@/components/icons";
 import { ShareForm } from "@/components/ShareForm";
 import { PageHeader, SectionTitle } from "@/components/ui";
 import HoldButton from "@/components/vendor/react-bits/HoldButton";
@@ -16,6 +17,14 @@ export default function CompartilharPage() {
       <PageHeader title="Relatório para o médico">
         Você escolhe quem vê, o quê e por quanto tempo. O médico recebe um link com exames, remédios e medições numa tela só.
       </PageHeader>
+      <Link href="/internacao" className="lift mb-6 flex items-center gap-3 rounded-2xl bg-surface p-4">
+        <BedIcon width={24} className="shrink-0" />
+        <span className="flex-1">
+          <span className="block text-[15px] font-medium">Internação</span>
+          <span className="block text-sm text-muted">Pasta para o hospital, resumo da alta e pós-alta.</span>
+        </span>
+        <ChevronRight width={18} className="shrink-0 text-faint" />
+      </Link>
       <ShareForm />
       <Shares />
     </div>
@@ -38,6 +47,7 @@ function Shares() {
             <li key={s.token} className="tile">
               <div className="flex items-start justify-between gap-2">
                 <div>
+                  <p className="text-sm text-muted">{s.kind === "hospital" ? "Hospital · pasta de internação" : "Médico · relatório"}</p>
                   <p className="text-[17px] font-medium">{s.doctorName}{s.doctorCrm ? ` · CRM ${s.doctorCrm}` : ""}</p>
                   <p className="num text-sm text-muted">
                     {st === "ativo" ? `Vale até ${formatDateTime(s.expiresAt)}` : st === "revogado" ? `Revogado em ${formatDateTime(s.revokedAt!)}` : "Prazo encerrado"}

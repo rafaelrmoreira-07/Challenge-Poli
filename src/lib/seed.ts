@@ -136,6 +136,10 @@ export function createSeedDb(now = new Date()): Db {
       { id: "dev-pressao", name: "Medidor de pressão Bluetooth (simulado)", kind: "medidor_pressao", metrics: ["Pressão arterial"], connectedAt: addDays(today, -90) + "T09:05:00.000Z" },
     ],
     shares: [],
+    admissions: [],
+    checkins: [],
+    readingStats: {},
+    fhirExports: 0,
   };
 }
 

@@ -105,3 +105,14 @@ Chat dentro do app, no estilo do WhatsApp (`/conversa`, botão de balão no cabe
 - **Relatório para o médico:** o Elo pergunta o nome do médico e o prazo, cria o acesso com `createShare` (todos os tipos de dado) e devolve o link, com botão para revogar.
 
 Para virar WhatsApp de verdade: WhatsApp Business Cloud API (conta Meta verificada, número próprio, templates aprovados), um servidor para o webhook, os dados do paciente num banco com login e vínculo do número de WhatsApp à conta, e cuidados de LGPD para dado de saúde (consentimento, criptografia, registro de acesso). As regras de `lib/chatbot.ts` podem ser reaproveitadas no servidor.
+
+## Apêndices no app
+
+Detalhes em [APENDICES.md](APENDICES.md). No código:
+
+- `lib/admission.ts`: pasta de pré-internação, conferência (com o código de glosa de cada pendência), alta simulada e pós-alta.
+- `lib/fhir.ts`: exportar e importar em FHIR R4. Exemplo fictício em `public/exemplos/rnds-exemplo.json`.
+- `lib/quality.ts`: estágio de conferência de cada exame na leitura de laudos.
+- `components/views/InternacaoView.tsx` (paciente) e `components/views/HospitalView.tsx` (o que o hospital vê pelo link).
+- O link do hospital usa a mesma rota `/medico/`, com `kind: "hospital"` no compartilhamento. Ele leva só os laudos escolhidos na pasta, a pasta (sem o arquivo do pedido, que fica no aparelho) e os registros do pós-alta.
+- Campos novos no banco (`admissions`, `checkins`, `readingStats`, `fhirExports`) são opcionais, para não apagar o que já estava salvo no navegador.

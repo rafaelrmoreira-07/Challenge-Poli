@@ -5,7 +5,8 @@ import { analyteInfo, resolveAnalyteKey } from "./analytes";
 import { resetChat } from "./chat";
 import { addDays, isValidISODate, todayISO } from "./dates";
 import { createSeedDb, extendWearablesToToday } from "./seed";
-import { SCOPES, type Db, type DoctorSummary, type ExtractionSource, type Scope } from "./types";
+import { simulatedDischarge } from "./admission";
+import { SCOPES, type Admission, type CheckInSymptom, type Db, type DoctorSummary, type ExtractedResult, type ExtractionSource, type Scope, type ShareKind } from "./types";
 
 /**
  * Armazenamento da versão web: tudo fica no navegador da pessoa.
@@ -226,17 +227,28 @@ function newToken(): string {
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-export function createShare(form: { doctorName: string; doctorCrm?: string; scopes: string[]; hours: number }): { error: string } | { token: string } {
+export function createShare(form: {
+  doctorName: string;
+  doctorCrm?: string;
+  scopes: string[];
+  hours: number;
+  kind?: ShareKind;
+  admissionId?: string;
+  evidenceConsent?: boolean;
+}): { error: string } | { token: string } {
   const doctorName = clean(form.doctorName, 100);
   const doctorCrm = clean(form.doctorCrm, 30) || undefined;
   const scopes = form.scopes.filter((s): s is Scope => SCOPES.includes(s as Scope));
-  if (!doctorName) return { error: "Informe o nome do médico." };
+  if (!doctorName) return { error: form.kind === "hospital" ? "Informe o nome do hospital." : "Informe o nome do médico." };
   if (!scopes.length) return { error: "Escolha pelo menos um tipo de dado para compartilhar." };
   if (![1, 24, 168, 720].includes(form.hours)) return { error: "Prazo inválido." };
 
   const token = newToken();
   const now = new Date();
   update((db) => {
+    // Apêndice B: quantos resultados dos últimos 90 dias vão no relatório
+    const since = addDays(todayISO(), -90);
+    const recentShown = scopes.includes("exames") && form.kind !== "hospital" ? db.labResults.filter((r) => r.date >= since).length : undefined;
     db.shares.unshift({
       token,
       doctorName,
@@ -246,6 +258,10 @@ export function createShare(form: { doctorName: string; doctorCrm?: string; scop
       expiresAt: new Date(now.getTime() + form.hours * 3_600_000).toISOString(),
       revokedAt: null,
       accessLog: [],
+      kind: form.kind ?? "medico",
+      admissionId: form.admissionId,
+      evidenceConsent: form.kind === "hospital" ? Boolean(form.evidenceConsent) : undefined,
+      recentShown,
     });
   });
   return { token };
@@ -275,4 +291,152 @@ export function cacheSummary(token: string, hash: string, summary: DoctorSummary
     const s = db.shares.find((x) => x.token === token);
     if (s) s.summaryCache = { hash, summary };
   });
+}
+
+// ---------- jornada da internação (apêndices A, C e H) ----------
+
+export async function storeFile(file: File): Promise<string | undefined> {
+  const id = crypto.randomUUID();
+  try {
+    await idbRun("readwrite", (s) => s.put(file, id));
+    return id;
+  } catch {
+    return undefined;
+  }
+}
+
+export type AdmissionInput = Omit<Admission, "id" | "createdAt" | "discharge" | "order"> & { orderFile?: File | null };
+
+export async function saveAdmission(input: AdmissionInput, id?: string): Promise<{ error: string } | { id: string }> {
+  const hospital = clean(input.hospital, 120);
+  const procedure = clean(input.procedure, 160);
+  if (!hospital) return { error: "Informe o hospital." };
+  if (!procedure) return { error: "Informe o procedimento." };
+  if (input.plannedDate && !isValidISODate(input.plannedDate)) return { error: "Data da internação inválida." };
+  if (input.authValidUntil && !isValidISODate(input.authValidUntil)) return { error: "Validade da autorização inválida." };
+  const order = input.orderFile
+    ? { name: clean(input.orderFile.name, 160) || "pedido", mimeType: clean(input.orderFile.type, 60), storedAs: await storeFile(input.orderFile) }
+    : undefined;
+  const newId = id ?? crypto.randomUUID();
+  update((db) => {
+    db.admissions ??= [];
+    const known = new Set(db.documents.map((d) => d.id));
+    const fields = {
+      hospital,
+      procedure,
+      plannedDate: input.plannedDate,
+      requestingDoctor: clean(input.requestingDoctor, 100),
+      plan: clean(input.plan, 80),
+      cardNumber: clean(input.cardNumber, 40),
+      authNumber: clean(input.authNumber, 40),
+      authValidUntil: input.authValidUntil,
+      supportDocIds: input.supportDocIds.filter((d) => known.has(d)).slice(0, 20),
+    };
+    const existing = db.admissions.find((a) => a.id === newId);
+    if (existing) Object.assign(existing, fields, order ? { order } : {});
+    else db.admissions.push({ id: newId, createdAt: new Date().toISOString(), ...fields, order });
+  });
+  return { id: newId };
+}
+
+/** Demonstração: o hospital manda o resumo da alta, e começa o acompanhamento. */
+export function simulateDischargeFor(admissionId: string) {
+  update((db) => {
+    const ad = db.admissions?.find((a) => a.id === admissionId);
+    if (!ad || ad.discharge) return;
+    const d = simulatedDischarge(ad);
+    ad.discharge = d;
+    db.encounters.push({
+      id: `enc-alta-${ad.id}`,
+      date: d.date,
+      specialty: "Internação",
+      professional: ad.requestingDoctor || "Equipe do hospital",
+      place: ad.hospital,
+      reason: ad.procedure,
+      notes: "Alta hospitalar. Resumo da alta e acompanhamento de 30 dias no Elo Saúde.",
+    });
+    for (const m of d.newMeds) {
+      db.medications.push({
+        id: `med-alta-${ad.id}-${m.name}`,
+        name: m.name,
+        dose: m.dose,
+        frequency: m.frequency,
+        startDate: d.date,
+        endDate: addDays(d.date, m.days),
+        reason: `Depois da alta: ${ad.procedure}`,
+      });
+    }
+  });
+}
+
+export function addCheckIn(admissionId: string, symptoms: CheckInSymptom[], tookMeds: boolean) {
+  update((db) => {
+    db.checkins ??= [];
+    db.checkins.push({ id: crypto.randomUUID(), admissionId, at: new Date().toISOString(), symptoms, tookMeds });
+  });
+}
+
+// ---------- qualidade da leitura (apêndice F) ----------
+
+const sameNum = (a: number | null, b: number | null) => (a == null && b == null) || (a != null && b != null && Math.abs(a - b) < 1e-9);
+
+/**
+ * Compara o que a leitura trouxe com o que a pessoa salvou. Cada exame conta
+ * 4 campos (valor, unidade, referência mínima e máxima); remover a linha conta
+ * os 4 como corrigidos.
+ */
+export function recordReadingReview(original: ExtractedResult[], saved: (ExtractedResult | null)[]) {
+  update((db) => {
+    db.readingStats ??= {};
+    original.forEach((o, i) => {
+      const key = o.analyteKey || "outro";
+      const st = (db.readingStats![key] ??= { key, name: analyteInfo(key)?.name ?? o.name, reads: 0, fields: 0, corrected: 0 });
+      const s = saved[i];
+      st.reads += 1;
+      st.fields += 4;
+      if (!s) st.corrected += 4;
+      else {
+        if (!sameNum(o.value, s.value) || (o.value == null && (o.valueText ?? "") !== (s.valueText ?? ""))) st.corrected += 1;
+        if ((o.unit ?? "").trim() !== (s.unit ?? "").trim()) st.corrected += 1;
+        if (!sameNum(o.refLow, s.refLow)) st.corrected += 1;
+        if (!sameNum(o.refHigh, s.refHigh)) st.corrected += 1;
+      }
+    });
+  });
+}
+
+export function countFhirExport() {
+  update((db) => {
+    db.fhirExports = (db.fhirExports ?? 0) + 1;
+  });
+}
+
+/** Importação de FHIR (apêndice D): junta sem duplicar. */
+export function importRecords(rec: {
+  vaccines: { name: string; date: string; dose?: string }[];
+  labs: { date: string; lab?: string; results: { analyteKey: string; name: string; value: number | null; unit: string; refLow: number | null; refHigh: number | null }[] }[];
+  sourceLabel: string;
+}): { vaccines: number; results: number } {
+  let nv = 0;
+  let nr = 0;
+  update((db) => {
+    for (const v of rec.vaccines) {
+      if (!isValidISODate(v.date) || db.vaccines.some((x) => x.name.toLowerCase() === v.name.toLowerCase() && x.date === v.date)) continue;
+      db.vaccines.push({ id: crypto.randomUUID(), name: clean(v.name, 120), date: v.date, dose: clean(v.dose, 60) || undefined });
+      nv++;
+    }
+    for (const group of rec.labs) {
+      if (!isValidISODate(group.date)) continue;
+      const fresh = group.results.filter((r) => !db.labResults.some((x) => x.analyteKey === r.analyteKey && x.date === group.date && sameNum(x.value, r.value)));
+      if (!fresh.length) continue;
+      const docId = crypto.randomUUID();
+      db.documents.push({ id: docId, filename: `${rec.sourceLabel}.json`, mimeType: "application/fhir+json", uploadedAt: new Date().toISOString(), examDate: group.date, lab: clean(group.lab, 120) || rec.sourceLabel, extractedBy: "seed" });
+      for (const r of fresh) {
+        const key = resolveAnalyteKey(r.analyteKey, r.name);
+        db.labResults.push({ id: crypto.randomUUID(), documentId: docId, analyteKey: key, name: clean(r.name, 120), value: finite(r.value), unit: clean(r.unit, 30), refLow: finite(r.refLow), refHigh: finite(r.refHigh), date: group.date, lab: clean(group.lab, 120) || rec.sourceLabel });
+        nr++;
+      }
+    }
+  });
+  return { vaccines: nv, results: nr };
 }

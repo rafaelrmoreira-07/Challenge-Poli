@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AiStatusBanner } from "@/components/AiStatus";
 import { ExamSearch } from "@/components/ExamSearch";
-import { AlertIcon, ChevronDown, DropIcon, GaugeIcon, HeartIcon, MoonIcon } from "@/components/icons";
+import { AlertIcon, BedIcon, ChevronDown, ChevronRight, DropIcon, GaugeIcon, HeartIcon, MoonIcon } from "@/components/icons";
+import { followUp } from "@/lib/admission";
 import { AlertCard, Disclaimer, RowLink, SectionLink, SectionTitle, Skeleton, Spark, StatusBadge } from "@/components/ui";
 import NumberFlow from "@number-flow/react";
 import { ageFrom, formatDate } from "@/lib/dates";
@@ -31,6 +32,8 @@ export function HomeView() {
   const bpHigh = w.systolic >= 130 || w.diastolic >= 80;
   const spo2Low = w.spo2Min < 90;
   const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+  const fu = followUp(db);
+  const posAlta = fu?.active ? fu : null;
 
   return (
     <div>
@@ -58,6 +61,17 @@ export function HomeView() {
         </div>
       </dl>
 
+      {posAlta && (
+        <Link href="/internacao#registro" className="lift mt-4 flex items-center gap-4 rounded-3xl bg-ink p-5 text-white">
+          <BedIcon width={28} className="shrink-0 text-accent" />
+          <span className="flex-1">
+            <span className="block text-sm text-navy-200">Pós-alta · dia {posAlta.day} de {posAlta.total}</span>
+            <span className="block text-lg font-normal tracking-[-0.02em]">{posAlta.checkedInToday ? "Registro de hoje feito" : "Faça o registro de hoje"}</span>
+          </span>
+          <ChevronRight width={18} className="shrink-0 text-navy-200" />
+        </Link>
+      )}
+
       <AiStatusBanner />
 
       <SectionTitle>{alerts.length ? `Alertas (${alerts.length})` : "Alertas"}</SectionTitle>
@@ -72,6 +86,16 @@ export function HomeView() {
       <div className="mt-6 flex flex-col gap-2">
         <Link href="/enviar" className="btn-primary">Adicionar exame</Link>
         <Link href="/compartilhar" className="btn-secondary">Montar relatório para o médico</Link>
+        {!posAlta && (
+          <Link href="/internacao" className="lift mt-2 flex items-center gap-3 rounded-2xl bg-surface p-4">
+            <BedIcon width={24} className="shrink-0" />
+            <span className="flex-1">
+              <span className="block text-[15px] font-medium">Vai se internar?</span>
+              <span className="block text-sm text-muted">Monte a pasta com o que o hospital e o plano pedem.</span>
+            </span>
+            <ChevronRight width={18} className="shrink-0 text-faint" />
+          </Link>
+        )}
       </div>
 
       <SectionTitle action={<SectionLink href="/wearables">Ver gráficos</SectionLink>}>Sinais dos últimos 7 dias</SectionTitle>

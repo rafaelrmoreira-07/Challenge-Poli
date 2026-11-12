@@ -1,0 +1,240 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "timestamp": "2026-11-10T12:00:00Z",
+  "meta": {
+    "tag": [
+      {
+        "display": "Exemplo fictício no formato FHIR R4, como o exportado por um app ligado à RNDS. Não são dados reais."
+      }
+    ]
+  },
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:paciente-demo",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "paciente-demo",
+        "name": [
+          {
+            "text": "Carlos Mendes"
+          }
+        ],
+        "gender": "male",
+        "birthDate": "1968-03-14"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:imm-1",
+      "resource": {
+        "resourceType": "Immunization",
+        "id": "imm-1",
+        "status": "completed",
+        "vaccineCode": {
+          "text": "Febre amarela"
+        },
+        "patient": {
+          "reference": "urn:uuid:paciente-demo"
+        },
+        "occurrenceDateTime": "2019-03-12",
+        "protocolApplied": [
+          {
+            "doseNumberString": "Dose única"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:imm-2",
+      "resource": {
+        "resourceType": "Immunization",
+        "id": "imm-2",
+        "status": "completed",
+        "vaccineCode": {
+          "text": "Pneumocócica 23-valente"
+        },
+        "patient": {
+          "reference": "urn:uuid:paciente-demo"
+        },
+        "occurrenceDateTime": "2025-05-06",
+        "protocolApplied": [
+          {
+            "doseNumberString": "1ª dose"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:obs-1",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-1",
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "1558-6",
+              "display": "Glicose em jejum"
+            }
+          ],
+          "text": "Glicose em jejum"
+        },
+        "subject": {
+          "reference": "urn:uuid:paciente-demo"
+        },
+        "effectiveDateTime": "2026-09-15",
+        "valueQuantity": {
+          "value": 104,
+          "unit": "mg/dL"
+        },
+        "referenceRange": [
+          {
+            "low": {
+              "value": 70,
+              "unit": "mg/dL"
+            },
+            "high": {
+              "value": 99,
+              "unit": "mg/dL"
+            }
+          }
+        ],
+        "performer": [
+          {
+            "display": "UBS Vila Mariana (fictícia)"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:obs-2",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-2",
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "4548-4",
+              "display": "Hemoglobina glicada (HbA1c)"
+            }
+          ],
+          "text": "Hemoglobina glicada (HbA1c)"
+        },
+        "subject": {
+          "reference": "urn:uuid:paciente-demo"
+        },
+        "effectiveDateTime": "2026-09-15",
+        "valueQuantity": {
+          "value": 6.1,
+          "unit": "%"
+        },
+        "referenceRange": [
+          {
+            "low": {
+              "value": 4,
+              "unit": "%"
+            },
+            "high": {
+              "value": 5.6,
+              "unit": "%"
+            }
+          }
+        ],
+        "performer": [
+          {
+            "display": "UBS Vila Mariana (fictícia)"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:obs-3",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-3",
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "718-7",
+              "display": "Hemoglobina"
+            }
+          ],
+          "text": "Hemoglobina"
+        },
+        "subject": {
+          "reference": "urn:uuid:paciente-demo"
+        },
+        "effectiveDateTime": "2026-09-15",
+        "valueQuantity": {
+          "value": 14.8,
+          "unit": "g/dL"
+        },
+        "referenceRange": [
+          {
+            "low": {
+              "value": 13.5,
+              "unit": "g/dL"
+            },
+            "high": {
+              "value": 17.5,
+              "unit": "g/dL"
+            }
+          }
+        ],
+        "performer": [
+          {
+            "display": "UBS Vila Mariana (fictícia)"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:obs-4",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-4",
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "2160-0",
+              "display": "Creatinina"
+            }
+          ],
+          "text": "Creatinina"
+        },
+        "subject": {
+          "reference": "urn:uuid:paciente-demo"
+        },
+        "effectiveDateTime": "2026-09-15",
+        "valueQuantity": {
+          "value": 1.1,
+          "unit": "mg/dL"
+        },
+        "referenceRange": [
+          {
+            "low": {
+              "value": 0.7,
+              "unit": "mg/dL"
+            },
+            "high": {
+              "value": 1.3,
+              "unit": "mg/dL"
+            }
+          }
+        ],
+        "performer": [
+          {
+            "display": "UBS Vila Mariana (fictícia)"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -53,6 +53,21 @@ Cuidado no pitch: não dizer que existe parceria. Falar em "como o Elo poderia s
 
 ## Parte 2. Apêndices
 
+### Onde cada apêndice está no app
+
+Todos viraram protótipos que funcionam no navegador. O que dependeria de servidor está avisado na própria tela.
+
+| # | Onde ver | O que funciona hoje | O que falta para a versão real |
+|---|---|---|---|
+| A | Médico → Internação | Pasta com plano, carteirinha, senha e validade, pedido médico (foto ou PDF) e laudos escolhidos; conferência com o risco de glosa de cada pendência; link para o hospital | Envio ao sistema do hospital por integração |
+| B | Relatório do médico; tela de cada exame | Seção "Exames dos últimos 90 dias" com laudo; aviso no exame do paciente | Medir com o médico se o exame deixou de ser pedido |
+| C | Internação → Pós-alta; Hoje | Dia X de 30, registro diário de sintomas e remédios, alerta quando há sintoma, registros e medições no link do hospital | Painel contínuo da equipe (hoje o link é uma cópia do momento) |
+| D | Configurações → Seus dados em outros sistemas | Baixar o histórico em FHIR R4 (LOINC nos exames conhecidos); importar um arquivo FHIR, com exemplo no formato da RNDS | Credenciamento na RNDS / Meu SUS Digital |
+| E | Internação → Enviar ao hospital; tela do hospital | Consentimento separado para anexar ao prontuário; pacote FHIR com o recurso Consent | Integração com o prontuário do hospital |
+| F | Adicionar exame (revisão); Configurações → Qualidade da leitura | Conta os campos corrigidos por exame; depois de 3 leituras com até 5% de correção, passa para conferência rápida | Dados de muitos pacientes para calibrar |
+| G | Configurações → Ver indicadores de resultado | Indicadores calculados no aparelho, separados por quem pagaria (hospital ou plano) | Grupo de comparação para medir o resultado de verdade |
+| H | Internação → Resumo da alta | Resumo em linguagem simples, remédios novos, próximos passos e sinais de alerta (alta simulada) | Resumo enviado e revisado pelo hospital |
+
 Resumo, do mais próximo do negócio da Rivio ao mais distante:
 
 | # | Apêndice | Liga com a Rivio por | Esforço | Dá para mostrar na demo |

@@ -5,12 +5,14 @@ import { useEffect, useRef, useState } from "react";
 import { CHART, LabTrendChart, WearableChart } from "@/components/charts";
 import { DoctorSummary } from "@/components/DoctorSummary";
 import { ShieldIcon } from "@/components/icons";
+import { RecentExams } from "@/components/RecentExams";
 import { AlertCard, StatusBadge } from "@/components/ui";
+import { HospitalDashboard } from "./HospitalView";
 import { ageFrom, formatDate, formatDateTime } from "@/lib/dates";
 import { summaryForShare } from "@/lib/doctor";
 import { geminiConfigured } from "@/lib/gemini";
 import { analyteSeries, fmt, formatRef, medicationMarkers, wearableSnapshot } from "@/lib/health";
-import { decodeSharePayload, scopedData, shareState, type ScopedData } from "@/lib/share";
+import { dataForShare, decodeSharePayload, shareState, type ScopedData, type SharedExtras } from "@/lib/share";
 import { logAccess, openDocumentFile, useDb } from "@/lib/store";
 import { fallbackSummary, generateDoctorSummary } from "@/lib/summary";
 import { buildTimeline } from "@/lib/timeline";
@@ -22,7 +24,7 @@ const DENIED = {
   revogado: "O paciente revogou este acesso.",
 };
 
-type FromLink = { share: Share; data: ScopedData; summary?: Summary } | "invalid" | null;
+type FromLink = ({ share: Share; data: ScopedData; summary?: Summary } & SharedExtras) | "invalid" | null;
 
 export function DoctorView() {
   const token = useSearchParams().get("t") ?? "";
@@ -58,7 +60,18 @@ export function DoctorView() {
   if (local) {
     const st = shareState(local);
     if (st !== "ativo") return <Denied reason={st} />;
-    const data = scopedData(db, local.scopes);
+    const data = dataForShare(db, local);
+    if (local.kind === "hospital") {
+      return (
+        <HospitalDashboard
+          share={local}
+          data={data}
+          admission={db.admissions?.find((a) => a.id === local.admissionId)}
+          checkins={(db.checkins ?? []).filter((c) => c.admissionId === local.admissionId)}
+          openDoc={(id) => openDocumentFile(id)}
+        />
+      );
+    }
     return (
       <Dashboard
         share={local}
@@ -72,6 +85,9 @@ export function DoctorView() {
   if (fromLink === "invalid" || !fromLink) return <Denied reason="nao_encontrado" />;
   if (shareState(fromLink.share) !== "ativo") return <Denied reason="expirado" />;
   const { share, data, summary } = fromLink;
+  if (share.kind === "hospital") {
+    return <HospitalDashboard share={share} data={data} admission={fromLink.admission} checkins={fromLink.checkins ?? []} fromLink />;
+  }
   return (
     <Dashboard
       share={share}
@@ -152,6 +168,8 @@ function Dashboard({
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <DoctorSummary load={loadSummary} cacheKey={cacheKey} />
+
+          {has("exames") && <RecentExams labs={data.labResults} documents={data.documents} openDoc={openDoc} />}
 
           {data.alerts.length > 0 && (
             <section>

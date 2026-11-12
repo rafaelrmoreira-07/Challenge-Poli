@@ -87,7 +87,21 @@ export function ShareForm() {
   );
 }
 
-function ShareResult({ token, onDone }: { token: string; onDone: () => void }) {
+export function ShareResult({
+  token,
+  onDone,
+  title = "Envie o link ao médico",
+  viewLabel = "Ver como o médico vê",
+  againLabel = "Montar outro relatório",
+  eyebrow = "Relatório pronto",
+}: {
+  token: string;
+  onDone: () => void;
+  title?: string;
+  viewLabel?: string;
+  againLabel?: string;
+  eyebrow?: string;
+}) {
   const [url, setUrl] = useState<string | null>(null);
   const [qr, setQr] = useState<string | null>(null);
 
@@ -108,8 +122,8 @@ function ShareResult({ token, onDone }: { token: string; onDone: () => void }) {
 
   return (
     <section className="rounded-3xl bg-ink p-5 text-white" aria-live="polite">
-      <p className="text-sm text-navy-200">Relatório pronto</p>
-      <h2 className="mt-1 text-2xl font-normal tracking-[-0.03em]">Envie o link ao médico</h2>
+      <p className="text-sm text-navy-200">{eyebrow}</p>
+      <h2 className="mt-1 text-2xl font-normal tracking-[-0.03em]">{title}</h2>
       {!url ? (
         <p className="t-shimmer mt-6 text-[15px] [--color-muted:#bcc3d6] [--color-ink:#fff]">Montando o relatório…</p>
       ) : (
@@ -143,7 +157,7 @@ function ShareResult({ token, onDone }: { token: string; onDone: () => void }) {
               <CopyIcon width={18} /> Copiar link
             </button>
             <Link href={`/medico/?t=${encodeURIComponent(token)}`} target="_blank" className="btn border border-white/20 bg-white/5 text-white hover:bg-white/10">
-              Ver como o médico vê
+              {viewLabel}
             </Link>
           </div>
           <p className="mt-4 text-sm leading-relaxed text-navy-200">
@@ -152,7 +166,7 @@ function ShareResult({ token, onDone }: { token: string; onDone: () => void }) {
         </>
       )}
       <button type="button" className="mt-3 inline-flex min-h-11 items-center text-[15px] font-medium text-white underline decoration-white/30 underline-offset-4" onClick={onDone}>
-        Montar outro relatório
+        {againLabel}
       </button>
     </section>
   );

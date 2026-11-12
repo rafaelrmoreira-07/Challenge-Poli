@@ -37,6 +37,10 @@ import {
   WarningIcon as PhWarning,
   WarningOctagonIcon as PhWarningOctagon,
   WatchIcon as PhWatch,
+  BedIcon as PhBed,
+  DownloadSimpleIcon as PhDownload,
+  UploadSimpleIcon as PhUpload,
+  ChartBarIcon as PhChart,
   CircleNotchIcon as PhRing,
   XIcon as PhX,
 } from "@phosphor-icons/react/ssr";
@@ -83,6 +87,10 @@ export const DropIcon = wrap(PhDrop);
 export const GaugeIcon = wrap(PhGauge);
 export const WatchIcon = wrap(PhWatch);
 export const RingIcon = wrap(PhRing);
+export const BedIcon = wrap(PhBed);
+export const DownloadIcon = wrap(PhDownload);
+export const UploadIcon = wrap(PhUpload);
+export const ChartIcon = wrap(PhChart);
 
 // Envio de laudo
 export const CameraIcon = wrap(PhCamera);

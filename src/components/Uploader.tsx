@@ -7,7 +7,8 @@ import { ageFrom } from "@/lib/dates";
 import { ACCEPTED_TYPES, extractLabReport, fileType, MAX_UPLOAD_BYTES, NoKeyError } from "@/lib/extraction";
 import { labStatus } from "@/lib/health";
 import { asset } from "@/lib/paths";
-import { getDbSnapshot, saveExam, type SaveExamInput } from "@/lib/store";
+import { stageOf } from "@/lib/quality";
+import { getDbSnapshot, recordReadingReview, saveExam, useDb, type SaveExamInput } from "@/lib/store";
 import type { Extraction, ExtractedResult } from "@/lib/types";
 import { toast } from "sonner";
 import { CameraIcon, CloseIcon, FileIcon } from "./icons";
@@ -171,6 +172,8 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
   const [pending, start] = useTransition();
   const [showOriginal, setShowOriginal] = useState(false);
   const nextId = useRef(1000);
+  const stats = useDb()?.readingStats ?? {};
+  const quick = rows.filter((r) => stageOf(stats[r.analyteKey]) === "rapida").length;
 
   const update = (id: number, patch: Partial<Row>) => setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
@@ -197,6 +200,18 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
       const res = await saveExam(input);
       if ("error" in res) setError(res.error);
       else {
+        // Apêndice F: compara o que a leitura trouxe com o que foi salvo
+        if (ex && ex.source !== "manual") {
+          recordReadingReview(
+            ex.results,
+            ex.results.map((_, i) => {
+              const r = rows.find((x) => x.id === i);
+              return r
+                ? { ...ex.results[i], name: r.name, value: numOrNull(r.value), valueText: numOrNull(r.value) == null ? r.valueText : null, unit: r.unit, refLow: numOrNull(r.refLow), refHigh: numOrNull(r.refHigh) }
+                : null;
+            }),
+          );
+        }
         toast.success(`${rows.length} resultados salvos`, { description: lab || undefined });
         router.push(`/exames/?novo=${res.docId}`);
       }
@@ -212,6 +227,15 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
         {ex?.source === "simulado" && <>Leitura pré-gravada deste laudo de exemplo (IA desligada ou indisponível). Com uma chave da Gemini em Configurações, a leitura é feita ao vivo.</>}
         {!ex && <>{phase.warning ?? "Não foi possível ler o laudo."} Você pode adicionar os resultados manualmente.</>}
       </div>
+      {ex && rows.length > 0 && (
+        <p className="mb-3 text-sm text-muted">
+          {quick === rows.length
+            ? "Estes exames vieram sem correção nas últimas leituras. Confira por cima e salve."
+            : quick
+              ? `${quick} de ${rows.length} exames costumam vir sem correção. Confira com atenção os outros.`
+              : "Primeiras leituras destes exames: confira cada valor com o laudo."}
+        </p>
+      )}
       {ex?.patientName && <p className="mb-2 text-sm text-muted">Nome no laudo: {ex.patientName}</p>}
       {ex?.notes && <p className="mb-2 text-sm text-muted">Observação da IA: {ex.notes}</p>}
 
@@ -251,6 +275,7 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
               <div className="flex items-center gap-2">
                 <input className="input flex-1 font-medium" value={r.name} onChange={(e) => update(r.id, { name: e.target.value })} aria-label="Exame" />
                 <StatusBadge status={st} />
+                {stageOf(stats[r.analyteKey]) === "rapida" && <span className="hidden rounded-full bg-ok-soft px-2 py-0.5 text-xs font-medium text-ok sm:inline">Sem correção</span>}
                 <button type="button" onClick={() => setRows((rs) => rs.filter((x) => x.id !== r.id))} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted transition-colors hover:bg-danger-soft hover:text-danger" aria-label={`Remover ${r.name || "resultado"}`}>
                   <CloseIcon width={18} />
                 </button>

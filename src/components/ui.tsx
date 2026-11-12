@@ -104,7 +104,9 @@ export function AlertCard({ alert, open: alwaysOpen, cta = true, defaultOpen = f
             {cta && (
               <div className="mt-4 flex flex-col gap-2">
                 {urgent && <Link href="/compartilhar" className="btn-primary">Montar relatório para o médico</Link>}
-                {alert.kind !== "exames" ? (
+                {alert.kind === "pos_alta" ? (
+                  <Link href="/internacao" className="btn-secondary">Abrir o pós-alta</Link>
+                ) : alert.kind !== "exames" ? (
                   <Link href="/wearables" className="btn-secondary">Ver medições</Link>
                 ) : (
                   <Link href="/exames" className="btn-secondary">Ver exames</Link>

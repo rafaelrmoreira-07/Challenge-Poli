@@ -11,7 +11,7 @@ const ITEMS = [
   { href: "/historico", label: "Histórico", icon: HistoryIcon, match: (p: string) => /^\/(historico|exames?|enviar)/.test(p) },
   { href: "/wearables", label: "Sinais", icon: VitalsIcon, match: (p: string) => p.startsWith("/wearables") },
   { href: "/conversa", label: "Conversa", icon: ChatIcon, match: (p: string) => p.startsWith("/conversa"), chat: true },
-  { href: "/compartilhar", label: "Médico", icon: DoctorIcon, match: (p: string) => p.startsWith("/compartilhar") },
+  { href: "/compartilhar", label: "Médico", icon: DoctorIcon, match: (p: string) => p.startsWith("/compartilhar") || p.startsWith("/internacao") },
 ];
 
 /**
