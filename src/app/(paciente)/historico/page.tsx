@@ -1,6 +1,6 @@
 "use client";
 
-import { HistoryTabs } from "@/components/HistoryTabs";
+import { HistoryHeader } from "@/components/HistoryTabs";
 import { TimelineList } from "@/components/TimelineList";
 import { Skeleton } from "@/components/ui";
 import { computeAlerts } from "@/lib/health";
@@ -11,8 +11,7 @@ export default function HistoricoPage() {
   const db = useDb();
   return (
     <div>
-      <h1 className="mb-3 page-title">Histórico</h1>
-      <HistoryTabs active="timeline" />
+      <HistoryHeader active="timeline" />
       {db ? <TimelineList events={buildTimeline(db, computeAlerts(db), (id) => `/exames/?doc=${id}`)} /> : <Skeleton lines={6} />}
     </div>
   );

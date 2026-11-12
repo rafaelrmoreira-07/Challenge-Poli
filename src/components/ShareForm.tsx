@@ -3,18 +3,19 @@
 import Link from "next/link";
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { buildDoctorLink } from "@/lib/doctor";
 import { absoluteUrl } from "@/lib/paths";
 import { createShare } from "@/lib/store";
-import { SCOPE_LABELS, SCOPES } from "@/lib/types";
-import { useAiEnabled } from "./AiStatus";
-import { CheckIcon, ClipboardIcon, ShieldIcon } from "./icons";
+import { SCOPE_LABELS, SCOPES, type Scope } from "@/lib/types";
+import { Checkbox } from "./base/checkbox";
+import { CopyIcon, ShieldIcon } from "./icons";
+import { SlidingTabs } from "./SlidingTabs";
 
 const DURATIONS = [
-  { hours: 1, label: "1 hora (durante a consulta)" },
+  { hours: 1, label: "1 hora" },
   { hours: 24, label: "24 horas" },
   { hours: 168, label: "7 dias" },
-  { hours: 720, label: "30 dias" },
 ];
 
 /** Limite prático de um QR code legível pela câmera do celular. */
@@ -23,21 +24,21 @@ const QR_MAX_CHARS = 2300;
 export function ShareForm() {
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [crm, setCrm] = useState("");
+  const [scopes, setScopes] = useState<Scope[]>([...SCOPES]);
+  const [hours, setHours] = useState(24);
 
   if (token) return <ShareResult key={token} token={token} onDone={() => setToken(null)} />;
 
+  const toggle = (s: Scope, on: boolean) => setScopes((xs) => (on ? [...xs, s] : xs.filter((x) => x !== s)));
+
   return (
     <form
-      className="card space-y-4"
+      className="space-y-6"
       onSubmit={(e) => {
         e.preventDefault();
-        const f = new FormData(e.currentTarget);
-        const res = createShare({
-          doctorName: String(f.get("doctorName") ?? ""),
-          doctorCrm: String(f.get("doctorCrm") ?? ""),
-          scopes: f.getAll("scopes").map(String),
-          hours: Number(f.get("hours")),
-        });
+        const res = createShare({ doctorName: name, doctorCrm: crm, scopes, hours });
         if ("error" in res) setError(res.error);
         else {
           setError(null);
@@ -48,52 +49,47 @@ export function ShareForm() {
       <div className="grid grid-cols-3 gap-2">
         <label className="col-span-2 block">
           <span className="label">Nome do médico</span>
-          <input name="doctorName" className="input" placeholder="Dra. Ana Ribeiro" required maxLength={100} />
+          <input value={name} onChange={(e) => setName(e.target.value)} className="input" placeholder="Dra. Ana Ribeiro" required maxLength={100} autoComplete="off" />
         </label>
         <label className="block">
-          <span className="label">CRM (opcional)</span>
-          <input name="doctorCrm" className="input" placeholder="123456/SP" maxLength={30} />
+          <span className="label">CRM</span>
+          <input value={crm} onChange={(e) => setCrm(e.target.value)} className="input" placeholder="Opcional" maxLength={30} autoComplete="off" autoCapitalize="characters" />
         </label>
       </div>
 
       <fieldset>
-        <legend className="label">O que compartilhar</legend>
-        <div className="space-y-2">
+        <legend className="label">O que o médico pode ver</legend>
+        <div className="divide-y divide-line rounded-2xl bg-surface">
           {SCOPES.map((s) => (
-            <label key={s} className="flex min-h-11 items-center gap-3 rounded-lg border border-ink-200 px-3 text-[15px] has-[:checked]:border-brand-300 has-[:checked]:bg-brand-50/50">
-              <input type="checkbox" name="scopes" value={s} defaultChecked className="h-5 w-5 accent-brand-600" />
+            <label key={s} className="flex min-h-14 cursor-pointer items-center gap-3 px-4 text-[15px]">
+              <Checkbox checked={scopes.includes(s)} onCheckedChange={(on) => toggle(s, on)} />
               {SCOPE_LABELS[s]}
             </label>
           ))}
         </div>
       </fieldset>
 
-      <label className="block">
-        <span className="label">Por quanto tempo</span>
-        <select name="hours" className="input" defaultValue="24">
-          {DURATIONS.map((d) => <option key={d.hours} value={d.hours}>{d.label}</option>)}
-        </select>
-      </label>
-
-      <div className="flex gap-3 rounded-lg border border-brand-100 bg-brand-50 p-3 text-sm leading-relaxed text-ink-700">
-        <ShieldIcon className="h-5 w-5 shrink-0 text-brand-700" />
-        <p>
-          Ao criar o acesso, você autoriza este médico a ver os dados marcados até o prazo escolhido, para fins de cuidado
-          com a sua saúde (LGPD, art. 11). Você pode revogar quando quiser, e cada acesso fica registrado.
-        </p>
+      <div>
+        <p className="label" id="prazo">Por quanto tempo</p>
+        <SlidingTabs label="Por quanto tempo" active={String(hours)} onChange={(k) => setHours(Number(k))} items={DURATIONS.map((d) => ({ key: String(d.hours), label: d.label }))} />
       </div>
 
-      {error && <p className="rounded-xl bg-danger-50 px-3 py-2 text-sm text-danger-700 ring-1 ring-danger-200">{error}</p>}
-      <button className="btn-primary w-full">Autorizar e gerar link</button>
+      <p className="flex gap-3 rounded-2xl bg-navy-50 p-4 text-sm leading-relaxed text-ink-soft">
+        <ShieldIcon width={20} className="mt-0.5 shrink-0 text-ink" />
+        <span>
+          Você autoriza este médico a ver os dados marcados até o fim do prazo, para cuidar da sua saúde (LGPD, art. 11). Dá para revogar quando quiser, e cada acesso fica registrado.
+        </span>
+      </p>
+
+      {error && <p className="rounded-2xl bg-danger-soft p-3 text-[15px] text-danger" role="alert">{error}</p>}
+      <button className="btn-primary w-full" disabled={!scopes.length}>Autorizar e gerar link</button>
     </form>
   );
 }
 
 function ShareResult({ token, onDone }: { token: string; onDone: () => void }) {
-  const ai = useAiEnabled();
   const [url, setUrl] = useState<string | null>(null);
   const [qr, setQr] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,7 +97,7 @@ function ShareResult({ token, onDone }: { token: string; onDone: () => void }) {
       if (!link || cancelled) return;
       const full = absoluteUrl(link.path);
       setUrl(full);
-      if (full.length <= QR_MAX_CHARS) setQr(await QRCode.toDataURL(full, { width: 260, margin: 1, errorCorrectionLevel: "L", color: { dark: "#10372d" } }));
+      if (full.length <= QR_MAX_CHARS) setQr(await QRCode.toDataURL(full, { width: 260, margin: 1, errorCorrectionLevel: "L", color: { dark: "#1f2b4d" } }));
     });
     return () => {
       cancelled = true;
@@ -111,57 +107,53 @@ function ShareResult({ token, onDone }: { token: string; onDone: () => void }) {
   const canShare = typeof navigator !== "undefined" && "share" in navigator;
 
   return (
-    <div className="card text-center">
-      <p className="flex items-center justify-center gap-1.5 font-serif text-xl font-semibold text-brand-800"><CheckIcon width={20} height={20} strokeWidth={2.4} /> Acesso criado</p>
+    <section className="rounded-3xl bg-ink p-5 text-white" aria-live="polite">
+      <p className="text-sm text-navy-200">Relatório pronto</p>
+      <h2 className="mt-1 text-2xl font-normal tracking-[-0.03em]">Envie o link ao médico</h2>
       {!url ? (
-        <div className="py-8">
-          <ClipboardIcon className="mx-auto h-8 w-8 animate-pulse text-brand-600" />
-          <p className="mt-2 text-sm text-ink-600">{ai ? "Preparando o resumo por IA para o médico…" : "Preparando o link…"}</p>
-        </div>
+        <p className="t-shimmer mt-6 text-[15px] [--color-muted:#bcc3d6] [--color-ink:#fff]">Montando o relatório…</p>
       ) : (
         <>
-          <p className="mt-1 text-sm text-ink-500">
-            {qr ? "Mostre o QR code ao médico ou envie o link." : "Envie o link ao médico (por WhatsApp ou e-mail)."}
-          </p>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {qr && <img src={qr} alt="QR code do link de acesso" className="mx-auto mt-3 h-52 w-52" />}
-          <div className="mt-3 flex flex-col gap-2">
+          {qr && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={qr} alt="QR code do link do relatório" className="mx-auto mt-5 h-48 w-48 rounded-2xl bg-white p-3" />
+          )}
+          <div className="mt-5 flex flex-col gap-2">
             {canShare && (
               <button
                 type="button"
                 className="btn-primary"
-                onClick={() => navigator.share({ title: "Histórico de saúde", text: "Acesso ao meu histórico de saúde", url }).catch(() => undefined)}
+                onClick={() => navigator.share({ title: "Relatório de saúde", text: "Meu relatório de saúde", url }).catch(() => undefined)}
               >
                 Enviar link
               </button>
             )}
             <button
               type="button"
-              className="btn-secondary"
+              className="btn border border-white/20 bg-white/5 text-white hover:bg-white/10"
               onClick={async () => {
                 try {
                   await navigator.clipboard.writeText(url);
-                  setCopied(true);
+                  toast.success("Link copiado", { description: "Cole no WhatsApp ou no e-mail do médico." });
                 } catch {
                   window.prompt("Copie o link:", url);
                 }
               }}
             >
-              {copied ? "Link copiado" : "Copiar link"}
+              <CopyIcon width={18} /> Copiar link
             </button>
-            <Link href={`/medico/?t=${encodeURIComponent(token)}`} target="_blank" className="btn-secondary">
-              Abrir visão do médico aqui
+            <Link href={`/medico/?t=${encodeURIComponent(token)}`} target="_blank" className="btn border border-white/20 bg-white/5 text-white hover:bg-white/10">
+              Ver como o médico vê
             </Link>
           </div>
-          <p className="mt-3 text-xs leading-relaxed text-ink-500">
-            O link leva uma cópia compactada só dos dados autorizados e deixa de abrir no fim do prazo. Até lá, quem tiver o link
-            consegue abrir: envie só para o médico.
+          <p className="mt-4 text-sm leading-relaxed text-navy-200">
+            O link leva só os dados autorizados e para de abrir no fim do prazo. Até lá, quem tiver o link consegue abrir, então envie só para o médico.
           </p>
         </>
       )}
-      <button type="button" className="mt-2 inline-flex min-h-11 items-center px-2 text-sm font-semibold text-ink-600" onClick={onDone}>
-        Criar outro acesso
+      <button type="button" className="mt-3 inline-flex min-h-11 items-center text-[15px] font-medium text-white underline decoration-white/30 underline-offset-4" onClick={onDone}>
+        Montar outro relatório
       </button>
-    </div>
+    </section>
   );
 }

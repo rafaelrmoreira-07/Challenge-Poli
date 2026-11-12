@@ -1,56 +1,63 @@
 # Identidade visual do Elo Saúde
 
-Referência rápida para quem mexer na interface. Os tokens ficam em `src/app/globals.css`; a paleta dos gráficos em `CHART` (`src/components/charts.tsx`).
+Terceira versão, refeita do zero. Os tokens ficam em `src/app/globals.css`; a paleta dos gráficos em `CHART` (`src/components/charts.tsx`).
 
-## Ideia
+## De onde veio cada decisão
 
-O app trata de histórico de saúde, então a referência é um **prontuário bem diagramado**: papel quente, tinta escura, títulos em serifa, fios finos separando seções. Isso afasta o visual genérico de "app de IA" (gradientes, azul-ciano, brilhos, cartões muito arredondados com sombra) e passa calma e credibilidade.
+| Frente | Fonte | O que entrou no app |
+|---|---|---|
+| Cores e fonte | taste-skill (`start.mjs deal --page service --trade clinic`) | Paleta "white-navy-tab" (branco, azul-marinho `#1f2b4d`, laranja `#f7941d`) e Hanken Grotesk. Títulos em peso 400 com tracking negativo |
+| Marca | taste-skill (sorteio "initial") | Monograma "e" com o ponto laranja do elo (`LogoMark`) |
+| Regras de texto | taste-skill (`copy.md`) | Títulos com substantivo, botões com verbo e objeto ("Adicionar exame", "Montar relatório para o médico") |
+| Acessibilidade e saúde | ui-ux-pro-max | Contraste AA, status com ícone e texto, alvos de 44 px, texto mínimo de 12 px |
+| Celular de verdade | mobile-native (Emil Kowalski) | Sem flash ao tocar, sem zoom em campos, `touch-action`, `overscroll-behavior`, `viewport-fit=cover` e recuo do notch |
+| Movimento | transitions.dev | Tokens de duração e curva; seletor deslizante (abas, prazo, período), sanfona (alertas), check de sucesso, brilho no texto "Lendo o laudo", entrada única dos títulos |
+| Primitivos acessíveis | Base UI (via shadcn/ui) | `Switch` e `Checkbox` em `src/components/base/` |
+| Avisos | Sonner | Alerta novo, laudo salvo, link copiado, acesso revogado, chave testada |
+| Gaveta | Vaul | Busca de exames abre de baixo e fecha puxando |
+| Busca | cmdk | Busca de exames com teclado e ⌘K / Ctrl+K |
+| Números | NumberFlow | Sinais da tela Hoje e de Sinais, valor do exame |
+| Momento de destaque | Beautiful UI (ThinkingState) | Etapas da leitura do laudo (`ReadingSteps`) |
+| Confirmação | React Bits (HoldButton) | "Segure para revogar" acesso de médico |
+| Escolha das bibliotecas | pick-ui-library (Emil) e o artigo de Griffin Wooldridge | Base UI + Sonner + Vaul + cmdk + NumberFlow + motion; uma peça de destaque por tela |
 
-## Marca
-
-- **Símbolo:** dois elos entrelaçados (`<LogoMark>` em `src/components/icons.tsx`). Um elo em verde-pinho, outro em argila. O mesmo desenho gera os ícones do app (`npm run icones`).
-- **Nome:** "Elo Saúde" sempre em Newsreader seminegrito.
+Magic UI, Aceternity, RareUI e 21st.dev foram avaliados e ficaram de fora: são feitos para landing pages (fundos animados, efeitos 3D, brilhos) e deixariam o app com a aparência que queremos evitar.
 
 ## Cores
 
 | Uso | Token | Hex |
 |---|---|---|
-| Fundo (papel) | `paper` | `#f5f2ec` |
-| Texto principal | `ink-900` | `#1c1b18` |
-| Texto secundário (mínimo para texto) | `ink-500` | `#6b665c` |
-| Marca, botões, aba ativa | `brand-600` | `#1f5e4c` |
-| Acento decorativo (logo, anos da linha do tempo) | `clay-500` / `clay-600` | `#c8673e` / `#a9532f` |
-| Acima da faixa, "procure um médico" | `danger-600` / `danger-700` | `#b42318` / `#912018` |
-| Abaixo da faixa, "atenção" | `warn-500` / `warn-800` | `#c98a12` / `#6b4508` |
+| Fundo | `bg` | `#ffffff` |
+| Superfície (cartões) | `surface` | `#f4f4f2` |
+| Texto principal | `ink` | `#1f2b4d` |
+| Texto secundário (mínimo para texto) | `muted` | `#646b81` |
+| Ação e marca | `accent` | `#f7941d` (texto sobre ele sempre `ink`) |
+| Alto, "procure um médico" | `danger` / `danger-soft` | `#b3261e` / `#fdecea` |
+| Baixo, "atenção" | `warn` / `warn-soft` | `#7a5200` / `#fff5d6` |
+| Confirmação | `ok` / `ok-soft` | `#2f6b3f` / `#e8f3eb` |
 
-Regras:
-
-- `ink-400` e mais claros **não** servem para texto (contraste abaixo de 4,5:1); use só em ícones decorativos e bordas.
-- A argila é decorativa. Nunca use em status, para não confundir com vermelho de alerta.
-- Status clínico **nunca depende só da cor**: sempre ícone + texto (`<StatusBadge>`: ↑ Acima, ↓ Abaixo, ✓ Na faixa).
-- "Na faixa" é neutro de propósito: o olho deve ir direto ao que está fora.
+- `faint` (`#8b90a0`, 3,2:1) só serve para ícones e traços, nunca para texto.
+- Texto branco sobre laranja não passa no contraste (2,3:1). O botão principal usa texto azul-marinho (6,1:1).
+- Status clínico nunca depende só da cor: Alto ↑, Baixo ↓, Normal ✓, Sem referência −.
 
 ## Tipografia
 
-- **Títulos e números de destaque:** Newsreader (utilitário `page-title`, classe `font-serif`).
-- **Interface e texto corrido:** Source Sans 3, base de 16 px.
-- **Valores clínicos:** classe `num` (algarismos de largura fixa, alinham em colunas).
-- Tamanho mínimo de texto: 12 px (`text-xs`). Nada de `text-[10px]` ou `text-[11px]`.
+- Hanken Grotesk em tudo. Títulos grandes em peso 400 (`display`, `title`), corpo em 15 e 16 px.
+- Números com algarismos de largura fixa (`num`, `big-num`).
 
-Os pares vieram das buscas da skill ui-ux-pro-max ("News Editorial" para títulos, "Corporate Trust" para o corpo, ambos marcados para saúde e legibilidade).
+## Componentes
 
-## Componentes e layout
+- **Superfície** (`tile`): fundo `surface`, raio 16 px, sem borda nem sombra.
+- **Botões**: `btn-primary` (laranja), `btn-secondary` (contorno), `btn-danger`, `btn-quiet` (link sublinhado). Altura mínima 48 px. Sobem 1 px no hover do mouse e afundam ao pressionar.
+- **Alertas** (`AlertCard`): sanfona. Fechado mostra gravidade e título; aberto mostra o que aconteceu, o que fazer e as medições. Na tela do médico ficam sempre abertos.
+- **Navegação inferior**: Hoje, Histórico, Sinais, Conversa (com contador), Médico. A aba ativa tem ícone preenchido e um ponto laranja.
 
-- **Cartão** (`card`): borda `ink-200`, raio 12 px, sem sombra.
-- **Título de seção** (`<SectionTitle>`): versalete pequeno com um fio até a margem.
-- **Alertas** (`<AlertCard>`): faixa de 4 px à esquerda na cor da gravidade, rótulo com ícone, recomendação separada por um fio.
-- **Alvos de toque:** botões, links de ação e abas com pelo menos 44 px de altura (`min-h-11`).
-- **Foco:** contorno verde de 2 px em todo elemento focado pelo teclado (definido em `globals.css`).
-- **Movimento:** transições de 200 ms, desligadas com `prefers-reduced-motion`.
+## Movimento
 
-## Gráficos
+Tokens do transitions.dev em `:root` (`--duration-*`, `--ease-*`, `--distance-*`, `--blur-*`). Fechar é mais rápido que abrir. Tudo para com `prefers-reduced-motion`.
 
-- Linha principal em `CHART.ink`; pontos fora da faixa são **maiores e cheios** em vermelho, os normais são vazados (forma + cor).
-- Faixa de referência sombreada e rotulada "faixa de referência".
-- Início de remédio: linha pontilhada roxa com o nome.
-- Duas séries no mesmo gráfico: mesma cor, traços diferentes (`dashed: true`), com legenda.
+## Código de terceiros
+
+- `src/components/vendor/react-bits/HoldButton.tsx`: React Bits, MIT + Commons Clause (`LICENSE.md` na pasta).
+- `src/components/ReadingSteps.tsx`: adaptado do ThinkingState do Beautiful UI (MIT).
+- `src/components/base/*`: adaptados do shadcn/ui (variante Base UI, MIT).

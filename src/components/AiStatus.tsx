@@ -23,12 +23,13 @@ export function AiStatusBanner() {
   const enabled = useAiEnabled();
   if (enabled !== false) return null;
   return (
-    <Link href="/configuracoes" className="mt-3 flex items-center gap-3 rounded-xl border border-ink-200 bg-ink-50 p-3 text-sm text-ink-700 transition-colors hover:bg-ink-100">
-      <ScanIcon className="h-5 w-5 shrink-0 text-ink-500" />
+    <Link href="/configuracoes" className="lift mt-4 flex items-center gap-3 rounded-2xl border border-line p-4 text-sm text-muted">
+      <ScanIcon width={22} className="shrink-0 text-ink" />
       <span className="flex-1">
-        <strong className="text-ink-900">Leitura por IA desligada.</strong> Os laudos de exemplo usam leitura pré-gravada. Para ler qualquer laudo, informe uma chave da Gemini em Configurações.
+        <span className="block font-medium text-ink">Leitura de laudos desligada</span>
+        Os dois laudos de exemplo funcionam. Para ler outros, adicione uma chave da Gemini.
       </span>
-      <ChevronRight width={18} height={18} className="shrink-0 text-ink-400" />
+      <ChevronRight width={18} className="shrink-0 text-faint" />
     </Link>
   );
 }

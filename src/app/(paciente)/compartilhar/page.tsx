@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { toast } from "sonner";
 import { ShareForm } from "@/components/ShareForm";
-import { SectionTitle } from "@/components/ui";
+import { PageHeader, SectionTitle } from "@/components/ui";
+import HoldButton from "@/components/vendor/react-bits/HoldButton";
 import { formatDateTime } from "@/lib/dates";
 import { shareState } from "@/lib/share";
 import { revokeShare, useDb } from "@/lib/store";
@@ -11,15 +13,16 @@ import { SCOPE_LABELS } from "@/lib/types";
 export default function CompartilharPage() {
   return (
     <div>
-      <h1 className="page-title">Mostrar ao médico</h1>
-      <p className="mb-5 mt-1 text-[15px] text-ink-600">
-        Como no open finance: você escolhe quem vê, o quê e por quanto tempo. O médico recebe um link com tudo organizado numa tela só.
-      </p>
+      <PageHeader title="Relatório para o médico">
+        Você escolhe quem vê, o quê e por quanto tempo. O médico recebe um link com exames, remédios e medições numa tela só.
+      </PageHeader>
       <ShareForm />
       <Shares />
     </div>
   );
 }
+
+const STATE_LABEL = { ativo: "Ativo", expirado: "Expirado", revogado: "Revogado" } as const;
 
 function Shares() {
   const db = useDb();
@@ -27,36 +30,48 @@ function Shares() {
   const now = new Date();
   return (
     <>
-      <SectionTitle>Acessos concedidos</SectionTitle>
+      <SectionTitle>Acessos que você deu</SectionTitle>
       <ul className="space-y-2">
         {db.shares.map((s) => {
           const st = shareState(s, now);
           return (
-            <li key={s.token} className="card p-3">
+            <li key={s.token} className="tile">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-[15px] font-semibold">{s.doctorName}{s.doctorCrm ? ` · CRM ${s.doctorCrm}` : ""}</p>
-                  <p className="text-xs text-ink-500">
-                    Criado em {formatDateTime(s.createdAt)} · {st === "ativo" ? `válido até ${formatDateTime(s.expiresAt)}` : st === "revogado" ? `revogado em ${formatDateTime(s.revokedAt!)}` : "expirado"}
+                  <p className="text-[17px] font-medium">{s.doctorName}{s.doctorCrm ? ` · CRM ${s.doctorCrm}` : ""}</p>
+                  <p className="num text-sm text-muted">
+                    {st === "ativo" ? `Vale até ${formatDateTime(s.expiresAt)}` : st === "revogado" ? `Revogado em ${formatDateTime(s.revokedAt!)}` : "Prazo encerrado"}
                   </p>
                 </div>
-                <span className={`rounded-md border px-1.5 py-0.5 text-xs font-semibold capitalize ${st === "ativo" ? "border-brand-200 bg-brand-50 text-brand-800" : "border-ink-200 bg-ink-100 text-ink-600"}`}>
-                  {st}
-                </span>
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${st === "ativo" ? "bg-ok-soft text-ok" : "bg-white text-muted"}`}>{STATE_LABEL[st]}</span>
               </div>
-              <p className="mt-1.5 text-sm text-ink-600">{s.scopes.map((x) => SCOPE_LABELS[x]).join(" · ")}</p>
-              <details className="mt-1 text-sm text-ink-600">
-                <summary className="flex min-h-11 items-center font-semibold">
-                  {s.accessLog.length} {s.accessLog.length === 1 ? "acesso registrado neste aparelho" : "acessos registrados neste aparelho"}
-                </summary>
-                <ul className="mt-1 list-disc pl-4">
-                  {s.accessLog.slice(-10).reverse().map((a) => <li key={a.at}>{formatDateTime(a.at)}</li>)}
-                </ul>
-              </details>
+              <p className="mt-2 text-sm text-muted">{s.scopes.map((x) => SCOPE_LABELS[x]).join(" · ")}</p>
+              <p className="mt-1 text-sm text-muted">
+                {s.accessLog.length ? `Aberto ${s.accessLog.length} ${s.accessLog.length === 1 ? "vez" : "vezes"} neste aparelho, a última em ${formatDateTime(s.accessLog.at(-1)!.at)}` : "Ainda não foi aberto neste aparelho"}
+              </p>
               {st === "ativo" && (
-                <div className="mt-2 flex gap-2">
+                <div className="mt-3 flex gap-2">
                   <Link href={`/medico/?t=${encodeURIComponent(s.token)}`} target="_blank" className="btn-secondary flex-1">Abrir</Link>
-                  <button className="btn-danger flex-1" onClick={() => revokeShare(s.token)}>Revogar</button>
+                  {/* Segurar para revogar (HoldButton do React Bits): evita revogar sem querer */}
+                  <HoldButton
+                    className="flex-1"
+                    size="lg"
+                    radius={12}
+                    holdTime={1200}
+                    backgroundColor="#fdecea"
+                    fillColor="#b3261e"
+                    textColor="#b3261e"
+                    fillTextColor="#ffffff"
+                    glow={false}
+                    doneLabel="Revogado"
+                    onHold={() => {
+                      revokeShare(s.token);
+                      toast.success(`Acesso de ${s.doctorName} revogado`, { description: "O link não abre mais." });
+                    }}
+                    onTap={() => toast("Segure o botão para revogar", { id: "segure" })}
+                  >
+                    Segure para revogar
+                  </HoldButton>
                 </div>
               )}
             </li>

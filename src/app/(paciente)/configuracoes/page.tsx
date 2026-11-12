@@ -2,91 +2,95 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 import { useAiEnabled } from "@/components/AiStatus";
-import { SectionTitle } from "@/components/ui";
+import { Switch } from "@/components/base/switch";
+import { PageHeader, SectionTitle } from "@/components/ui";
 import { MODELS, setGeminiKey, testGeminiKey } from "@/lib/gemini";
 
 export default function ConfiguracoesPage() {
   const enabled = useAiEnabled();
   const [key, setKey] = useState("");
-  const [status, setStatus] = useState<{ tone: "ok" | "erro" | "info"; text: string } | null>(null);
   const [testing, setTesting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!key.trim()) return;
     setGeminiKey(key);
     setKey("");
+    setError(null);
     setTesting(true);
-    setStatus({ tone: "info", text: "Testando a chave…" });
+    const id = toast.loading("Testando a chave…");
     const r = await testGeminiKey();
     setTesting(false);
-    if (r.ok) setStatus({ tone: "ok", text: `Chave funcionando (${r.model}). A leitura de laudos e o resumo do médico usam IA ao vivo.` });
-    else {
+    if (r.ok) {
+      toast.success("Leitura de laudos ligada", { id, description: `Modelo ${r.model}` });
+    } else {
       if (r.error === "Chave inválida.") setGeminiKey(null);
-      setStatus({ tone: "erro", text: r.error });
+      toast.error("A chave não funcionou", { id, description: r.error });
+      setError(r.error);
     }
   }
 
   return (
     <div>
-      <h1 className="page-title">Configurações</h1>
+      <PageHeader title="Configurações" />
 
-      <SectionTitle>Inteligência artificial</SectionTitle>
-      <div className="card space-y-3 text-sm">
-        <p className="flex items-center gap-2">
-          <span className={`h-2.5 w-2.5 rounded-full ${enabled ? "bg-brand-500" : "bg-ink-300"}`} />
-          {enabled == null ? "…" : enabled ? "IA ligada neste navegador" : "IA desligada"}
-        </p>
-        <p className="text-ink-600">
-          A leitura de laudos e o resumo para o médico usam a Gemini API. Crie uma chave gratuita no{" "}
-          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" className="font-semibold text-brand-700 underline">Google AI Studio</a>{" "}
-          e cole abaixo.
-        </p>
-        <form onSubmit={save} className="flex gap-2">
-          <input
-            type="password"
-            className="input"
-            placeholder="Cole a chave aqui"
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
-            autoComplete="off"
-            aria-label="Chave da Gemini API"
+      <SectionTitle>Leitura de laudos</SectionTitle>
+      <div className="tile space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-[15px] font-medium" id="ia-estado">{enabled == null ? "…" : enabled ? "Ligada neste aparelho" : "Desligada"}</p>
+            <p className="text-sm text-muted">Usa a Gemini para ler fotos e PDFs de laudos.</p>
+          </div>
+          <Switch
+            aria-labelledby="ia-estado"
+            checked={Boolean(enabled)}
+            onCheckedChange={(on) => {
+              if (!on) {
+                setGeminiKey(null);
+                toast("Leitura de laudos desligada", { description: "A chave foi apagada deste aparelho." });
+              } else {
+                document.getElementById("chave")?.focus();
+              }
+            }}
           />
-          <button className="btn-primary shrink-0" disabled={testing || !key.trim()}>Salvar</button>
-        </form>
-        {status && (
-          <p className={`rounded-lg px-3 py-2 text-xs ${status.tone === "ok" ? "bg-brand-50 text-brand-800" : status.tone === "erro" ? "bg-danger-50 text-danger-700" : "bg-ink-50 text-ink-600"}`}>
-            {status.text}
-          </p>
+        </div>
+        {!enabled && (
+          <form onSubmit={save} className="space-y-2">
+            <label htmlFor="chave" className="label">Chave da Gemini</label>
+            <div className="flex gap-2">
+              <input id="chave" type="password" className="input" placeholder="Cole a chave aqui" value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" autoCapitalize="none" autoCorrect="off" />
+              <button className="btn-primary shrink-0" disabled={testing || !key.trim()}>Salvar</button>
+            </div>
+            {error && <p className="text-sm text-danger" role="alert">{error}</p>}
+            <p className="text-sm text-muted">
+              Crie uma chave gratuita no{" "}
+              <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" className="font-medium text-ink underline underline-offset-4">Google AI Studio</a>.
+            </p>
+          </form>
         )}
-        {enabled && (
-          <button type="button" className="btn-danger w-full" onClick={() => { setGeminiKey(null); setStatus(null); }}>
-            Remover chave deste navegador
-          </button>
-        )}
-        <p className="text-xs leading-relaxed text-ink-500">
-          A chave fica salva só neste navegador e vai direto para o Google; o site não guarda nem envia para outro lugar.
-          Não salve sua chave em computadores compartilhados. Modelos usados, em ordem: {MODELS.join(", ")}.
+        <p className="text-sm leading-relaxed text-muted">
+          A chave fica só neste navegador e vai direto para o Google. Não salve em computador compartilhado. Modelos, em ordem: {MODELS.join(", ")}.
         </p>
       </div>
 
-      <SectionTitle>Usar como app no celular</SectionTitle>
-      <div className="card space-y-2 text-sm text-ink-700">
-        <p><strong>iPhone (Safari):</strong> toque em Compartilhar e depois em <em>Adicionar à Tela de Início</em>.</p>
-        <p><strong>Android (Chrome):</strong> toque no menu ⋮ e depois em <em>Instalar app</em> ou <em>Adicionar à tela inicial</em>.</p>
-        <p className="text-xs text-ink-500">O ícone do Elo Saúde aparece na tela inicial e o app abre em tela cheia.</p>
+      <SectionTitle>Usar como app</SectionTitle>
+      <div className="tile space-y-2 text-[15px] leading-relaxed">
+        <p><span className="font-medium">iPhone (Safari):</span> Compartilhar, depois Adicionar à Tela de Início.</p>
+        <p><span className="font-medium">Android (Chrome):</span> menu de três pontos, depois Instalar app.</p>
       </div>
 
       <SectionTitle>Apresentação</SectionTitle>
-      <div className="card space-y-2 text-sm">
-        <p className="text-ink-600">Tela para projetar: o app do paciente num celular e a visão do médico lado a lado.</p>
+      <div className="tile space-y-3">
+        <p className="text-[15px] text-muted">O app do paciente e a tela do médico lado a lado, para projetar.</p>
         <Link href="/demo" className="btn-secondary w-full">Abrir modo apresentação</Link>
       </div>
 
       <SectionTitle>Privacidade</SectionTitle>
-      <p className="card text-[12px] leading-relaxed text-ink-600">
-        Todo o histórico fica salvo neste navegador. Para apagar tudo e voltar aos dados de demonstração, use Início → Controles da demonstração → Restaurar.
+      <p className="tile text-[15px] leading-relaxed text-muted">
+        Todo o histórico fica salvo neste navegador. Para apagar tudo e voltar aos dados de demonstração, use Hoje, Controles da demonstração, Restaurar.
       </p>
     </div>
   );

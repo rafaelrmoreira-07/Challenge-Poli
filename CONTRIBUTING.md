@@ -23,6 +23,8 @@ src/
 │   ├── medico/       página que o médico abre pelo link compartilhado
 │   └── demo/         modo apresentação (para projetar no palco)
 ├── components/
+│   ├── base/         Switch e Checkbox (Base UI) e os avisos (Sonner)
+│   ├── vendor/       código copiado de outras bibliotecas, com a licença
 │   ├── views/        telas completas (Home, Exames, Exame, Médico)
 │   └── *.tsx         peças reutilizáveis (Uploader, gráficos, formulário de compartilhamento…)
 └── lib/              regras e dados, sem interface

@@ -1,19 +1,37 @@
-import Link from "next/link";
+"use client";
 
-export function HistoryTabs({ active }: { active: "timeline" | "exames" }) {
-  const tab = (key: "timeline" | "exames", href: string, label: string) => (
-    <Link
-      href={href}
-      aria-current={active === key ? "page" : undefined}
-      className={`-mb-px flex min-h-11 flex-1 items-center justify-center border-b-[3px] text-[15px] font-semibold transition-colors ${active === key ? "border-brand-600 text-brand-800" : "border-transparent text-ink-500 hover:text-ink-800"}`}
-    >
-      {label}
-    </Link>
-  );
+import Link from "next/link";
+import { ExamSearch } from "./ExamSearch";
+import { PlusIcon } from "./icons";
+import { SlidingTabs } from "./SlidingTabs";
+import { PageHeader } from "./ui";
+
+/** Cabeçalho comum das duas abas do Histórico. */
+export function HistoryHeader({ active }: { active: "timeline" | "exames" }) {
   return (
-    <nav aria-label="Seções do histórico" className="mb-5 flex border-b border-ink-200">
-      {tab("timeline", "/historico", "Linha do tempo")}
-      {tab("exames", "/exames", "Exames")}
-    </nav>
+    <>
+      <PageHeader
+        title="Histórico"
+        action={
+          <div className="flex items-center gap-1">
+            <ExamSearch variant="icon" />
+            <Link href="/enviar" className="btn-primary min-h-11 px-4 text-sm">
+              <PlusIcon width={16} /> Adicionar
+            </Link>
+          </div>
+        }
+      />
+      <div className="mb-6">
+        <SlidingTabs
+          label="Seções do histórico"
+          memoryKey="historico"
+          active={active}
+          items={[
+            { key: "timeline", label: "Linha do tempo", href: "/historico" },
+            { key: "exames", label: "Exames", href: "/exames" },
+          ]}
+        />
+      </div>
+    </>
   );
 }
