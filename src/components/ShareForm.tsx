@@ -6,10 +6,11 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { buildDoctorLink } from "@/lib/doctor";
 import { absoluteUrl } from "@/lib/paths";
-import { createShare } from "@/lib/store";
+import { createShare, useDb } from "@/lib/store";
+import { whatsappDoctorUrl } from "@/lib/whatsapp";
 import { SCOPE_LABELS, SCOPES, type Scope } from "@/lib/types";
 import { Checkbox } from "./base/checkbox";
-import { CopyIcon, ShieldIcon } from "./icons";
+import { CopyIcon, ShieldIcon, WhatsappIcon } from "./icons";
 import { SlidingTabs } from "./SlidingTabs";
 
 const DURATIONS = [
@@ -105,6 +106,7 @@ function ShareResult({ token, onDone }: { token: string; onDone: () => void }) {
   }, [token]);
 
   const canShare = typeof navigator !== "undefined" && "share" in navigator;
+  const share = useDb()?.shares.find((s) => s.token === token);
 
   return (
     <section className="rounded-3xl bg-ink p-5 text-white" aria-live="polite">
@@ -119,10 +121,15 @@ function ShareResult({ token, onDone }: { token: string; onDone: () => void }) {
             <img src={qr} alt="QR code do link do relatório" className="mx-auto mt-5 h-48 w-48 rounded-2xl bg-white p-3" />
           )}
           <div className="mt-5 flex flex-col gap-2">
+            {share && (
+              <a href={whatsappDoctorUrl(share.doctorName, share.expiresAt, url)} target="_blank" rel="noopener" className="btn-primary">
+                <WhatsappIcon width={20} /> Enviar pelo WhatsApp
+              </a>
+            )}
             {canShare && (
               <button
                 type="button"
-                className="btn-primary"
+                className="btn border border-white/20 bg-white/5 text-white hover:bg-white/10"
                 onClick={() => navigator.share({ title: "Relatório de saúde", text: "Meu relatório de saúde", url }).catch(() => undefined)}
               >
                 Enviar link

@@ -78,7 +78,15 @@ export function ChatView() {
     const t = shown.trim();
     if (!t) return;
     pushUser({ text: t });
-    enqueue(() => respondToText(botText, say, { fromButton }));
+    // "digitando…" durante toda a espera (a resposta da IA leva alguns segundos)
+    enqueue(async () => {
+      setTyping(true);
+      try {
+        await respondToText(botText, say, { fromButton });
+      } finally {
+        setTyping(false);
+      }
+    });
   };
 
   const sendFile = (file: File) => {
