@@ -5,10 +5,11 @@ import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import { buildDoctorLink } from "@/lib/doctor";
 import { absoluteUrl } from "@/lib/paths";
-import { createShare } from "@/lib/store";
+import { createShare, useDb } from "@/lib/store";
+import { whatsappDoctorUrl } from "@/lib/whatsapp";
 import { SCOPE_LABELS, SCOPES } from "@/lib/types";
 import { useAiEnabled } from "./AiStatus";
-import { CheckIcon, ClipboardIcon, ShieldIcon } from "./icons";
+import { CheckIcon, ClipboardIcon, ShieldIcon, WhatsappIcon } from "./icons";
 
 const DURATIONS = [
   { hours: 1, label: "1 hora (durante a consulta)" },
@@ -109,6 +110,7 @@ function ShareResult({ token, onDone }: { token: string; onDone: () => void }) {
   }, [token]);
 
   const canShare = typeof navigator !== "undefined" && "share" in navigator;
+  const share = useDb()?.shares.find((s) => s.token === token);
 
   return (
     <div className="card text-center">
@@ -126,10 +128,15 @@ function ShareResult({ token, onDone }: { token: string; onDone: () => void }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {qr && <img src={qr} alt="QR code do link de acesso" className="mx-auto mt-3 h-52 w-52" />}
           <div className="mt-3 flex flex-col gap-2">
+            {share && (
+              <a href={whatsappDoctorUrl(share.doctorName, share.expiresAt, url)} target="_blank" rel="noopener" className="btn-primary">
+                <WhatsappIcon width={20} /> Enviar pelo WhatsApp
+              </a>
+            )}
             {canShare && (
               <button
                 type="button"
-                className="btn-primary"
+                className="btn-secondary"
                 onClick={() => navigator.share({ title: "Histórico de saúde", text: "Acesso ao meu histórico de saúde", url }).catch(() => undefined)}
               >
                 Enviar link

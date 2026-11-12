@@ -3,18 +3,22 @@
 import { ANALYTES } from "./analytes";
 import { getChatSnapshot, markActionsDone, menuActions, alertDraft, setFlow, type BotDraft, type ChatResultRow } from "./chat";
 import { ageFrom, formatDate } from "./dates";
+import { aiReply, chatAiAvailable } from "./chatAi";
 import { buildDoctorLink } from "./doctor";
 import { ACCEPTED_TYPES, extractLabReport, fileType, MAX_UPLOAD_BYTES, NoKeyError } from "./extraction";
 import { analyteSeries, computeAlerts, fmt, formatRef, hasBloodPressure, labStatus, wearableSnapshot, type LabStatus } from "./health";
 import { absoluteUrl } from "./paths";
+import { whatsappDoctorUrl } from "./whatsapp";
 import { shareState } from "./share";
 import { createShare, getDbSnapshot, revokeShare, saveExam } from "./store";
 import { SCOPES, type Extraction } from "./types";
 
 /**
- * Respostas do Elo. São regras por palavra-chave, sem IA na conversa:
- * cada resposta vem dos dados do histórico e pode ser conferida na tela
- * correspondente. A IA só entra na leitura do laudo, como na tela Adicionar.
+ * Respostas do Elo. Regras por palavra-chave para o que precisa ser
+ * previsível (emergência, revogar, enviar laudo, criar relatório, menu).
+ * Com a chave da Gemini configurada, as perguntas abertas vão para a IA
+ * (lib/chatAi.ts), que responde em linguagem natural a partir do histórico.
+ * Sem chave, ou se a IA falhar, as regras abaixo respondem como antes.
  */
 
 /** Mostra "digitando…" e então publica a mensagem do Elo. */
@@ -30,6 +34,7 @@ const STATUS_WORD: Record<LabStatus, string> = { alto: "alto", baixo: "baixo", n
 export const SAMPLE_FILES = [
   { file: "laudo-vida-2026-11.pdf", mime: "application/pdf", label: "Exemplo: PDF do laboratório" },
   { file: "exame-papel-2016.jpg", mime: "image/jpeg", label: "Exemplo: foto de exame antigo" },
+  { file: "exame-papel-carimbo-2020.jpg", mime: "image/jpeg", label: "Exemplo: foto difícil de ler" },
 ];
 
 const HOURS: { re: RegExp; hours: number; label: string }[] = [
@@ -85,29 +90,46 @@ export async function respondToText(raw: string, say: Say, opts: { fromButton?: 
     setFlow(null); // um botão de outro assunto encerra a etapa
   }
 
-  if (has(t, /^(oi|ola|opa|bom dia|boa tarde|boa noite|menu|ajuda|inicio|opcoes|comecar)\b/)) {
+  const ai = chatAiAvailable() && !opts.fromButton;
+  const short = t.split(" ").length <= 4;
+
+  if (has(t, /^(oi|ola|opa|bom dia|boa tarde|boa noite|menu|ajuda|inicio|opcoes|comecar)\b/) && (!ai || short)) {
     const name = getDbSnapshot().patient.name.split(" ")[0];
     return say({ text: `Olá, ${name}. Em que posso ajudar?`, actions: menuActions() });
   }
   if (has(t, /revogar|tirar o acesso|cancelar acesso|cancelar o acesso/)) return listShares(say);
-  if (has(t, /alerta|aviso/)) return listAlerts(say);
-  if (has(t, /\b(enviar|mandar|anexar|subir|carregar|fotografar)\b/)) return askFile(say);
+  if (has(t, /alerta|aviso/) && (!ai || short)) return listAlerts(say);
+  if (has(t, /\b(enviar|mandar|anexar|subir|carregar|fotografar)\b/) && !/\b(medic[oa]|doutor|dra?)\b|relatorio/.test(t)) return askFile(say);
+  if (ai && has(t, /relatorio|compartilh|(enviar|mandar|passar).*(medic[oa]|doutor|\bdra?\b)/)) return startReport(say);
+
+  // Pergunta aberta: com chave, a IA responde em linguagem natural.
+  if (ai) {
+    try {
+      const history = (getChatSnapshot()?.messages ?? []).slice(0, -1);
+      const reply = await aiReply(text, history);
+      return say({ text: reply.text, actions: reply.actions.length ? reply.actions : undefined }, { delay: 150 });
+    } catch (err) {
+      console.warn("[elo] IA indisponível, usando as regras:", (err as Error).message.slice(0, 160));
+    }
+  }
 
   const analyte = findAnalyte(t);
   if (analyte) return describeAnalyte(analyte, say);
   if (has(t, /exame|resultado|alterad/)) return listAltered(say);
   if (has(t, /pressao|batiment|frequencia|coracao|sono|dormi|saturacao|oxigen|spo2|passos|relogio|sinais/)) return describeVitals(say);
   if (has(t, /remedio|medicamento|medicac|tomando/)) return listMeds(say);
-  if (has(t, /relatorio|\bmedic[oa]\b|consulta|compartilh|doutor|\bdra?\b/)) {
-    setFlow({ step: "doctor_name" });
-    return say({ text: "Vou preparar um relatório com seus exames, remédios e medições.\n\nQual é o nome do médico ou da médica?" });
-  }
+  if (has(t, /relatorio|\bmedic[oa]\b|consulta|compartilh|doutor|\bdra?\b/)) return startReport(say);
   if (has(t, /obrigad|valeu|brigad/)) return say({ text: "Por nada. Se precisar, é só chamar." });
 
   return say({
     text: "Não entendi. Posso ajudar com estes assuntos, ou você pode perguntar por um exame, por exemplo: *como está meu colesterol LDL?*",
     actions: menuActions(),
   });
+}
+
+function startReport(say: Say) {
+  setFlow({ step: "doctor_name" });
+  return say({ text: "Vou preparar um relatório com seus exames, remédios e medições.\n\nQual é o nome do médico ou da médica?" });
 }
 
 function hoursActions() {
@@ -133,6 +155,7 @@ async function createReport(doctorName: string, hours: number, label: string, sa
       `Pronto. O relatório para *${doctorName}* fica disponível por *${label}*.\n\n` +
       "Envie o link para o médico. Ele vê seus exames, remédios, consultas, vacinas e as medições do relógio numa tela só. Você pode revogar quando quiser.",
     actions: [
+      { kind: "link", label: "Enviar pelo WhatsApp", href: whatsappDoctorUrl(doctorName, getDbSnapshot().shares.find((s) => s.token === res.token)?.expiresAt ?? new Date().toISOString(), absoluteUrl(link.path)), newTab: true },
       { kind: "copy", label: "Copiar link", text: absoluteUrl(link.path) },
       { kind: "link", label: "Abrir relatório", href: `/medico/?t=${encodeURIComponent(res.token)}`, newTab: true },
       { kind: "revoke", label: "Revogar acesso", token: res.token },
