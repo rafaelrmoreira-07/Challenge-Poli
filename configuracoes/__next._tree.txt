@@ -1,7 +1,7 @@
-:HL["/Challenge-Poli/_next/static/chunks/3mf4hb43z6qws.css","style"]
+:HL["/Challenge-Poli/_next/static/chunks/3p-sza372-q1x.css","style"]
 :HL["/Challenge-Poli/_next/static/media/newsreader_latin_wght_normal-s.p.0rbocftmutivq.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/Challenge-Poli/_next/static/media/source_sans_3_latin_wght_normal-s.p.319-552wy8l00.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 3:[["children",{"s":"__PAGE__","h":160}]]
 2:[["children",{"s":"configuracoes","h":64,"c":"$Q3"}]]
 1:[["children",{"s":"(paciente)","h":32,"c":"$Q2"}]]
-0:{"b":"ys7ml5BEkCw5fYAnE4E33","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"SOkOLRmsgqoKI_DnItmOb","t":{"t":{"s":"","h":80,"c":"$Q1"}}}

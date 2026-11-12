@@ -1,9 +1,9 @@
 3:"$Sreact.fragment"
-4:"/Challenge-Poli/_next/static/chunks/3qfy96eoyh-ek.js"
-5:"/Challenge-Poli/_next/static/chunks/3em8y_z_h_0e6.js"
+4:"/Challenge-Poli/_next/static/chunks/2tctsrsyjnbad.js"
+5:"/Challenge-Poli/_next/static/chunks/41ihr3nmlqz5m.js"
 6:"/Challenge-Poli/_next/static/chunks/1uc5rs56z8zsi.js"
-7:"/Challenge-Poli/_next/static/chunks/21xmil6rbcj0h.js"
-8:"/Challenge-Poli/_next/static/chunks/2s9c_4rlhckzl.js"
+7:"/Challenge-Poli/_next/static/chunks/3il79pgh_gadx.js"
+8:"/Challenge-Poli/_next/static/chunks/2dc01i3tmi5uj.js"
 9:I[69814,["$4","$5","$6","$7","$8"],"HomeView"]
 a:I[97367,["$4"],"OutletBoundary"]
 b:"$Sreact.suspense"
@@ -13,9 +13,9 @@ f:"ViewportBoundary"
 12:I[97367,["$4"],"$11"]
 13:I[27201,["$4"],"IconMark"]
 e:X
-2:[["children",{"s":"__PAGE__","h":128,"d":{"r":["$","$3","c",{"children":[["$","$L9",null,{}],[["$","script","script-0",{"src":"/Challenge-Poli/_next/static/chunks/2s9c_4rlhckzl.js","async":true}]],["$","$La",null,{"children":["$","$b",null,{"name":"Next.MetadataOutlet","children":"$@c"}]}]]}],"p":"$@d","v":null,"s":"$e"}}]]
+2:[["children",{"s":"__PAGE__","h":128,"d":{"r":["$","$3","c",{"children":[["$","$L9",null,{}],[["$","script","script-0",{"src":"/Challenge-Poli/_next/static/chunks/2dc01i3tmi5uj.js","async":true}]],["$","$La",null,{"children":["$","$b",null,{"name":"Next.MetadataOutlet","children":"$@c"}]}]]}],"p":"$@d","v":null,"s":"$e"}}]]
 1:[["children",{"s":"(paciente)","h":32,"c":"$Q2"}]]
-0:{"t":{"t":{"s":"","h":80,"c":"$Q1"},"h":{"r":["$","$3","h",{"children":[null,["$","$L10",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","2",{"name":"theme-color","content":"#1f5e4c"}]]}],["$","$L12",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Elo Saúde · seu histórico de saúde em um só lugar"}],["$","meta","1",{"name":"description","content":"Hub de saúde pessoal: exames, consultas, remédios, vacinas e wearables organizados por IA, para você e para o seu médico."}],["$","meta","2",{"name":"application-name","content":"Elo Saúde"}],["$","link","3",{"rel":"manifest","href":"/Challenge-Poli/manifest.webmanifest"}],["$","link","4",{"rel":"icon","href":"/Challenge-Poli/icon.png?icon.02vb-6s8ks4se.png","sizes":"512x512","type":"image/png"}],["$","link","5",{"rel":"apple-touch-icon","href":"/Challenge-Poli/apple-icon.png?apple-icon.0l1kq4ixw2dts.png","sizes":"180x180","type":"image/png"}],["$","$L13","6",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@14","v":null,"s":"$e"}},"a":"$@15","u":"$@16","b":"ys7ml5BEkCw5fYAnE4E33"}
+0:{"t":{"t":{"s":"","h":80,"c":"$Q1"},"h":{"r":["$","$3","h",{"children":[null,["$","$L10",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","2",{"name":"theme-color","content":"#1f5e4c"}]]}],["$","$L12",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Elo Saúde · seu histórico de saúde em um só lugar"}],["$","meta","1",{"name":"description","content":"Hub de saúde pessoal: exames, consultas, remédios, vacinas e wearables organizados por IA, para você e para o seu médico."}],["$","meta","2",{"name":"application-name","content":"Elo Saúde"}],["$","link","3",{"rel":"manifest","href":"/Challenge-Poli/manifest.webmanifest"}],["$","link","4",{"rel":"icon","href":"/Challenge-Poli/icon.png?icon.02vb-6s8ks4se.png","sizes":"512x512","type":"image/png"}],["$","link","5",{"rel":"apple-touch-icon","href":"/Challenge-Poli/apple-icon.png?apple-icon.0l1kq4ixw2dts.png","sizes":"180x180","type":"image/png"}],["$","$L13","6",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@14","v":null,"s":"$e"}},"a":"$@15","u":"$@16","b":"SOkOLRmsgqoKI_DnItmOb"}
 c:null
 16:true
 e:300
