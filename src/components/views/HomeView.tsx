@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertIcon, ChevronRight, ClipboardIcon, DropIcon, GaugeIcon, HeartIcon, MoonIcon } from "@/components/icons";
+import { AlertIcon, ChevronRight, ClipboardIcon, DropIcon, GaugeIcon, HeartIcon, MoonIcon, WatchIcon } from "@/components/icons";
 import { AlertCard, Disclaimer, SectionLink, SectionTitle, Skeleton, StatusBadge } from "@/components/ui";
 import { AiStatusBanner } from "@/components/AiStatus";
 import { ageFrom, formatDate } from "@/lib/dates";
-import { analyteSeries, computeAlerts, fmt, formatRef, wearableSnapshot } from "@/lib/health";
+import { analyteSeries, computeAlerts, fmt, formatRef, hasBloodPressure, wearableSnapshot } from "@/lib/health";
+import { PERSONAS } from "@/lib/personas";
 import { resetDemo, simulateIrregularRhythm, useDb } from "@/lib/store";
 
 export function HomeView() {
@@ -15,7 +16,11 @@ export function HomeView() {
   if (!db) return <Skeleton lines={5} />;
 
   const p = db.patient;
-  const alerts = computeAlerts(db);
+  const all = computeAlerts(db);
+  const insights = all.filter((a) => a.kind === "cruzado");
+  const alerts = all.filter((a) => a.kind !== "cruzado");
+  const hasWearables = db.wearableDays.length > 0;
+  const hasBp = hasBloodPressure(db.wearableDays);
   const w = wearableSnapshot(db.wearableDays);
   const altered = analyteSeries(db.labResults).filter((s) => s.status === "alto" || s.status === "baixo");
   const activeMeds = db.medications.filter((m) => !m.endDate);
@@ -53,6 +58,15 @@ export function HomeView() {
 
       <AiStatusBanner />
 
+      {insights.length > 0 && (
+        <>
+          <SectionTitle>Dados que se conectam</SectionTitle>
+          <div className="space-y-3">
+            {insights.map((a) => <AlertCard key={a.id} alert={a} />)}
+          </div>
+        </>
+      )}
+
       <SectionTitle>{alerts.length ? `Alertas (${alerts.length})` : "Alertas"}</SectionTitle>
       {alerts.length ? (
         <div className="space-y-3">
@@ -62,13 +76,21 @@ export function HomeView() {
         <p className="card text-[15px] text-ink-600">Nenhum alerta no momento.</p>
       )}
 
-      <SectionTitle action={<SectionLink href="/wearables">Ver tudo</SectionLink>}>Últimos 7 dias</SectionTitle>
-      <div className="grid grid-cols-2 gap-3">
-        <Vital icon={<HeartIcon />} label="Batimentos em repouso" value={`${w.restingHr}`} unit="bpm" note="média" />
-        <Vital icon={<MoonIcon />} label="Sono" value={fmt(w.sleepHours)} unit="h/noite" note="média" />
-        <Vital icon={<DropIcon />} label="Saturação mínima" value={`${w.spo2Min}`} unit="%" note={spo2Low ? "abaixo de 90%" : "menor valor"} warn={spo2Low} />
-        <Vital icon={<GaugeIcon />} label="Pressão arterial" value={`${w.systolic}/${w.diastolic}`} unit="mmHg" note={bpHigh ? "acima de 130/80" : "média"} warn={bpHigh} />
-      </div>
+      <SectionTitle action={hasWearables ? <SectionLink href="/wearables">Ver tudo</SectionLink> : undefined}>Últimos 7 dias</SectionTitle>
+      {hasWearables ? (
+        <div className="grid grid-cols-2 gap-3">
+          <Vital icon={<HeartIcon />} label="Batimentos em repouso" value={`${w.restingHr}`} unit="bpm" note="média" />
+          <Vital icon={<MoonIcon />} label="Sono" value={fmt(w.sleepHours)} unit="h/noite" note="média" />
+          <Vital icon={<DropIcon />} label="Saturação mínima" value={`${w.spo2Min}`} unit="%" note={spo2Low ? "abaixo de 90%" : "menor valor"} warn={spo2Low} />
+          {hasBp ? (
+            <Vital icon={<GaugeIcon />} label="Pressão arterial" value={`${w.systolic}/${w.diastolic}`} unit="mmHg" note={bpHigh ? "acima de 130/80" : "média"} warn={bpHigh} />
+          ) : (
+            <Vital icon={<WatchIcon />} label="Passos" value={w.steps.toLocaleString("pt-BR")} unit="/dia" note="média" />
+          )}
+        </div>
+      ) : (
+        <NoWearables />
+      )}
 
       <SectionTitle action={<SectionLink href="/exames">Todos os exames</SectionLink>}>Exames alterados</SectionTitle>
       {altered.length ? (
@@ -111,7 +133,22 @@ export function HomeView() {
       <details className="mt-10 rounded-xl border border-dashed border-ink-300 px-4 text-[15px]">
         <summary className="flex min-h-12 items-center font-semibold text-ink-600">Controles da demonstração</summary>
         <div className="flex flex-col gap-2 pb-4">
-          <button className="btn-secondary w-full" onClick={() => simulateIrregularRhythm()}>
+          <label className="block">
+            <span className="label">Persona (dados sintéticos)</span>
+            <select
+              className="input"
+              value={db.personaId ?? "carlos"}
+              onChange={async (e) => {
+                const id = e.target.value as (typeof PERSONAS)[number]["id"];
+                if (!confirm(`Trocar para ${PERSONAS.find((x) => x.id === id)?.name}? Os exames enviados e os acessos criados serão apagados.`)) return;
+                await resetDemo(id);
+                router.push("/");
+              }}
+            >
+              {PERSONAS.map((x) => <option key={x.id} value={x.id}>{x.name}: {x.resumo}</option>)}
+            </select>
+          </label>
+          <button className="btn-secondary w-full" onClick={() => simulateIrregularRhythm() || alert("Esta persona não usa relógio.")} disabled={!hasWearables}>
             Simular batimentos irregulares no relógio
           </button>
           <button
@@ -128,6 +165,21 @@ export function HomeView() {
       </details>
 
       <Disclaimer />
+    </div>
+  );
+}
+
+function NoWearables() {
+  return (
+    <div className="card flex items-start gap-3">
+      <WatchIcon width={28} className="shrink-0 text-ink-400" />
+      <div>
+        <p className="text-[15px] font-semibold text-ink-900">Nenhum relógio ou anel conectado</p>
+        <p className="mt-0.5 text-sm text-ink-600">
+          Sem problema: exames, remédios e vacinas funcionam do mesmo jeito. Se a pessoa passar a usar um relógio, batimento,
+          sono e atividade entram neste mesmo histórico.
+        </p>
+      </div>
     </div>
   );
 }

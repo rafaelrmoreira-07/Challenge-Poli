@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { ageFrom } from "@/lib/dates";
 import { ACCEPTED_TYPES, extractLabReport, fileType, MAX_UPLOAD_BYTES, NoKeyError } from "@/lib/extraction";
-import { labStatus } from "@/lib/health";
+import { checkRepeats, labStatus } from "@/lib/health";
 import { asset } from "@/lib/paths";
 import { getDbSnapshot, saveExam, type SaveExamInput } from "@/lib/store";
-import type { Extraction, ExtractedResult } from "@/lib/types";
-import { CameraIcon, FileIcon, ScanIcon } from "./icons";
+import type { Confidence, Extraction, ExtractedResult } from "@/lib/types";
+import { AlertIcon, CameraIcon, CheckIcon, FileIcon, HistoryIcon, ScanIcon } from "./icons";
 import { SectionTitle, StatusBadge } from "./ui";
 
 type Phase =
@@ -20,6 +20,7 @@ type Phase =
 const SAMPLES = [
   { file: "laudo-vida-2026-11.pdf", type: "application/pdf", title: "PDF do laboratório", desc: "Laudo de nov/2026 com 14 exames" },
   { file: "exame-papel-2016.jpg", type: "image/jpeg", title: "Foto de exame em papel", desc: "Laudo antigo de 2016, fotografado" },
+  { file: "exame-papel-carimbo-2020.jpg", type: "image/jpeg", title: "Foto difícil de ler", desc: "Papel de 2020, torto, com carimbo em cima de um valor" },
 ];
 
 const STAGES = ["Enviando o arquivo…", "Lendo o documento…", "Identificando cada exame…", "Conferindo unidades e faixas de referência…"];
@@ -159,7 +160,15 @@ interface Row {
   refLow: string;
   refHigh: string;
   refText: string | null;
+  confidence: Confidence | null;
+  /** A pessoa conferiu este valor (editou ou tocou em "Está certo"). */
+  checked: boolean;
 }
+
+/** Valor que a IA não conseguiu ler: precisa ser preenchido ou removido. */
+const isMissing = (r: Row) => r.confidence != null && !r.value.trim() && !r.valueText;
+/** Valor lido com dúvida, ainda não conferido. */
+const needsCheck = (r: Row) => !r.checked && (isMissing(r) || r.confidence === "baixa" || r.confidence === "media");
 
 const toRow = (r: ExtractedResult, id: number): Row => ({
   id,
@@ -171,6 +180,8 @@ const toRow = (r: ExtractedResult, id: number): Row => ({
   refLow: toInput(r.refLow),
   refHigh: toInput(r.refHigh),
   refText: r.refText,
+  confidence: r.confidence ?? null,
+  checked: false,
 });
 
 function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "review" }>; preview: string | null; onCancel: () => void }) {
@@ -181,10 +192,13 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
   const [rows, setRows] = useState<Row[]>(() => (ex?.results ?? []).map(toRow));
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const [showOriginal, setShowOriginal] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(() => (ex?.results ?? []).some((r) => r.confidence === "baixa" || r.confidence === "media"));
   const nextId = useRef(1000);
 
   const update = (id: number, patch: Partial<Row>) => setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  const toCheck = rows.filter(needsCheck).length;
+  const missing = rows.filter(isMissing).length;
+  const repeat = checkRepeats(getDbSnapshot(), date, lab, rows.map((r) => r.analyteKey));
 
   function submit() {
     setError(null);
@@ -224,6 +238,32 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
       {ex?.patientName && <p className="mb-2 text-xs text-ink-500">Nome no laudo: {ex.patientName}</p>}
       {ex?.notes && <p className="mb-2 text-xs text-ink-500">Observação da IA: {ex.notes}</p>}
 
+      {toCheck > 0 && (
+        <p className="mb-3 flex gap-2 rounded-xl bg-warn-50 px-3 py-2 text-sm text-warn-900 ring-1 ring-warn-300" role="status">
+          <AlertIcon width={18} className="mt-0.5 shrink-0" />
+          <span>
+            <strong>{toCheck === 1 ? "1 valor para conferir." : `${toCheck} valores para conferir.`}</strong>{" "}
+            A IA marcou em amarelo o que não conseguiu ler com segurança, em vez de adivinhar. Compare com o original abaixo.
+          </span>
+        </p>
+      )}
+      {repeat.duplicate && (
+        <p className="mb-3 flex gap-2 rounded-xl bg-warn-50 px-3 py-2 text-sm text-warn-900 ring-1 ring-warn-300" role="status">
+          <AlertIcon width={18} className="mt-0.5 shrink-0" />
+          <span><strong>Este laudo parece já estar no seu histórico</strong> (mesma data e laboratório). Se salvar de novo, os resultados ficam duplicados.</span>
+        </p>
+      )}
+      {repeat.repeats.length > 0 && (
+        <p className="mb-3 flex gap-2 rounded-xl bg-brand-50 px-3 py-2 text-sm text-brand-900 ring-1 ring-brand-200" role="status">
+          <HistoryIcon width={18} className="mt-0.5 shrink-0" />
+          <span>
+            <strong>Exame repetido:</strong> você já tinha feito {listNames(repeat.repeats.map((x) => x.name))} em{" "}
+            {formatShort(repeat.repeats[0].prevDate)}, {repeat.repeats[0].days} dias antes desta coleta. Da próxima vez, vale mostrar o resultado
+            anterior ao médico antes de repetir.
+          </span>
+        </p>
+      )}
+
       {preview && (
         <div className="mb-3">
           <button type="button" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 underline underline-offset-4" onClick={() => setShowOriginal((v) => !v)}>
@@ -255,8 +295,10 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
       <div className="mt-3 space-y-2">
         {rows.map((r) => {
           const st = labStatus({ value: numOrNull(r.value), refLow: numOrNull(r.refLow), refHigh: numOrNull(r.refHigh) });
+          const doubt = needsCheck(r);
+          const gone = isMissing(r);
           return (
-            <div key={r.id} className="card p-3">
+            <div key={r.id} className={`card p-3 ${doubt ? "border-warn-300 bg-warn-50 ring-1 ring-warn-200" : ""}`}>
               <div className="flex items-center gap-2">
                 <input className="input flex-1 font-medium" value={r.name} onChange={(e) => update(r.id, { name: e.target.value })} aria-label="Exame" />
                 <StatusBadge status={st} />
@@ -265,19 +307,32 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
                 </button>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
-                <label><span className="label">Valor</span><input className="input" inputMode="decimal" value={r.value} onChange={(e) => update(r.id, { value: e.target.value })} placeholder={r.valueText ?? ""} /></label>
+                <label><span className="label">Valor</span><input className={`input ${gone ? "border-warn-500 bg-white" : ""}`} inputMode="decimal" value={r.value} onChange={(e) => update(r.id, { value: e.target.value, checked: true })} placeholder={gone ? "Digite o valor" : r.valueText ?? ""} aria-invalid={gone || undefined} /></label>
                 <label><span className="label">Unidade</span><input className="input" value={r.unit} onChange={(e) => update(r.id, { unit: e.target.value })} /></label>
                 <label><span className="label">Ref. mín.</span><input className="input" inputMode="decimal" value={r.refLow} onChange={(e) => update(r.id, { refLow: e.target.value })} /></label>
                 <label><span className="label">Ref. máx.</span><input className="input" inputMode="decimal" value={r.refHigh} onChange={(e) => update(r.id, { refHigh: e.target.value })} /></label>
               </div>
               {r.refText && <p className="mt-1.5 text-xs text-ink-500">No laudo: {r.refText}</p>}
+              {doubt && (
+                <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-warn-200 pt-2">
+                  <p className="flex flex-1 items-center gap-1.5 text-sm font-semibold text-warn-800">
+                    <AlertIcon width={16} className="shrink-0" />
+                    {gone ? "Não consegui ler este valor. Confira no original e preencha, ou remova a linha." : "Confira este valor no original."}
+                  </p>
+                  {!gone && (
+                    <button type="button" onClick={() => update(r.id, { checked: true })} className="btn-secondary min-h-11 px-3 text-sm">
+                      <CheckIcon width={16} /> Está certo
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
         <button
           type="button"
           className="btn-secondary w-full"
-          onClick={() => setRows((rs) => [...rs, { id: nextId.current++, name: "", analyteKey: "", value: "", valueText: null, unit: "", refLow: "", refHigh: "", refText: null }])}
+          onClick={() => setRows((rs) => [...rs, { id: nextId.current++, name: "", analyteKey: "", value: "", valueText: null, unit: "", refLow: "", refHigh: "", refText: null, confidence: null, checked: true }])}
         >
           + Adicionar resultado
         </button>
@@ -286,10 +341,14 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
       {error && <p className="mt-3 rounded-xl bg-danger-50 px-3 py-2 text-sm text-danger-700 ring-1 ring-danger-200">{error}</p>}
       <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] mt-4 flex gap-2 border-t border-ink-200 bg-paper py-3">
         <button type="button" className="btn-secondary flex-1" onClick={onCancel} disabled={pending}>Cancelar</button>
-        <button type="button" className="btn-primary flex-[2]" onClick={submit} disabled={pending || !rows.length || !date}>
-          {pending ? "Salvando…" : `Salvar ${rows.length} resultados`}
+        <button type="button" className="btn-primary flex-[2]" onClick={submit} disabled={pending || !rows.length || !date || missing > 0}>
+          {pending ? "Salvando…" : missing > 0 ? `Preencha ou remova ${missing === 1 ? "1 valor" : `${missing} valores`}` : `Salvar ${rows.length} resultados`}
         </button>
       </div>
     </div>
   );
 }
+
+const listNames = (names: string[]) =>
+  names.length <= 1 ? names.join("") : `${names.slice(0, -1).join(", ")} e ${names.at(-1)}`;
+const formatShort = (iso: string) => iso.split("-").reverse().join("/");

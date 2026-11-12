@@ -1,6 +1,6 @@
 import { ageFrom, formatDate, todayISO } from "./dates";
 import { generateJson, geminiConfigured } from "./gemini";
-import { analyteSeries, fmt, formatRef, wearableSnapshot } from "./health";
+import { analyteSeries, fmt, formatRef, hasBloodPressure, wearableSnapshot } from "./health";
 import type { ScopedData } from "./share";
 import type { DoctorSummary } from "./types";
 
@@ -36,7 +36,7 @@ export function buildClinicalContext(data: ScopedData): string {
     lines.push(
       "",
       "WEARABLES (média dos últimos 7 dias)",
-      `FC repouso ${w.restingHr} bpm; VFC ${w.hrvMs} ms; sono ${w.sleepHours} h; SpO2 mínima ${w.spo2Min}%; passos ${w.steps}/dia; PA ${w.systolic}/${w.diastolic} mmHg`,
+      `FC repouso ${w.restingHr} bpm; VFC ${w.hrvMs} ms; sono ${w.sleepHours} h; SpO2 mínima ${w.spo2Min}%; passos ${w.steps}/dia${hasBloodPressure(data.wearableDays) ? `; PA ${w.systolic}/${w.diastolic} mmHg` : "; sem medidor de pressão"}`,
     );
   }
 

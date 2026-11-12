@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { LabStatus } from "@/lib/health";
 import type { HealthAlert } from "@/lib/types";
-import { AlertIcon, ArrowDownIcon, ArrowUpIcon, CheckIcon, ChevronRight, MinusIcon, UrgentIcon } from "./icons";
+import { AlertIcon, ArrowDownIcon, ArrowUpIcon, CheckIcon, ChevronRight, InsightIcon, MinusIcon, UrgentIcon } from "./icons";
 
 /**
  * Status de um resultado, nos termos usados nos laudos.
@@ -42,6 +42,7 @@ export function SectionLink({ href, children }: { href: string; children: React.
 }
 
 export function AlertCard({ alert, compact, cta = true }: { alert: HealthAlert; compact?: boolean; cta?: boolean }) {
+  if (alert.kind === "cruzado") return <InsightCard alert={alert} compact={compact} cta={cta} />;
   const urgent = alert.severity === "procure_medico";
   const Icon = urgent ? UrgentIcon : AlertIcon;
   return (
@@ -79,6 +80,44 @@ export function AlertCard({ alert, compact, cta = true }: { alert: HealthAlert; 
     </article>
   );
 }
+
+/** Cartão "Juntando seus dados": dois fatos de fontes diferentes, lado a lado. */
+function InsightCard({ alert, compact, cta }: { alert: HealthAlert; compact?: boolean; cta: boolean }) {
+  return (
+    <article className="rounded-xl border border-l-4 border-brand-200 border-l-brand-600 bg-brand-50/60 p-4">
+      <p className="flex items-center gap-1.5 text-sm font-semibold text-brand-800">
+        <InsightIcon width={16} />
+        Juntando seus dados
+      </p>
+      <h3 className="mt-1 text-[17px] font-semibold leading-snug text-ink-900">{alert.title}</h3>
+      <p className="mt-1 text-[15px] text-ink-700">{alert.message}</p>
+      {!compact && (
+        <>
+          <p className="mt-3 border-t border-brand-100 pt-3 text-[15px] text-ink-900">
+            <span className="font-semibold">O que fazer: </span>
+            {alert.recommendation}
+          </p>
+          {alert.evidence.length > 0 && (
+            <details className="mt-1 text-sm text-ink-600">
+              <summary className="inline-flex min-h-11 items-center font-semibold text-brand-700">Ver de onde vêm os dados</summary>
+              <ul className="num list-disc space-y-0.5 pl-5">
+                {alert.evidence.map((e) => <li key={e}>{e}</li>)}
+              </ul>
+            </details>
+          )}
+          {cta && alert.links && alert.links.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {alert.links.map((l) => (
+                <Link key={l.href} href={l.href} className="btn-secondary min-h-11 px-3 text-sm">{l.label}</Link>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </article>
+  );
+}
+
 
 export function ListLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (

@@ -4,7 +4,7 @@ import { CHART, WearableChart } from "@/components/charts";
 import { WatchIcon } from "@/components/icons";
 import { AlertCard, Disclaimer, SectionTitle, Skeleton } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
-import { computeAlerts } from "@/lib/health";
+import { computeAlerts, hasBloodPressure } from "@/lib/health";
 import { simulateIrregularRhythm, useDb } from "@/lib/store";
 
 export default function WearablesPage() {
@@ -19,8 +19,21 @@ export default function WearablesPage() {
 }
 
 function Wearables({ db }: { db: NonNullable<ReturnType<typeof useDb>> }) {
-  const alerts = computeAlerts(db).filter((a) => a.kind !== "exames");
+  const alerts = computeAlerts(db).filter((a) => a.kind !== "exames" && a.kind !== "cruzado");
   const days = db.wearableDays;
+  if (!days.length)
+    return (
+      <div className="card mt-6 flex flex-col items-center px-6 py-10 text-center">
+        <WatchIcon width={40} className="text-ink-400" />
+        <p className="mt-3 text-lg font-semibold text-ink-900">Nenhum relógio ou anel conectado</p>
+        <p className="mt-1 max-w-sm text-[15px] text-ink-600">
+          Quando houver um dispositivo, batimento, sono, oxigenação e atividade aparecem aqui, junto dos exames. Até lá, o histórico
+          de exames, remédios e vacinas funciona normalmente.
+        </p>
+        <Disclaimer />
+      </div>
+    );
+  const bp = hasBloodPressure(days);
   const irregular = days.filter((d) => d.irregularRhythmEvents > 0).reverse();
 
   return (
@@ -43,7 +56,7 @@ function Wearables({ db }: { db: NonNullable<ReturnType<typeof useDb>> }) {
       <div className="space-y-3">
         {alerts.length ? alerts.map((a) => <AlertCard key={a.id} alert={a} />) : <p className="card text-sm text-ink-600">Nenhum alerta nos wearables.</p>}
       </div>
-      <button className="btn-secondary mt-3 w-full text-xs" onClick={() => simulateIrregularRhythm()}>
+      <button className="btn-secondary mt-3 w-full text-xs" onClick={() => { simulateIrregularRhythm(); }}>
         Demo: simular episódios de ritmo irregular
       </button>
 
@@ -67,16 +80,20 @@ function Wearables({ db }: { db: NonNullable<ReturnType<typeof useDb>> }) {
         <WearableChart days={days} unit="%" domain={[80, 100]} refs={[{ y: 90, label: "90%" }]} series={[{ key: "spo2Min", name: "SpO2 mínima", color: CHART.blue }]} />
       </div>
 
-      <SectionTitle>Pressão arterial</SectionTitle>
-      <div className="card px-2">
-        <WearableChart
-          days={days}
-          unit="mmHg"
-          domain={[60, 160]}
-          refs={[{ y: 130, label: "130", color: CHART.warn }, { y: 80, label: "80", color: CHART.warn }]}
-          series={[{ key: "systolic", name: "Sistólica", color: CHART.plum }, { key: "diastolic", name: "Diastólica", color: CHART.plum, dashed: true }]}
-        />
-      </div>
+      {bp && (
+        <>
+          <SectionTitle>Pressão arterial</SectionTitle>
+          <div className="card px-2">
+            <WearableChart
+              days={days}
+              unit="mmHg"
+              domain={[60, 160]}
+              refs={[{ y: 130, label: "130", color: CHART.warn }, { y: 80, label: "80", color: CHART.warn }]}
+              series={[{ key: "systolic", name: "Sistólica", color: CHART.plum }, { key: "diastolic", name: "Diastólica", color: CHART.plum, dashed: true }]}
+            />
+          </div>
+        </>
+      )}
 
       <SectionTitle>Sono e variabilidade cardíaca</SectionTitle>
       <div className="card space-y-4 px-2">

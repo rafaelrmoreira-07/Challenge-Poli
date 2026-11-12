@@ -4,8 +4,9 @@ import { useSyncExternalStore } from "react";
 import { analyteInfo, resolveAnalyteKey } from "./analytes";
 import { resetChat } from "./chat";
 import { addDays, isValidISODate, todayISO } from "./dates";
-import { createSeedDb, extendWearablesToToday } from "./seed";
-import { SCOPES, type Db, type DoctorSummary, type ExtractionSource, type Scope } from "./types";
+import { createPersonaDb, personaWearables } from "./personas";
+import { extendWearablesToToday } from "./seed";
+import { SCOPES, type Db, type DoctorSummary, type ExtractionSource, type PersonaId, type Scope } from "./types";
 
 /**
  * Armazenamento da versão web: tudo fica no navegador da pessoa.
@@ -29,9 +30,9 @@ function read(): Db {
     }
   }
   if (!db || db.version !== 1) {
-    db = createSeedDb();
+    db = createPersonaDb("carlos");
     write(db);
-  } else if (extendWearablesToToday(db)) {
+  } else if (extendWearablesToToday(db, new Date(), personaWearables(db.personaId))) {
     write(db);
   }
   return db;
@@ -195,8 +196,9 @@ export async function saveExam(input: SaveExamInput): Promise<{ error: string } 
   return { docId };
 }
 
-/** Demo: injeta episódios de ritmo irregular nos últimos dias. */
-export function simulateIrregularRhythm() {
+/** Demo: injeta episódios de ritmo irregular nos últimos dias. Devolve false se a persona não tem relógio. */
+export function simulateIrregularRhythm(): boolean {
+  if (!getDbSnapshot().wearableDays.length) return false;
   const today = todayISO();
   const plan: Record<string, number> = { [today]: 2, [addDays(today, -1)]: 1, [addDays(today, -3)]: 1 };
   update((db) => {
@@ -207,11 +209,15 @@ export function simulateIrregularRhythm() {
       }
     }
   });
+  return true;
 }
 
-export async function resetDemo() {
+/** Volta aos dados iniciais da persona atual (ou troca para outra persona). */
+export async function resetDemo(persona?: PersonaId) {
   update((db) => {
-    Object.assign(db, createSeedDb());
+    const id = persona ?? db.personaId ?? "carlos";
+    for (const k of Object.keys(db)) delete (db as unknown as Record<string, unknown>)[k];
+    Object.assign(db, createPersonaDb(id));
   });
   resetChat();
   try {

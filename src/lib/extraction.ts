@@ -3,7 +3,7 @@ import { isValidISODate } from "./dates";
 import { generateJson, geminiConfigured, GeminiUnavailableError } from "./gemini";
 import { asset } from "./paths";
 import { SAMPLE_EXTRACTIONS } from "./samples";
-import type { Extraction, ExtractedResult } from "./types";
+import type { Confidence, Extraction, ExtractedResult } from "./types";
 
 export const ACCEPTED_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
@@ -19,6 +19,7 @@ const SYSTEM = `Você é um extrator de laudos laboratoriais brasileiros. Leia o
 
 Regras:
 - Extraia só o que está escrito. Nunca invente valor, unidade ou faixa. Se não conseguir ler, deixe o campo nulo.
+- "confianca" diz o quanto você tem certeza do VALOR lido: "alta" (nítido), "media" (legível, mas com alguma dúvida: borrado, dígito parecido com outro, alinhamento confuso na tabela) ou "baixa" (adivinhação). Se o número estiver coberto por carimbo, rasgado ou ilegível, NÃO tente adivinhar: devolva "valor" nulo e "confianca" baixa. Prefira marcar dúvida a errar.
 - Números brasileiros: vírgula é decimal ("5,8" = 5.8); ponto costuma separar milhar ("7.500" = 7500; "250.000" = 250000).
 - "valor" é numérico. Resultados qualitativos ("Negativo", "Não reagente") vão em "valor_texto" com "valor" nulo.
 - Faixa de referência: use a do laudo. "Desejável: < 130" vira ref_max=130. "Superior a 40" vira ref_min=40. Se houver faixas por sexo ou idade, escolha a do paciente informado. Copie o texto original da faixa em "ref_texto".
@@ -49,8 +50,9 @@ const SCHEMA = {
           ref_min: { type: "NUMBER", nullable: true },
           ref_max: { type: "NUMBER", nullable: true },
           ref_texto: { type: "STRING", nullable: true },
+          confianca: { type: "STRING", enum: ["alta", "media", "baixa"] },
         },
-        required: ["nome", "chave", "unidade"],
+        required: ["nome", "chave", "unidade", "confianca"],
       },
     },
   },
@@ -71,11 +73,16 @@ interface RawExtraction {
     ref_min?: number | null;
     ref_max?: number | null;
     ref_texto?: string | null;
+    confianca?: string | null;
   }[];
 }
 
 const str = (v: unknown, max = 200) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+const conf = (v: unknown): Confidence | null => {
+  const s = typeof v === "string" ? v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim() : "";
+  return s === "alta" || s === "media" || s === "baixa" ? s : null;
+};
 
 function normalizeExtraction(raw: RawExtraction): Omit<Extraction, "source" | "model"> {
   const results: ExtractedResult[] = (raw.resultados ?? []).slice(0, 80).flatMap((r) => {
@@ -91,6 +98,8 @@ function normalizeExtraction(raw: RawExtraction): Omit<Extraction, "source" | "m
       refLow: num(r.ref_min),
       refHigh: num(r.ref_max),
       refText: str(r.ref_texto, 160),
+      // Valor ausente sem texto qualitativo = a IA não conseguiu ler: sempre pede conferência.
+      confidence: num(r.valor) == null && !str(r.valor_texto, 80) ? "baixa" : conf(r.confianca),
     }];
   });
   return {
@@ -151,7 +160,7 @@ export async function extractLabReport(file: File, patient: { sex: "F" | "M"; ag
         schema: SCHEMA,
         timeoutMs: 40_000,
         parts: [
-          { inlineData: { mimeType: file.type, data: toBase64(buf) } },
+          { inlineData: { mimeType: fileType(file), data: toBase64(buf) } },
           { text: `Paciente: sexo ${patient.sex === "F" ? "feminino" : "masculino"}, ${patient.age} anos. Extraia os resultados deste laudo.` },
         ],
       });

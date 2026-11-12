@@ -18,6 +18,7 @@ import {
   HeartbeatIcon as PhHeartbeat,
   HeartIcon as PhHeart,
   HouseIcon as PhHouse,
+  IntersectIcon as PhIntersect,
   MinusIcon as PhMinus,
   MoonIcon as PhMoon,
   PaperclipIcon as PhPaperclip,
@@ -77,6 +78,8 @@ export const MoonIcon = wrap(PhMoon);
 export const DropIcon = wrap(PhDrop);
 export const GaugeIcon = wrap(PhGauge);
 export const WatchIcon = wrap(PhWatch);
+/** Dois dados de fontes diferentes conectados ("Juntando seus dados"). */
+export const InsightIcon = wrap(PhIntersect);
 
 // Envio de laudo
 export const CameraIcon = wrap(PhCamera);

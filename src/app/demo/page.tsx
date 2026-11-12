@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import { LogoMark } from "@/components/icons";
 import { absoluteUrl, asset } from "@/lib/paths";
+import { PERSONAS } from "@/lib/personas";
 import { shareState } from "@/lib/share";
 import { resetDemo, simulateIrregularRhythm, useDb } from "@/lib/store";
 
@@ -39,7 +40,27 @@ export default function DemoPage() {
           <span className="text-brand-200">· paciente e médico, ao vivo</span>
         </div>
         <div className="flex items-center gap-2 text-xs">
-          <button className="rounded-lg bg-brand-800 px-3 py-2 font-semibold hover:bg-brand-700" onClick={() => simulateIrregularRhythm()}>
+          <label className="flex items-center gap-2">
+            <span className="text-brand-200">Persona</span>
+            <select
+              className="rounded-lg bg-brand-800 px-2 py-2 font-semibold text-white"
+              value={db?.personaId ?? "carlos"}
+              onChange={async (e) => {
+                const id = e.target.value as (typeof PERSONAS)[number]["id"];
+                if (!confirm(`Trocar para ${PERSONAS.find((x) => x.id === id)?.name}? Os dados da demonstração voltam ao início.`)) return;
+                await resetDemo(id);
+                setReloadKey((k) => k + 1);
+              }}
+            >
+              {PERSONAS.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+            </select>
+          </label>
+          <button
+            className="rounded-lg bg-brand-800 px-3 py-2 font-semibold hover:bg-brand-700 disabled:opacity-40"
+            disabled={!db?.wearableDays.length}
+            title={db?.wearableDays.length ? undefined : "Esta persona não usa relógio"}
+            onClick={() => simulateIrregularRhythm()}
+          >
             Simular ritmo irregular
           </button>
           <button

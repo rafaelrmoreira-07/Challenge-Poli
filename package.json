@@ -8,6 +8,7 @@
     "start": "npx --yes serve@14 out -l 3000",
     "lint": "eslint",
     "exemplos": "node scripts/gerar-exemplos.mjs",
+    "exemplos:dificil": "node scripts/gerar-exemplo-dificil.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "icones": "node scripts/gerar-icones.mjs",
     "build:pages": "NEXT_PUBLIC_BASE_PATH=/Challenge-Poli next build"

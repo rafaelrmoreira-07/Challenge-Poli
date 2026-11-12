@@ -9,7 +9,7 @@ import { AlertCard, StatusBadge } from "@/components/ui";
 import { ageFrom, formatDate, formatDateTime } from "@/lib/dates";
 import { summaryForShare } from "@/lib/doctor";
 import { geminiConfigured } from "@/lib/gemini";
-import { analyteSeries, fmt, formatRef, medicationMarkers, wearableSnapshot } from "@/lib/health";
+import { analyteSeries, fmt, formatRef, hasBloodPressure, medicationMarkers, wearableSnapshot } from "@/lib/health";
 import { decodeSharePayload, scopedData, shareState, type ScopedData } from "@/lib/share";
 import { logAccess, openDocumentFile, useDb } from "@/lib/store";
 import { fallbackSummary, generateDoctorSummary } from "@/lib/summary";
@@ -116,6 +116,7 @@ function Dashboard({
   const docs = new Map(data.documents.map((d) => [d.id, d]));
   const timeline = buildTimeline(data).filter((e) => e.kind === "exame" || e.kind === "consulta");
   const w = data.wearableDays.length ? wearableSnapshot(data.wearableDays) : null;
+  const bp = hasBloodPressure(data.wearableDays);
   const cacheKey = `${data.labResults.length}-${data.alerts.map((a) => a.id).join(",")}-${data.wearableDays.at(-1)?.irregularRhythmEvents ?? 0}`;
 
   return (
@@ -193,7 +194,7 @@ function Dashboard({
             <section>
               <DocH2>Wearables</DocH2>
               <p className="num -mt-1 mb-3 text-sm text-ink-600">
-                Médias de 7 dias: FC repouso <strong>{w.restingHr} bpm</strong> · sono <strong>{fmt(w.sleepHours)} h</strong> · SpO2 mín. <strong>{w.spo2Min}%</strong> · PA <strong>{w.systolic}/{w.diastolic}</strong>
+                Médias de 7 dias: FC repouso <strong>{w.restingHr} bpm</strong> · sono <strong>{fmt(w.sleepHours)} h</strong> · SpO2 mín. <strong>{w.spo2Min}%</strong>{bp && <> · PA <strong>{w.systolic}/{w.diastolic}</strong></>}
               </p>
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="card px-2">
@@ -208,7 +209,7 @@ function Dashboard({
                   <p className="px-2 pt-1 text-[15px] font-semibold">SpO2 mínima noturna</p>
                   <WearableChart days={data.wearableDays} unit="%" domain={[80, 100]} height={150} refs={[{ y: 90, label: "90%" }]} series={[{ key: "spo2Min", name: "SpO2", color: CHART.blue }]} />
                 </div>
-                <div className="card px-2">
+                {bp && <div className="card px-2">
                   <p className="px-2 pt-1 text-[15px] font-semibold">Pressão arterial (medidor domiciliar)</p>
                   <WearableChart
                     days={data.wearableDays}
@@ -218,7 +219,7 @@ function Dashboard({
                     refs={[{ y: 130, label: "130", color: CHART.warn }, { y: 80, label: "80", color: CHART.warn }]}
                     series={[{ key: "systolic", name: "Sistólica", color: CHART.plum }, { key: "diastolic", name: "Diastólica", color: CHART.plum, dashed: true }]}
                   />
-                </div>
+                </div>}
               </div>
             </section>
           )}

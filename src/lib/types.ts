@@ -130,8 +130,12 @@ export interface Share {
   summaryCache?: { hash: string; summary: DoctorSummary };
 }
 
+/** Personas de demonstração (todas sintéticas). Ausente = Carlos, o paciente original. */
+export type PersonaId = "carlos" | "juliana" | "lucia" | "pedro";
+
 export interface Db {
   version: 1;
+  personaId?: PersonaId;
   createdAt: string;
   patient: Patient;
   documents: SourceDocument[];
@@ -148,13 +152,16 @@ export type AlertSeverity = "atencao" | "procure_medico";
 
 export interface HealthAlert {
   id: string;
-  kind: "ritmo_irregular" | "apneia" | "pressao" | "fc_repouso" | "exames";
+  /** "cruzado": junta um sinal dos wearables com um exame ("Juntando seus dados"). */
+  kind: "ritmo_irregular" | "apneia" | "pressao" | "fc_repouso" | "exames" | "cruzado";
   severity: AlertSeverity;
   title: string;
   message: string;
   recommendation: string;
   specialty?: string;
   evidence: string[];
+  /** Atalhos para as telas de origem dos dados (usados no app do paciente). */
+  links?: { label: string; href: string }[];
 }
 
 /** Resultado da extração por IA, antes da revisão do usuário. */
@@ -167,7 +174,11 @@ export interface ExtractedResult {
   refLow: number | null;
   refHigh: number | null;
   refText: string | null;
+  /** Quão segura a IA está da leitura deste valor. null = não informado (ex.: leitura antiga). */
+  confidence: Confidence | null;
 }
+
+export type Confidence = "alta" | "media" | "baixa";
 
 export interface Extraction {
   lab: string | null;
