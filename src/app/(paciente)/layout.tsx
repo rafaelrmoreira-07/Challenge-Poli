@@ -3,6 +3,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { ChatButton } from "@/components/ChatButton";
 import { ChatNotifier } from "@/components/ChatNotifier";
 import { GearIcon, LogoMark } from "@/components/icons";
+import { OnboardingGate } from "@/components/OnboardingGate";
 
 export default function PacienteLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -29,6 +30,7 @@ export default function PacienteLayout({ children }: { children: React.ReactNode
       <ChatNotifier />
       <main className="flex-1 px-4 pb-32 pt-5">{children}</main>
       <BottomNav />
+      <OnboardingGate />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Newsreader, Source_Sans_3 } from "next/font/google";
+import { PersonaFromUrl } from "@/components/PersonaFromUrl";
 import "./globals.css";
 
 /** Títulos e números de destaque: serifa de leitura longa, com cara de prontuário. */
@@ -22,7 +23,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="pt-BR" className={`${display.variable} ${body.variable} h-full antialiased`}>
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        <PersonaFromUrl />
+        {children}
+      </body>
     </html>
   );
 }

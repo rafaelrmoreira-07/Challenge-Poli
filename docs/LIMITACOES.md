@@ -14,6 +14,7 @@ O Elo Saúde é um site estático (GitHub Pages, sem servidor). Isso deixa o pro
 | Wearables são simulados | Ler Apple Health ou Health Connect exige app nativo | Dizer que o modelo de dados (agregados diários) já está pronto para isso |
 | "WhatsApp" é um chat dentro do app | WhatsApp de verdade exige Cloud API da Meta e servidor | Slide de próximos passos |
 | Remédios e vacinas não podem ser adicionados pela tela | Ainda não existe formulário; vêm dos dados iniciais | Mostrar os já carregados; se der tempo, adicionar um formulário simples |
+| Até 5 laudos por envio | A chave gratuita da Gemini aceita poucas leituras por minuto | A IA lê um de cada vez; se um falhar, só ele pede "Tentar ler de novo" |
 
 ## Em detalhe
 
@@ -51,12 +52,22 @@ Mesmo com a revisão por confiança, a IA pode ler um número errado com "alta" 
 
 O cartão "Juntando seus dados" vem de três regras escritas à mão (batimentos em repouso + tireoide ou hemoglobina; ritmo irregular + TSH ou potássio; sinais de apneia + pressão acima da meta). Elas foram escolhidas porque funcionam sempre, sem depender da IA, e nunca dizem o que a pessoa tem: só mostram os dois fatos e orientam levar ao médico. Não descobrem relações novas. As regras são de demonstração e precisam de revisão clínica (estudantes de medicina e residentes podem ajudar a validar).
 
-### 6. Personas
+### 6. Começar do zero e personas
 
-O modo apresentação e os "Controles da demonstração" (no fim da tela inicial) trocam entre quatro personas sintéticas:
+Dois links prontos para a apresentação (troque o endereço base se usar outro site):
+
+- **App vazio, com guia de boas-vindas:** `…/Challenge-Poli/?persona=nova`
+- **Histórico completo do Carlos:** `…/Challenge-Poli/?persona=carlos`
+
+Abrir um desses links **apaga os dados deste navegador** e começa a persona do início. Depois de aberto, o parâmetro sai do endereço: recarregar a página não apaga o progresso. Tudo o que a pessoa envia fica salvo no navegador, mesmo fechando a aba (vale o limite do item 2: não aparece em outro aparelho).
+
+Roteiro sugerido: abrir o app vazio ("é assim que a Ana encontra o Elo no primeiro dia"), passar pelo guia, enviar um laudo ao vivo e então abrir o link do Carlos ("agora imagine a pasta inteira de dez anos").
+
+O modo apresentação e os "Controles da demonstração" (no fim da tela inicial) também trocam de persona:
 
 | Persona | Para quê |
 |---|---|
+| Começar do zero | Primeiro uso: guia de boas-vindas, cadastro e telas vazias |
 | Carlos Mendes, 58 | A demo principal (dados originais do protótipo) |
 | Juliana Rocha, 34 | Insight cruzado: batimentos subindo no anel + TSH baixo em março |
 | Lúcia Ferreira, 78 | Sem relógio nenhum: todas as telas precisam funcionar vazias |

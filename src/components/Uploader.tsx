@@ -12,10 +12,7 @@ import type { Confidence, Extraction, ExtractedResult } from "@/lib/types";
 import { AlertIcon, CameraIcon, CheckIcon, FileIcon, HistoryIcon, ScanIcon } from "./icons";
 import { SectionTitle, StatusBadge } from "./ui";
 
-type Phase =
-  | { step: "idle"; error?: string; needsKey?: boolean }
-  | { step: "reading"; filename: string }
-  | { step: "review"; file: File; extraction: Extraction | null; warning?: string };
+type Phase = { step: "review"; file: File; extraction: Extraction | null; warning?: string };
 
 const SAMPLES = [
   { file: "laudo-vida-2026-11.pdf", type: "application/pdf", title: "PDF do laboratório", desc: "Laudo de nov/2026 com 14 exames" },
@@ -37,61 +34,164 @@ const numOrNull = (raw: string) => {
 };
 const toInput = (n: number | null) => (n == null ? "" : n.toLocaleString("pt-BR", { maximumFractionDigits: 4, useGrouping: false }));
 
+/** Máximo de laudos por envio: a IA lê um de cada vez, para não estourar o limite da chave gratuita. */
+export const MAX_BATCH = 5;
+/** Pausa entre uma leitura e a próxima (limite de pedidos por minuto da Gemini). */
+const GAP_MS = 1500;
+
+interface Item {
+  file: File;
+  preview: string;
+  status: "lendo" | "pronto";
+  extraction: Extraction | null;
+  warning?: string;
+}
+
 export function Uploader() {
-  const [phase, setPhase] = useState<Phase>({ step: "idle" });
-  const [preview, setPreview] = useState<string | null>(null);
+  const router = useRouter();
+  const [items, setItems] = useState<Item[]>([]);
+  const [current, setCurrent] = useState(0);
+  const [saved, setSaved] = useState(0);
+  const [idle, setIdle] = useState<{ error?: string; needsKey?: boolean; notice?: string }>({});
   const fileRef = useRef<HTMLInputElement>(null);
   const camRef = useRef<HTMLInputElement>(null);
+  const batch = useRef(0); // invalida leituras de um envio cancelado
+  const previews = useRef<string[]>([]);
 
-  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+  useEffect(() => () => previews.current.forEach((u) => URL.revokeObjectURL(u)), []);
 
-  async function upload(picked: File) {
-    const type = fileType(picked);
-    if (!ACCEPTED_TYPES.includes(type)) return setPhase({ step: "idle", error: "Formato não aceito. Envie PDF, JPG, PNG, WEBP ou HEIC." });
-    if (picked.size > MAX_UPLOAD_BYTES) return setPhase({ step: "idle", error: "Arquivo maior que 10 MB." });
-    const file = picked.type ? picked : new File([picked], picked.name, { type });
+  const patch = (i: number, p: Partial<Item>) => setItems((xs) => xs.map((x, j) => (j === i ? { ...x, ...p } : x)));
 
-    setPreview(URL.createObjectURL(file));
-    setPhase({ step: "reading", filename: file.name });
+  async function read(file: File, i: number, id: number): Promise<"ok" | "nokey"> {
+    patch(i, { status: "lendo", extraction: null, warning: undefined });
     const { patient } = getDbSnapshot();
     try {
       const extraction = await extractLabReport(file, { sex: patient.sex, age: ageFrom(patient.birthDate) });
-      setPhase({ step: "review", file, extraction });
+      if (batch.current === id) patch(i, { status: "pronto", extraction });
+      return "ok";
     } catch (err) {
-      if (err instanceof NoKeyError) {
-        setPreview(null);
-        setPhase({ step: "idle", needsKey: true, error: "Para ler este laudo com IA, informe uma chave da Gemini em Configurações. Os dois laudos de exemplo abaixo funcionam sem chave." });
-        return;
+      if (err instanceof NoKeyError) return "nokey";
+      if (batch.current === id) patch(i, { status: "pronto", extraction: null, warning: "A IA não conseguiu ler este laudo agora. Tente de novo ou preencha os resultados à mão." });
+      return "ok";
+    }
+  }
+
+  function reset(state: typeof idle = {}) {
+    batch.current++;
+    previews.current.forEach((u) => URL.revokeObjectURL(u));
+    previews.current = [];
+    setItems([]);
+    setCurrent(0);
+    setSaved(0);
+    setIdle(state);
+  }
+
+  async function start(picked: File[]) {
+    const notices: string[] = [];
+    let files = picked;
+    if (files.length > MAX_BATCH) {
+      notices.push(`Você escolheu ${files.length} arquivos. Vou ler os ${MAX_BATCH} primeiros; envie os outros na próxima rodada.`);
+      files = files.slice(0, MAX_BATCH);
+    }
+    const ok: File[] = [];
+    for (const f of files) {
+      const type = fileType(f);
+      if (!ACCEPTED_TYPES.includes(type)) notices.push(`${f.name}: formato não aceito (envie PDF, JPG, PNG, WEBP ou HEIC).`);
+      else if (f.size > MAX_UPLOAD_BYTES) notices.push(`${f.name}: maior que 10 MB.`);
+      else ok.push(f.type ? f : new File([f], f.name, { type }));
+    }
+    if (!ok.length) return setIdle({ error: notices.join(" ") || "Nenhum arquivo válido." });
+
+    const id = ++batch.current;
+    previews.current = ok.map((f) => URL.createObjectURL(f));
+    setItems(ok.map((file, i) => ({ file, preview: previews.current[i], status: "lendo", extraction: null })));
+    setCurrent(0);
+    setSaved(0);
+    setIdle(notices.length ? { notice: notices.join(" ") } : {});
+
+    // Um de cada vez: a revisão do primeiro já abre enquanto os outros são lidos.
+    for (let i = 0; i < ok.length; i++) {
+      if (batch.current !== id) return;
+      if (i > 0) await new Promise((r) => setTimeout(r, GAP_MS));
+      if ((await read(ok[i], i, id)) === "nokey") {
+        return reset({ needsKey: true, error: "Para ler laudos com IA, informe uma chave da Gemini em Configurações. Os laudos de exemplo abaixo funcionam sem chave." });
       }
-      setPhase({ step: "review", file, extraction: null, warning: "A IA não conseguiu ler o laudo agora. Tente de novo ou preencha os resultados à mão." });
     }
   }
 
   async function sendSample(s: (typeof SAMPLES)[number]) {
     const res = await fetch(asset(`/exemplos/${s.file}`));
     const blob = await res.blob();
-    await upload(new File([blob], s.file, { type: s.type }));
+    await start([new File([blob], s.file, { type: s.type })]);
   }
 
   const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
+    const fs = Array.from(e.target.files ?? []);
     e.target.value = "";
-    if (f) upload(f);
+    if (fs.length) start(fs);
   };
 
-  if (phase.step === "reading") return <Reading filename={phase.filename} preview={preview} />;
-  if (phase.step === "review")
-    return <Review phase={phase} preview={preview} onCancel={() => { setPhase({ step: "idle" }); setPreview(null); }} />;
+  function next(docId: string | null) {
+    const done = saved + (docId ? 1 : 0);
+    setSaved(done);
+    if (current + 1 < items.length) return setCurrent(current + 1);
+    const total = items.length;
+    reset();
+    if (docId) router.push(`/exames/?novo=${docId}`);
+    else if (done > 0) router.push("/exames");
+    else if (total > 1) setIdle({ notice: "Nenhum laudo foi salvo." });
+  }
+
+  if (items.length) {
+    const item = items[current];
+    const multi = items.length > 1;
+    const header = multi && (
+      <div className="mb-3 flex items-center gap-2" aria-live="polite">
+        <p className="text-sm font-semibold text-ink-700">
+          Laudo {current + 1} de {items.length}
+          {saved > 0 && <span className="font-normal text-ink-500"> · {saved} salvo{saved > 1 ? "s" : ""}</span>}
+        </p>
+        <div className="flex flex-1 justify-end gap-1" aria-hidden>
+          {items.map((x, j) => (
+            <span key={j} className={`h-1.5 w-6 rounded-full ${j < current ? "bg-brand-500" : j === current ? "bg-brand-300" : x.status === "pronto" ? "bg-ink-300" : "bg-ink-200"}`} />
+          ))}
+        </div>
+      </div>
+    );
+    return (
+      <div>
+        {idle.notice && <p className="mb-3 rounded-xl bg-warn-50 px-3 py-2 text-sm text-warn-900 ring-1 ring-warn-300">{idle.notice}</p>}
+        {header}
+        {item.status === "lendo" ? (
+          <>
+            <Reading filename={item.file.name} preview={item.preview} />
+            <button type="button" className="btn-secondary mt-3 w-full" onClick={() => reset()}>Cancelar envio</button>
+          </>
+        ) : (
+          <Review
+            key={current}
+            phase={{ step: "review", file: item.file, extraction: item.extraction, warning: item.warning }}
+            preview={item.preview}
+            cancelLabel={multi ? "Pular este" : "Cancelar"}
+            onCancel={() => (multi ? next(null) : reset())}
+            onSaved={(docId) => next(docId)}
+            onRetry={item.extraction ? undefined : () => read(item.file, current, batch.current)}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div>
-      {phase.error && (
+      {idle.error && (
         <p className="mb-3 rounded-xl bg-danger-50 px-3 py-2 text-sm text-danger-700 ring-1 ring-danger-200">
-          {phase.error}
-          {phase.needsKey && <> <Link href="/configuracoes" className="font-semibold underline">Abrir Configurações</Link></>}
+          {idle.error}
+          {idle.needsKey && <> <Link href="/configuracoes" className="font-semibold underline">Abrir Configurações</Link></>}
         </p>
       )}
-      <input ref={fileRef} type="file" accept="application/pdf,image/*" className="hidden" onChange={onPick} />
+      {idle.notice && <p className="mb-3 rounded-xl bg-warn-50 px-3 py-2 text-sm text-warn-900 ring-1 ring-warn-300">{idle.notice}</p>}
+      <input ref={fileRef} type="file" accept="application/pdf,image/*" multiple className="hidden" onChange={onPick} />
       <input ref={camRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onPick} />
       <div className="grid grid-cols-2 gap-3">
         <button type="button" onClick={() => camRef.current?.click()} className="card flex flex-col items-center gap-2 py-6 transition-colors hover:border-brand-300 hover:bg-brand-50/40">
@@ -101,8 +201,8 @@ export function Uploader() {
         </button>
         <button type="button" onClick={() => fileRef.current?.click()} className="card flex flex-col items-center gap-2 py-6 transition-colors hover:border-brand-300 hover:bg-brand-50/40">
           <FileIcon className="h-8 w-8 text-brand-700" />
-          <span className="text-[15px] font-semibold">Escolher arquivo</span>
-          <span className="text-sm text-ink-500">PDF ou imagem, até 10 MB</span>
+          <span className="text-[15px] font-semibold">Escolher arquivos</span>
+          <span className="text-sm text-ink-500">Até {MAX_BATCH} por vez, PDF ou imagem</span>
         </button>
       </div>
 
@@ -184,8 +284,21 @@ const toRow = (r: ExtractedResult, id: number): Row => ({
   checked: false,
 });
 
-function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "review" }>; preview: string | null; onCancel: () => void }) {
-  const router = useRouter();
+function Review({
+  phase,
+  preview,
+  onCancel,
+  onSaved,
+  onRetry,
+  cancelLabel = "Cancelar",
+}: {
+  phase: Extract<Phase, { step: "review" }>;
+  preview: string | null;
+  onCancel: () => void;
+  onSaved: (docId: string) => void;
+  onRetry?: () => void;
+  cancelLabel?: string;
+}) {
   const ex = phase.extraction;
   const [lab, setLab] = useState(ex?.lab ?? "");
   const [date, setDate] = useState(ex?.examDate ?? "");
@@ -222,7 +335,7 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
     start(async () => {
       const res = await saveExam(input);
       if ("error" in res) setError(res.error);
-      else router.push(`/exames/?novo=${res.docId}`);
+      else onSaved(res.docId);
     });
   }
 
@@ -233,7 +346,12 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
       <div className={`mb-3 rounded-xl px-3 py-2 text-sm ring-1 ${ex?.source === "gemini" ? "bg-brand-50 text-brand-900 ring-brand-200" : "bg-warn-50 text-warn-900 ring-warn-200"}`}>
         {ex?.source === "gemini" && <>A IA leu <strong>{rows.length} resultados</strong> ({ex.model}). Confira e corrija o que for preciso antes de salvar.</>}
         {ex?.source === "simulado" && <>Leitura pré-gravada deste laudo de exemplo (IA desligada ou indisponível). Com uma chave da Gemini em Configurações, a leitura é feita ao vivo.</>}
-        {!ex && <>{phase.warning ?? "Não foi possível ler o laudo."} Você pode adicionar os resultados manualmente.</>}
+        {!ex && (
+          <>
+            {phase.warning ?? "Não foi possível ler o laudo."} Você pode adicionar os resultados manualmente.
+            {onRetry && <button type="button" onClick={onRetry} className="ml-1 font-semibold underline underline-offset-2">Tentar ler de novo</button>}
+          </>
+        )}
       </div>
       {ex?.patientName && <p className="mb-2 text-xs text-ink-500">Nome no laudo: {ex.patientName}</p>}
       {ex?.notes && <p className="mb-2 text-xs text-ink-500">Observação da IA: {ex.notes}</p>}
@@ -340,7 +458,7 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
 
       {error && <p className="mt-3 rounded-xl bg-danger-50 px-3 py-2 text-sm text-danger-700 ring-1 ring-danger-200">{error}</p>}
       <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] mt-4 flex gap-2 border-t border-ink-200 bg-paper py-3">
-        <button type="button" className="btn-secondary flex-1" onClick={onCancel} disabled={pending}>Cancelar</button>
+        <button type="button" className="btn-secondary flex-1" onClick={onCancel} disabled={pending}>{cancelLabel}</button>
         <button type="button" className="btn-primary flex-[2]" onClick={submit} disabled={pending || !rows.length || !date || missing > 0}>
           {pending ? "Salvando…" : missing > 0 ? `Preencha ou remova ${missing === 1 ? "1 valor" : `${missing} valores`}` : `Salvar ${rows.length} resultados`}
         </button>

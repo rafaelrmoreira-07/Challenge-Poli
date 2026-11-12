@@ -17,7 +17,7 @@ export function ChatNotifier() {
   const [toast, setToast] = useState<{ alert: HealthAlert; more: number } | null>(null);
 
   useEffect(() => {
-    if (!db) return;
+    if (!db || !db.patient.name.trim()) return; // ainda no guia de boas-vindas
     const fresh = syncAlerts(db.patient.name.split(" ")[0], computeAlerts(db));
     if (fresh.length) queueMicrotask(() => setToast({ alert: fresh[0], more: fresh.length - 1 }));
   }, [db]);

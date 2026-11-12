@@ -130,8 +130,8 @@ export interface Share {
   summaryCache?: { hash: string; summary: DoctorSummary };
 }
 
-/** Personas de demonstração (todas sintéticas). Ausente = Carlos, o paciente original. */
-export type PersonaId = "carlos" | "juliana" | "lucia" | "pedro";
+/** Personas de demonstração (todas sintéticas). Ausente = Carlos, o paciente original. "nova" = começar do zero. */
+export type PersonaId = "nova" | "carlos" | "juliana" | "lucia" | "pedro";
 
 export interface Db {
   version: 1;

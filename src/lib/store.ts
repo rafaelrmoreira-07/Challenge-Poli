@@ -212,6 +212,13 @@ export function simulateIrregularRhythm(): boolean {
   return true;
 }
 
+/** Cadastro feito no guia de boas-vindas (perfil "Começar do zero"). */
+export function saveProfile(profile: { name: string; birthDate: string; sex: "F" | "M"; allergies: string[] }) {
+  update((db) => {
+    db.patient = { ...db.patient, ...profile };
+  });
+}
+
 /** Volta aos dados iniciais da persona atual (ou troca para outra persona). */
 export async function resetDemo(persona?: PersonaId) {
   update((db) => {
