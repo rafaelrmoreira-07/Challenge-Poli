@@ -37,6 +37,7 @@ import {
   WarningIcon as PhWarning,
   WarningOctagonIcon as PhWarningOctagon,
   WatchIcon as PhWatch,
+  CircleNotchIcon as PhRing,
   XIcon as PhX,
 } from "@phosphor-icons/react/ssr";
 import type { Icon as PhIcon, IconWeight } from "@phosphor-icons/react/lib";
@@ -81,6 +82,7 @@ export const MoonIcon = wrap(PhMoon);
 export const DropIcon = wrap(PhDrop);
 export const GaugeIcon = wrap(PhGauge);
 export const WatchIcon = wrap(PhWatch);
+export const RingIcon = wrap(PhRing);
 
 // Envio de laudo
 export const CameraIcon = wrap(PhCamera);

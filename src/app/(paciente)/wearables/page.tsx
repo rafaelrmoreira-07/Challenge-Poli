@@ -2,7 +2,10 @@
 
 import NumberFlow from "@number-flow/react";
 import { CHART, WearableChart } from "@/components/charts";
-import { WatchIcon } from "@/components/icons";
+import { GaugeIcon, RingIcon, WatchIcon } from "@/components/icons";
+
+/** Um ícone por tipo de aparelho: relógio, anel e medidor de pressão (o mesmo manômetro do cartão de pressão na tela Hoje). */
+const DEVICE_ICON = { relogio: WatchIcon, anel: RingIcon, medidor_pressao: GaugeIcon } as const;
 import { AlertCard, Disclaimer, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
 import { computeAlerts, fmt, wearableSnapshot } from "@/lib/health";
@@ -26,16 +29,19 @@ function Wearables({ db }: { db: NonNullable<ReturnType<typeof useDb>> }) {
 
   return (
     <div>
-      <ul className="flex gap-2 overflow-x-auto pb-1" aria-label="Aparelhos conectados">
-        {db.devices.map((d) => (
+      <ul className="flex flex-wrap gap-2" aria-label="Aparelhos conectados">
+        {db.devices.map((d) => {
+          const Icon = DEVICE_ICON[d.kind] ?? WatchIcon;
+          return (
           <li key={d.id} className="flex shrink-0 items-center gap-2.5 rounded-full bg-surface py-2 pl-2 pr-4">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white"><WatchIcon width={16} /></span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white"><Icon width={16} /></span>
             <span>
               <span className="block text-sm font-medium leading-tight">{d.name.replace(" (simulado)", "")}</span>
               <span className="flex items-center gap-1 text-xs text-ok"><span className="h-1.5 w-1.5 rounded-full bg-ok" />Sincronizado</span>
             </span>
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       {alerts.length > 0 && (

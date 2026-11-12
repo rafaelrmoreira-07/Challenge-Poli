@@ -31,6 +31,10 @@ Modo apresentação (para projetar): https://suzetemirandasilva5601-cpu.github.i
 
 **Para a banca testar:** o QR code abaixo do celular no modo apresentação abre o app no celular de quem ler. A pessoa pode navegar, enviar os laudos de exemplo e criar um acesso para médico. No celular dela a IA fica desligada, então os exemplos usam a leitura pré-gravada.
 
+## Material extra
+
+Para perguntas sobre como o projeto se liga ao negócio da Rivio, veja [APENDICES.md](APENDICES.md): pasta de pré-internação, exames que não precisam ser repetidos, pós-alta, FHIR e modelo pago por resultado.
+
 ## Plano B
 
 - **A IA demorou ou falhou:** o app tenta outro modelo sozinho. Para os laudos de exemplo existe a leitura pré-gravada, e a tela avisa: diga isso em voz alta, sem esconder.
