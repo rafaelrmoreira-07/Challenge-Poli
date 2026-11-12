@@ -33,7 +33,7 @@ npm run dev                 # http://localhost:3000
 
 Build estático: `npm run build` gera `out/`, e `npm start` serve essa pasta. Para o GitHub Pages use `npm run build:pages` (prefixo `/Challenge-Poli`).
 
-Outros comandos: `npm run lint`, `npm run typecheck`, `npm run exemplos` (regera os laudos fictícios), `npm run icones`.
+Outros comandos: `npm run lint`, `npm run typecheck`, `npm run exemplos` (regera os laudos fictícios), `npm run exemplos:dificil` (regera o laudo com carimbo usado para mostrar a revisão por confiança), `npm run icones`.
 
 ## Publicar no GitHub Pages
 
@@ -49,3 +49,4 @@ npm run build:pages
 - [CONTRIBUTING.md](CONTRIBUTING.md): como clonar, estrutura das pastas, fluxo de branches e regras do grupo.
 - [docs/ARQUITETURA.md](docs/ARQUITETURA.md): arquitetura, regras de alerta, privacidade e o que falta para produção.
 - [docs/PITCH.md](docs/PITCH.md): roteiro da apresentação de 10 minutos com a demo ao vivo.
+- [docs/LIMITACOES.md](docs/LIMITACOES.md): o que a arquitetura sem servidor não permite, como contornar na demo, e as personas de teste.
