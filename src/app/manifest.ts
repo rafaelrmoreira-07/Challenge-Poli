@@ -9,14 +9,14 @@ export default function manifest(): MetadataRoute.Manifest {
     id: `${base}/`,
     name: "Elo Saúde · seu histórico de saúde",
     short_name: "Elo Saúde",
-    description: "Exames, consultas, remédios, vacinas e wearables organizados por IA, para você e para o seu médico.",
+    description: "Exames, consultas, remédios, vacinas e medições do relógio organizados para você e para o seu médico.",
     lang: "pt-BR",
     start_url: `${base}/`,
     scope: `${base}/`,
     display: "standalone",
     orientation: "portrait",
-    background_color: "#f5f2ec",
-    theme_color: "#1f5e4c",
+    background_color: "#ffffff",
+    theme_color: "#ffffff",
     categories: ["health", "medical"],
     icons: [
       { src: `${base}/icons/icon-192.png`, sizes: "192x192", type: "image/png" },
@@ -24,8 +24,8 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: `${base}/icons/maskable-512.png`, sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     shortcuts: [
-      { name: "Enviar exame", url: `${base}/enviar/` },
-      { name: "Mostrar ao médico", url: `${base}/compartilhar/` },
+      { name: "Adicionar exame", url: `${base}/enviar/` },
+      { name: "Relatório para o médico", url: `${base}/compartilhar/` },
     ],
   };
 }

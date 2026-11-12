@@ -4,15 +4,18 @@ import {
   ArrowLeftIcon as PhArrowLeft,
   ArrowUpIcon as PhArrowUp,
   CameraIcon as PhCamera,
+  CaretDownIcon as PhCaretDown,
   CaretRightIcon as PhCaretRight,
   ChatCircleTextIcon as PhChat,
   CheckIcon as PhCheck,
   ChecksIcon as PhChecks,
   ClipboardTextIcon as PhClipboardText,
   ClockCounterClockwiseIcon as PhClock,
+  CalendarBlankIcon as PhCalendar,
   CopyIcon as PhCopy,
   DropIcon as PhDrop,
   FileTextIcon as PhFileText,
+  FootprintsIcon as PhSteps,
   GaugeIcon as PhGauge,
   GearSixIcon as PhGear,
   HeartbeatIcon as PhHeartbeat,
@@ -26,6 +29,7 @@ import {
   PillIcon as PhPill,
   PlusIcon as PhPlus,
   ScanIcon as PhScan,
+  MagnifyingGlassIcon as PhSearch,
   ShieldCheckIcon as PhShieldCheck,
   StethoscopeIcon as PhStethoscope,
   SyringeIcon as PhSyringe,
@@ -91,6 +95,10 @@ export const CheckIcon = wrap(PhCheck, "bold");
 export const MinusIcon = wrap(PhMinus, "bold");
 export const ShieldIcon = wrap(PhShieldCheck);
 export const ChevronRight = wrap(PhCaretRight);
+export const ChevronDown = wrap(PhCaretDown);
+export const CalendarIcon = wrap(PhCalendar);
+export const SearchIcon = wrap(PhSearch);
+export const StepsIcon = wrap(PhSteps);
 
 // Conversa
 export const ChatIcon = wrap(PhChat);
@@ -102,11 +110,24 @@ export const CopyIcon = wrap(PhCopy);
 export const PhoneIcon = wrap(PhPhone);
 export const CloseIcon = wrap(PhX);
 
-/** Marca do Elo Saúde: dois elos entrelaçados (o mesmo desenho de scripts/gerar-icones.mjs). */
-export const LogoMark = ({ className, ...p }: SVGProps<SVGSVGElement>) => (
-  <svg width={28} height={28} viewBox="0 0 32 32" fill="none" strokeWidth={3.2} strokeLinecap="round" aria-hidden className={className} {...p}>
-    <rect x="3" y="10" width="16" height="12" rx="6" stroke="var(--color-brand-600)" />
-    <rect x="13" y="10" width="16" height="12" rx="6" stroke="var(--color-clay-500)" />
-    <path d="M13 16a6 6 0 0 1 6-6" stroke="var(--color-brand-600)" />
+/**
+ * Marca do Elo Saúde: monograma "e" sobre azul-marinho, com o ponto laranja
+ * do elo. Mesmo desenho de scripts/gerar-icones.mjs.
+ */
+export const LogoMark = ({ className, width = 28, height = 28, ...p }: SVGProps<SVGSVGElement>) => (
+  <svg width={width} height={height} viewBox="0 0 32 32" aria-hidden className={className} {...p}>
+    <rect width="32" height="32" rx="8" fill="var(--color-ink)" />
+    <g transform="translate(4.5 4.5) scale(0.72)">
+      <path d="M8.5 16H23.5A7.5 7.5 0 1 0 21.3 21.3" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" />
+      <circle cx="25" cy="23.6" r="2.3" fill="var(--color-accent)" />
+    </g>
   </svg>
+);
+
+/** Logo completo: marca + nome. */
+export const Logo = ({ size = 28 }: { size?: number }) => (
+  <span className="flex items-center gap-2">
+    <LogoMark width={size} height={size} />
+    <span className="text-[17px] font-semibold tracking-[-0.02em] text-ink">Elo Saúde</span>
+  </span>
 );

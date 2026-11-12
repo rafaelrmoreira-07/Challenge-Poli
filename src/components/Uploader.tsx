@@ -9,7 +9,9 @@ import { labStatus } from "@/lib/health";
 import { asset } from "@/lib/paths";
 import { getDbSnapshot, saveExam, type SaveExamInput } from "@/lib/store";
 import type { Extraction, ExtractedResult } from "@/lib/types";
-import { CameraIcon, FileIcon, ScanIcon } from "./icons";
+import { toast } from "sonner";
+import { CameraIcon, CloseIcon, FileIcon } from "./icons";
+import { ReadingSteps } from "./ReadingSteps";
 import { SectionTitle, StatusBadge } from "./ui";
 
 type Phase =
@@ -22,7 +24,6 @@ const SAMPLES = [
   { file: "exame-papel-2016.jpg", type: "image/jpeg", title: "Foto de exame em papel", desc: "Laudo antigo de 2016, fotografado" },
 ];
 
-const STAGES = ["Enviando o arquivo…", "Lendo o documento…", "Identificando cada exame…", "Conferindo unidades e faixas de referência…"];
 
 /** Aceita "5,8", "5.8", "7.200" e "250.000". */
 const numOrNull = (raw: string) => {
@@ -54,7 +55,11 @@ export function Uploader() {
     setPhase({ step: "reading", filename: file.name });
     const { patient } = getDbSnapshot();
     try {
-      const extraction = await extractLabReport(file, { sex: patient.sex, age: ageFrom(patient.birthDate) });
+      // A leitura pré-gravada volta na hora; o mínimo de 3,5 s deixa as etapas da leitura legíveis
+      const [extraction] = await Promise.all([
+        extractLabReport(file, { sex: patient.sex, age: ageFrom(patient.birthDate) }),
+        new Promise((r) => setTimeout(r, 3500)),
+      ]);
       setPhase({ step: "review", file, extraction });
     } catch (err) {
       if (err instanceof NoKeyError) {
@@ -78,73 +83,56 @@ export function Uploader() {
     if (f) upload(f);
   };
 
-  if (phase.step === "reading") return <Reading filename={phase.filename} preview={preview} />;
+  if (phase.step === "reading") return <ReadingSteps filename={phase.filename} preview={preview} />;
   if (phase.step === "review")
     return <Review phase={phase} preview={preview} onCancel={() => { setPhase({ step: "idle" }); setPreview(null); }} />;
 
   return (
     <div>
       {phase.error && (
-        <p className="mb-3 rounded-xl bg-danger-50 px-3 py-2 text-sm text-danger-700 ring-1 ring-danger-200">
+        <p className="mb-4 rounded-2xl bg-danger-soft p-4 text-[15px] text-danger" role="alert">
           {phase.error}
-          {phase.needsKey && <> <Link href="/configuracoes" className="font-semibold underline">Abrir Configurações</Link></>}
+          {phase.needsKey && <> <Link href="/configuracoes" className="font-medium underline underline-offset-4">Abrir Configurações</Link></>}
         </p>
       )}
       <input ref={fileRef} type="file" accept="application/pdf,image/*" className="hidden" onChange={onPick} />
       <input ref={camRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onPick} />
-      <div className="grid grid-cols-2 gap-3">
-        <button type="button" onClick={() => camRef.current?.click()} className="card flex flex-col items-center gap-2 py-6 transition-colors hover:border-brand-300 hover:bg-brand-50/40">
-          <CameraIcon className="h-8 w-8 text-brand-700" />
-          <span className="text-[15px] font-semibold">Fotografar</span>
-          <span className="text-sm text-ink-500">Exame em papel</span>
-        </button>
-        <button type="button" onClick={() => fileRef.current?.click()} className="card flex flex-col items-center gap-2 py-6 transition-colors hover:border-brand-300 hover:bg-brand-50/40">
-          <FileIcon className="h-8 w-8 text-brand-700" />
-          <span className="text-[15px] font-semibold">Escolher arquivo</span>
-          <span className="text-sm text-ink-500">PDF ou imagem, até 10 MB</span>
-        </button>
-      </div>
 
-      <SectionTitle>Laudos de exemplo (fictícios)</SectionTitle>
-      <div className="space-y-2">
+      <button type="button" onClick={() => camRef.current?.click()} className="lift flex w-full items-center gap-4 rounded-3xl bg-ink p-5 text-left text-white">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-accent text-ink">
+          <CameraIcon width={28} />
+        </span>
+        <span>
+          <span className="block text-xl font-normal tracking-[-0.02em]">Fotografar o laudo</span>
+          <span className="block text-[15px] text-navy-100">Papel, antigo ou dobrado, também serve</span>
+        </span>
+      </button>
+      <button type="button" onClick={() => fileRef.current?.click()} className="lift mt-2 flex w-full items-center gap-4 rounded-3xl bg-surface p-5 text-left">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white">
+          <FileIcon width={28} />
+        </span>
+        <span>
+          <span className="block text-xl font-normal tracking-[-0.02em]">Escolher um arquivo</span>
+          <span className="block text-[15px] text-muted">PDF do laboratório ou imagem, até 10 MB</span>
+        </span>
+      </button>
+
+      <SectionTitle>Laudos de exemplo</SectionTitle>
+      <ul className="divide-y divide-line border-y border-line">
         {SAMPLES.map((s) => (
-          <div key={s.file} className="card flex items-center gap-3 p-3">
-            <FileIcon className="shrink-0 text-ink-500" />
+          <li key={s.file} className="flex items-center gap-3 py-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-semibold">{s.title}</p>
-              <p className="text-sm text-ink-500">{s.desc}</p>
+              <p className="text-[15px] font-medium">{s.title}</p>
+              <p className="text-sm text-muted">{s.desc}</p>
             </div>
-            <a href={asset(`/exemplos/${s.file}`)} target="_blank" rel="noopener" className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-ink-600 underline underline-offset-4">ver</a>
-            <button type="button" onClick={() => sendSample(s)} className="btn-primary px-3">Enviar</button>
-          </div>
+            <a href={asset(`/exemplos/${s.file}`)} target="_blank" rel="noopener" className="btn-quiet text-sm">Ver</a>
+            <button type="button" onClick={() => sendSample(s)} className="btn-secondary min-h-11 px-4 text-sm">Usar</button>
+          </li>
         ))}
-      </div>
-      <p className="mt-8 text-sm leading-relaxed text-ink-500">
-        Com a IA ligada, o arquivo vai do seu navegador direto para a Gemini API (Google), só para leitura. O histórico fica
-        salvo apenas neste navegador. Use dados sintéticos ou seus próprios; dados de outra pessoa só com o consentimento dela.
+      </ul>
+      <p className="mt-6 text-sm leading-relaxed text-muted">
+        Com a leitura ligada, o arquivo vai do seu navegador direto para a Gemini (Google), só para leitura. O histórico fica salvo apenas neste aparelho. Os exemplos são fictícios.
       </p>
-    </div>
-  );
-}
-
-function Reading({ filename, preview }: { filename: string; preview: string | null }) {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setI((x) => Math.min(x + 1, STAGES.length - 1)), 2500);
-    return () => clearInterval(t);
-  }, []);
-  return (
-    <div className="card flex flex-col items-center py-8 text-center">
-      {preview && filename.match(/\.(jpe?g|png|webp)$/i) && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={preview} alt="" className="mb-4 max-h-48 rounded-lg opacity-60 shadow" />
-      )}
-      <ScanIcon className="h-10 w-10 animate-pulse text-brand-600" />
-      <p className="mt-3 font-semibold" aria-live="polite">{STAGES[i]}</p>
-      <p className="mt-1 text-xs text-ink-500">{filename}</p>
-      <div className="mt-4 h-1.5 w-48 overflow-hidden rounded-full bg-ink-200" role="progressbar" aria-label="Progresso da leitura" aria-valuemin={0} aria-valuemax={STAGES.length} aria-valuenow={i + 1}>
-        <div className="h-full rounded-full bg-brand-500 transition-all duration-[2500ms]" style={{ width: `${((i + 1) / STAGES.length) * 90}%` }} />
-      </div>
     </div>
   );
 }
@@ -208,7 +196,10 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
     start(async () => {
       const res = await saveExam(input);
       if ("error" in res) setError(res.error);
-      else router.push(`/exames/?novo=${res.docId}`);
+      else {
+        toast.success(`${rows.length} resultados salvos`, { description: lab || undefined });
+        router.push(`/exames/?novo=${res.docId}`);
+      }
     });
   }
 
@@ -216,30 +207,30 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
 
   return (
     <div>
-      <div className={`mb-3 rounded-xl px-3 py-2 text-sm ring-1 ${ex?.source === "gemini" ? "bg-brand-50 text-brand-900 ring-brand-200" : "bg-warn-50 text-warn-900 ring-warn-200"}`}>
+      <div className={`mb-4 rounded-2xl p-4 text-[15px] leading-relaxed ${ex?.source === "gemini" ? "bg-navy-50 text-ink" : "bg-warn-soft text-ink"}`}>
         {ex?.source === "gemini" && <>A IA leu <strong>{rows.length} resultados</strong> ({ex.model}). Confira e corrija o que for preciso antes de salvar.</>}
         {ex?.source === "simulado" && <>Leitura pré-gravada deste laudo de exemplo (IA desligada ou indisponível). Com uma chave da Gemini em Configurações, a leitura é feita ao vivo.</>}
         {!ex && <>{phase.warning ?? "Não foi possível ler o laudo."} Você pode adicionar os resultados manualmente.</>}
       </div>
-      {ex?.patientName && <p className="mb-2 text-xs text-ink-500">Nome no laudo: {ex.patientName}</p>}
-      {ex?.notes && <p className="mb-2 text-xs text-ink-500">Observação da IA: {ex.notes}</p>}
+      {ex?.patientName && <p className="mb-2 text-sm text-muted">Nome no laudo: {ex.patientName}</p>}
+      {ex?.notes && <p className="mb-2 text-sm text-muted">Observação da IA: {ex.notes}</p>}
 
       {preview && (
         <div className="mb-3">
-          <button type="button" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 underline underline-offset-4" onClick={() => setShowOriginal((v) => !v)}>
+          <button type="button" className="btn-quiet text-sm" onClick={() => setShowOriginal((v) => !v)}>
             {showOriginal ? "Esconder original" : "Comparar com o original"}
           </button>
           {showOriginal &&
             (isImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={preview} alt="Laudo original" className="mt-2 w-full rounded-lg ring-1 ring-ink-200" />
+              <img src={preview} alt="Laudo original" className="mt-2 w-full rounded-2xl border border-line" />
             ) : (
-              <iframe src={preview} title="Laudo original" className="mt-2 h-96 w-full rounded-lg ring-1 ring-ink-200" />
+              <iframe src={preview} title="Laudo original" className="mt-2 h-96 w-full rounded-2xl border border-line" />
             ))}
         </div>
       )}
 
-      <div className="card space-y-3">
+      <div className="tile space-y-3">
         <div className="grid grid-cols-2 gap-2">
           <label className="col-span-2 block">
             <span className="label">Laboratório</span>
@@ -256,12 +247,12 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
         {rows.map((r) => {
           const st = labStatus({ value: numOrNull(r.value), refLow: numOrNull(r.refLow), refHigh: numOrNull(r.refHigh) });
           return (
-            <div key={r.id} className="card p-3">
+            <div key={r.id} className="tile p-3">
               <div className="flex items-center gap-2">
                 <input className="input flex-1 font-medium" value={r.name} onChange={(e) => update(r.id, { name: e.target.value })} aria-label="Exame" />
                 <StatusBadge status={st} />
-                <button type="button" onClick={() => setRows((rs) => rs.filter((x) => x.id !== r.id))} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-xl text-ink-500 transition-colors hover:bg-danger-50 hover:text-danger-700" aria-label={`Remover ${r.name || "resultado"}`}>
-                  ×
+                <button type="button" onClick={() => setRows((rs) => rs.filter((x) => x.id !== r.id))} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted transition-colors hover:bg-danger-soft hover:text-danger" aria-label={`Remover ${r.name || "resultado"}`}>
+                  <CloseIcon width={18} />
                 </button>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
@@ -270,7 +261,7 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
                 <label><span className="label">Ref. mín.</span><input className="input" inputMode="decimal" value={r.refLow} onChange={(e) => update(r.id, { refLow: e.target.value })} /></label>
                 <label><span className="label">Ref. máx.</span><input className="input" inputMode="decimal" value={r.refHigh} onChange={(e) => update(r.id, { refHigh: e.target.value })} /></label>
               </div>
-              {r.refText && <p className="mt-1.5 text-xs text-ink-500">No laudo: {r.refText}</p>}
+              {r.refText && <p className="mt-1.5 text-sm text-muted">No laudo: {r.refText}</p>}
             </div>
           );
         })}
@@ -283,8 +274,8 @@ function Review({ phase, preview, onCancel }: { phase: Extract<Phase, { step: "r
         </button>
       </div>
 
-      {error && <p className="mt-3 rounded-xl bg-danger-50 px-3 py-2 text-sm text-danger-700 ring-1 ring-danger-200">{error}</p>}
-      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] mt-4 flex gap-2 border-t border-ink-200 bg-paper py-3">
+      {error && <p className="mt-3 rounded-2xl bg-danger-soft p-3 text-[15px] text-danger" role="alert">{error}</p>}
+      <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] mt-4 flex gap-2 bg-white/95 py-3 backdrop-blur">
         <button type="button" className="btn-secondary flex-1" onClick={onCancel} disabled={pending}>Cancelar</button>
         <button type="button" className="btn-primary flex-[2]" onClick={submit} disabled={pending || !rows.length || !date}>
           {pending ? "Salvando…" : `Salvar ${rows.length} resultados`}

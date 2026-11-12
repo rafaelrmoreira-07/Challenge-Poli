@@ -15,6 +15,7 @@ import {
   BarChart,
 } from "recharts";
 import type { WearableDay } from "@/lib/types";
+import { SlidingTabs } from "./SlidingTabs";
 
 const ts = (iso: string) => new Date(iso + "T12:00:00Z").getTime();
 const yearFmt = (t: number) => new Date(t).getUTCFullYear().toString();
@@ -30,19 +31,19 @@ const nf = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 2 }
  * nunca só pela cor.
  */
 export const CHART = {
-  ink: "#1f5e4c",
-  out: "#b42318",
-  warn: "#a86f0b",
-  band: "#2f7a63",
-  med: "#5b3f7a",
-  grid: "#e2ded5",
-  axis: "#6b665c",
-  blue: "#2f5d8a",
-  plum: "#5b3f7a",
-  sage: "#82b19d",
-  night: "#3e4c7a",
+  ink: "#1f2b4d",
+  out: "#d1382d",
+  warn: "#a87800",
+  band: "#1f2b4d",
+  med: "#e8850f",
+  grid: "#e4e4df",
+  axis: "#646b81",
+  blue: "#3d5a99",
+  plum: "#1f2b4d",
+  sage: "#8a93ad",
+  night: "#3d5a99",
 } as const;
-const tooltipStyle = { borderRadius: 8, fontSize: 13, border: "1px solid #e2ded5", boxShadow: "none" };
+const tooltipStyle = { borderRadius: 12, fontSize: 13, border: "1px solid #e4e4df", boxShadow: "0 8px 24px -8px rgb(31 43 77 / 0.18)" };
 
 export interface TrendPoint {
   date: string;
@@ -87,7 +88,7 @@ export function LabTrendChart({
               y1={refLow ?? yMin}
               y2={refHigh ?? yMax}
               fill={CHART.band}
-              fillOpacity={0.08}
+              fillOpacity={0.06}
               stroke={CHART.band}
               strokeOpacity={0.35}
               strokeDasharray="4 4"
@@ -192,9 +193,9 @@ export function WearableChart({
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-end gap-1" role="group" aria-label="Período">
+      <div className="mb-3 space-y-2">
         {series.length > 1 && (
-          <ul className="mr-auto flex flex-wrap gap-x-3 pl-2 text-xs text-ink-600">
+          <ul className="flex flex-wrap gap-x-3 pl-2 text-xs text-muted">
             {series.map((s) => (
               <li key={s.key} className="flex items-center gap-1.5">
                 <svg width="18" height="6" aria-hidden><line x1="0" y1="3" x2="18" y2="3" stroke={s.color} strokeWidth="2.5" strokeDasharray={s.dashed ? "4 3" : undefined} /></svg>
@@ -203,17 +204,14 @@ export function WearableChart({
             ))}
           </ul>
         )}
-        {([14, 30, 90] as const).map((r) => (
-          <button
-            key={r}
-            type="button"
-            onClick={() => setRange(r)}
-            aria-pressed={range === r}
-            className={`min-h-8 min-w-11 rounded-md border px-2 text-xs font-semibold transition-colors ${range === r ? "border-brand-600 bg-brand-600 text-white" : "border-ink-200 bg-white text-ink-600 hover:bg-ink-50"}`}
-          >
-            {r}d
-          </button>
-        ))}
+        <div>
+          <SlidingTabs
+            label="Período"
+            active={String(range)}
+            onChange={(k) => setRange(Number(k) as 14 | 30 | 90)}
+            items={[14, 30, 90].map((r) => ({ key: String(r), label: `${r} dias` }))}
+          />
+        </div>
       </div>
       <div style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -237,7 +235,7 @@ export function WearableChart({
             ))}
             {series.map((s) =>
               kind === "bar" ? (
-                <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color} radius={[2, 2, 0, 0]} isAnimationActive={false} />
+                <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color} radius={[4, 4, 0, 0]} isAnimationActive={false} />
               ) : (
                 <Line key={s.key} type="monotone" dataKey={s.key} name={s.name} stroke={s.color} strokeWidth={2.25} strokeDasharray={s.dashed ? "5 4" : undefined} dot={false} isAnimationActive={false} />
               ),

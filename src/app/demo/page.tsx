@@ -31,19 +31,19 @@ export default function DemoPage() {
   const doctorToken = active?.token ?? lastShare?.token;
 
   return (
-    <div className="flex h-dvh flex-col bg-brand-900 text-white">
+    <div className="flex h-dvh flex-col bg-ink text-white">
       <header className="flex items-center justify-between gap-4 px-6 py-3">
-        <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-paper"><LogoMark width={24} height={24} /></span>
-          <span className="font-serif text-xl font-semibold">Elo Saúde</span>
-          <span className="text-brand-200">· paciente e médico, ao vivo</span>
+        <div className="flex items-center gap-3">
+          <LogoMark width={32} height={32} className="rounded-lg ring-1 ring-white/20" />
+          <span className="text-xl font-medium tracking-[-0.02em]">Elo Saúde</span>
+          <span className="text-navy-200">Paciente e médico, ao vivo</span>
         </div>
         <div className="flex items-center gap-2 text-xs">
-          <button className="rounded-lg bg-brand-800 px-3 py-2 font-semibold hover:bg-brand-700" onClick={() => simulateIrregularRhythm()}>
+          <button className="rounded-xl bg-white/10 px-3.5 py-2 text-sm font-medium hover:bg-white/15" onClick={() => simulateIrregularRhythm()}>
             Simular ritmo irregular
           </button>
           <button
-            className="rounded-lg bg-brand-800 px-3 py-2 font-semibold text-danger-200 hover:bg-brand-700"
+            className="rounded-xl bg-white/10 px-3.5 py-2 text-sm font-medium text-danger-line hover:bg-white/15"
             onClick={async () => {
               if (!confirm("Voltar aos dados iniciais da demonstração?")) return;
               await resetDemo();
@@ -57,17 +57,17 @@ export default function DemoPage() {
 
       <div className="flex min-h-0 flex-1 gap-6 px-6 pb-6">
         <div className="flex shrink-0 flex-col items-center">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-200">Celular do paciente</p>
+          <p className="mb-2 text-sm text-navy-200">Celular do paciente</p>
           <div style={{ width: (PHONE_W + BEZEL * 2) * scale, height: (PHONE_H + BEZEL * 2) * scale }}>
             <div
-              className="origin-top-left rounded-[46px] bg-black shadow-2xl ring-1 ring-brand-700"
+              className="origin-top-left rounded-[46px] bg-black shadow-2xl ring-1 ring-white/10"
               style={{ width: PHONE_W + BEZEL * 2, height: PHONE_H + BEZEL * 2, padding: BEZEL, transform: `scale(${scale})` }}
             >
               <iframe key={`p${reloadKey}`} src={asset("/")} title="App do paciente" className="h-full w-full rounded-[34px] bg-white" />
             </div>
           </div>
           {qr && (
-            <div className="mt-3 flex items-center gap-2 text-xs text-brand-200">
+            <div className="mt-3 flex items-center gap-2 text-xs text-navy-200">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={qr} alt="QR code para abrir o app" className="h-14 w-14 rounded bg-white p-1" />
               <span>Abra no seu celular</span>
@@ -76,15 +76,15 @@ export default function DemoPage() {
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-200">
+          <p className="mb-2 text-sm text-navy-200">
             Computador do médico {active ? `· ${active.doctorName}` : ""}
           </p>
-          <div className="min-h-0 flex-1 overflow-hidden rounded-xl bg-white ring-1 ring-brand-700">
+          <div className="min-h-0 flex-1 overflow-hidden rounded-2xl bg-white ring-1 ring-white/10">
             {doctorToken ? (
               <iframe key={`m${doctorToken}${reloadKey}`} src={asset(`/medico/?t=${encodeURIComponent(doctorToken)}`)} title="Visão do médico" className="h-full w-full" />
             ) : (
-              <div className="flex h-full flex-col items-center justify-center p-8 text-center text-ink-500">
-                <p className="text-lg font-semibold text-ink-700">Aguardando o paciente compartilhar</p>
+              <div className="flex h-full flex-col items-center justify-center p-8 text-center text-muted">
+                <p className="text-lg font-medium text-ink">Aguardando o paciente compartilhar</p>
                 <p className="mt-1 max-w-sm text-sm">No celular, toque em <strong>Médico</strong> e crie um acesso. A tela do médico aparece aqui na hora.</p>
               </div>
             )}
