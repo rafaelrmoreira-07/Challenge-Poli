@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
 import { ChatNotifier } from "@/components/ChatNotifier";
 import { GearIcon, Logo } from "@/components/icons";
+import { OnboardingGate } from "@/components/OnboardingGate";
 
 export default function PacienteLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -24,6 +25,7 @@ export default function PacienteLayout({ children }: { children: React.ReactNode
       <ChatNotifier />
       <main className="flex-1 px-5 pb-32 pt-4">{children}</main>
       <BottomNav />
+      <OnboardingGate />
     </div>
   );
 }

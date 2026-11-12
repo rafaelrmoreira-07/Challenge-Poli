@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OnboardingGate } from "@/components/OnboardingGate";
 import { ChatView } from "@/components/views/ChatView";
 
 export const metadata: Metadata = {
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 
 /** Conversa com o Elo em tela cheia, sem a barra inferior, como um chat no celular. */
 export default function ConversaPage() {
-  return <ChatView />;
+  return (
+    <>
+      <ChatView />
+      <OnboardingGate />
+    </>
+  );
 }

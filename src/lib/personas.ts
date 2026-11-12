@@ -12,6 +12,7 @@ import type { Db, LabResult, PersonaId, SourceDocument, WearableDay, WearableDev
  */
 
 export const PERSONAS: { id: PersonaId; name: string; resumo: string }[] = [
+  { id: "nova", name: "Começar do zero", resumo: "Perfil vazio, com guia de boas-vindas e cadastro" },
   { id: "carlos", name: "Carlos Mendes, 58", resumo: "10 anos de exames, relógio e medidor de pressão, alertas de sono e pressão" },
   { id: "juliana", name: "Juliana Rocha, 34", resumo: "Anel de sono: batimentos subindo + TSH baixo em março (insight cruzado)" },
   { id: "lucia", name: "Lúcia Ferreira, 78", resumo: "Sem relógio, laudos antigos em papel" },
@@ -209,9 +210,32 @@ function pedro(now: Date): Db {
   };
 }
 
+/** Perfil vazio: a pessoa preenche nome, nascimento e sexo no guia de boas-vindas. */
+function nova(now: Date): Db {
+  return {
+    version: 1,
+    personaId: "nova",
+    createdAt: now.toISOString(),
+    patient: { id: "paciente-novo", name: "", birthDate: "", sex: "F", allergies: [] },
+    documents: [],
+    labResults: [],
+    encounters: [],
+    medications: [],
+    vaccines: [],
+    wearableDays: [],
+    devices: [],
+    shares: [],
+  };
+}
+
+/** Perfil ainda sem cadastro (mostra o guia de boas-vindas). */
+export const needsOnboarding = (db: Db) => !db.patient.name.trim();
+
 /** Histórico inicial de uma persona. */
 export function createPersonaDb(id: PersonaId = "carlos", now = new Date()): Db {
   switch (id) {
+    case "nova":
+      return nova(now);
     case "juliana":
       return juliana(now);
     case "lucia":
@@ -229,6 +253,7 @@ export function personaWearables(id: PersonaId | undefined): (today: string) => 
     case "juliana":
       return julianaWearables;
     case "lucia":
+    case "nova":
       return () => [];
     case "pedro":
       return pedroWearables;

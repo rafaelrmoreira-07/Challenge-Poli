@@ -16,7 +16,7 @@ export function ChatNotifier() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!db) return;
+    if (!db || !db.patient.name.trim()) return; // ainda no guia de boas-vindas
     const fresh = syncAlerts(db.patient.name.split(" ")[0], computeAlerts(db));
     for (const a of fresh) {
       const urgent = a.severity === "procure_medico";

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk } from "next/font/google";
 import { Toaster } from "@/components/base/toaster";
+import { PersonaFromUrl } from "@/components/PersonaFromUrl";
 import "./globals.css";
 
 /** Fonte única, sorteada pela taste-skill para clínicas: neo-grotesca calma e confiável. */
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="pt-BR" className={`${hanken.variable} h-full antialiased`}>
       <body className="min-h-full">
+        <PersonaFromUrl />
         {children}
         <Toaster />
       </body>
