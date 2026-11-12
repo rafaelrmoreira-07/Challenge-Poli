@@ -96,7 +96,7 @@ A primeira versão com servidor (Next.js com rotas de API, banco em arquivo e li
 
 ## Conversa com o Elo
 
-Chat dentro do app, no estilo do WhatsApp (`/conversa`, botão de balão no cabeçalho). Não usa o WhatsApp de verdade: roda no navegador, como o resto do protótipo.
+Chat dentro do app, aberto pelo botão flutuante "Elo" no canto da tela (`components/ChatLauncher.tsx`): a conversa sobe numa gaveta por cima da tela atual, sem trocar de página. `/conversa` continua existindo para links diretos. Não usa o WhatsApp de verdade: roda no navegador, como o resto do protótipo.
 
 - `lib/chat.ts`: mensagens salvas no navegador (`localStorage`, chave `elo-saude:chat:v1`) e a lista de alertas já avisados. Restaurar a demonstração apaga a conversa.
 - `lib/chatbot.ts`: respostas por palavra-chave, sem IA na conversa. Cada resposta vem dos dados do histórico: alertas, exames alterados, um exame pelo nome ("como está meu colesterol LDL?"), medições dos últimos 7 dias, remédios e acessos de médicos. Sintomas de emergência ("dor no peito", "falta de ar"...) sempre recebem a orientação de ligar 192 antes de qualquer outra coisa.

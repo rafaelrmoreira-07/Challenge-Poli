@@ -39,6 +39,9 @@ export default function DemoPage() {
           <span className="text-navy-200">Paciente e médico, ao vivo</span>
         </div>
         <div className="flex items-center gap-2 text-xs">
+          <a href={asset("/impacto/")} target="_blank" rel="noopener" className="rounded-xl bg-white/10 px-3.5 py-2 text-sm font-medium hover:bg-white/15">
+            Indicadores
+          </a>
           <button className="rounded-xl bg-white/10 px-3.5 py-2 text-sm font-medium hover:bg-white/15" onClick={() => simulateIrregularRhythm()}>
             Simular ritmo irregular
           </button>

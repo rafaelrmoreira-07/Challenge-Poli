@@ -78,10 +78,10 @@ export default function ConfiguracoesPage() {
         </p>
       </div>
 
-      <SectionTitle>Qualidade da leitura</SectionTitle>
+      <SectionTitle id="qualidade">Qualidade da leitura</SectionTitle>
       <ReadingQuality />
 
-      <SectionTitle>Seus dados em outros sistemas</SectionTitle>
+      <SectionTitle id="dados">Seus dados em outros sistemas</SectionTitle>
       <DataPortability />
 
       <SectionTitle>Usar como app</SectionTitle>

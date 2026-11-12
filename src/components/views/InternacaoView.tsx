@@ -1,14 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/base/checkbox";
 import { CheckInForm } from "@/components/CheckInForm";
-import { BackIcon, CameraIcon, CheckIcon, FileIcon, PhoneIcon, AlertIcon, UrgentIcon } from "@/components/icons";
+import { CareHeader } from "@/components/CareHeader";
+import { CameraIcon, CheckIcon, FileIcon, PhoneIcon, AlertIcon, UrgentIcon } from "@/components/icons";
 import { ShareResult } from "@/components/ShareForm";
 import { SlidingTabs } from "@/components/SlidingTabs";
-import { PageHeader, SectionTitle, Skeleton } from "@/components/ui";
+import { SectionTitle, Skeleton } from "@/components/ui";
 import { StatusDot } from "@/components/views/HospitalView";
 import { admissionChecklist, checklistScore, followUp, hasRedFlag, latestAdmission } from "@/lib/admission";
 import { formatDate, formatDateTime } from "@/lib/dates";
@@ -32,12 +32,9 @@ export function InternacaoView() {
 
   return (
     <div>
-      <Link href="/compartilhar" className="-ml-2 inline-flex min-h-11 items-center gap-1.5 px-2 text-[15px] font-medium text-ink">
-        <BackIcon width={20} /> Médico
-      </Link>
-      <PageHeader title="Internação">
-        Antes: uma pasta com o que o hospital pede, para a autorização não travar. Depois: o resumo da alta e um registro diário por 30 dias.
-      </PageHeader>
+      <CareHeader active="internacao">
+        Antes: uma pasta com o que o hospital e o plano pedem. Depois: o resumo da alta e um registro diário por 30 dias.
+      </CareHeader>
 
       {!ad || editing ? (
         <AdmissionForm db={db} admission={editing ? ad : undefined} onSaved={() => setEditing(false)} onCancel={ad ? () => setEditing(false) : undefined} />
@@ -265,7 +262,7 @@ function SendToHospital({ db, ad }: { db: Db; ad: Admission }) {
         Gerar link para o hospital
       </button>
       <p className="text-sm text-muted">
-        Vão no link: dados da internação, plano e senha, alergias, remédios e os {ad.supportDocIds.length} laudos marcados. {db.patient.name.split(" ")[0]}, você pode revogar na aba Médico.
+        Vão no link: dados da internação, plano e senha, alergias, remédios e os {ad.supportDocIds.length} laudos marcados. {db.patient.name.split(" ")[0]}, você pode revogar em Médico → Acessos.
       </p>
     </section>
   );

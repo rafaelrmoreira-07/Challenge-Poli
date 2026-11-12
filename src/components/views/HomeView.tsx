@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AiStatusBanner } from "@/components/AiStatus";
 import { ExamSearch } from "@/components/ExamSearch";
-import { AlertIcon, BedIcon, ChevronDown, ChevronRight, DropIcon, GaugeIcon, HeartIcon, MoonIcon } from "@/components/icons";
+import { AlertIcon, BedIcon, ChatIcon, ChevronDown, ChevronRight, DoctorIcon, DropIcon, GaugeIcon, HeartIcon, MoonIcon, ScanIcon } from "@/components/icons";
+import { openChat } from "@/lib/chatOpen";
 import { followUp } from "@/lib/admission";
 import { AlertCard, Disclaimer, RowLink, SectionLink, SectionTitle, Skeleton, Spark, StatusBadge } from "@/components/ui";
 import NumberFlow from "@number-flow/react";
@@ -72,6 +73,14 @@ export function HomeView() {
         </Link>
       )}
 
+      {/* Atalhos: tudo o que o app faz, a um toque */}
+      <nav aria-label="Atalhos" className="mt-4 grid grid-cols-2 gap-2">
+        <Shortcut href="/enviar" icon={<ScanIcon width={22} />} title="Adicionar exame" hint="Foto ou PDF" primary />
+        <Shortcut onClick={openChat} icon={<ChatIcon width={22} />} title="Perguntar ao Elo" hint="Exames, sinais, remédios" />
+        <Shortcut href="/compartilhar" icon={<DoctorIcon width={22} />} title="Relatório" hint="Para a consulta" />
+        <Shortcut href="/internacao" icon={<BedIcon width={22} />} title="Internação" hint={posAlta ? `Pós-alta, dia ${posAlta.day}` : "Pasta para o hospital"} />
+      </nav>
+
       <AiStatusBanner />
 
       <SectionTitle>{alerts.length ? `Alertas (${alerts.length})` : "Alertas"}</SectionTitle>
@@ -82,21 +91,6 @@ export function HomeView() {
       ) : (
         <p className="tile text-[15px] text-muted">Nenhum alerta. Eu aviso na Conversa se aparecer algum.</p>
       )}
-
-      <div className="mt-6 flex flex-col gap-2">
-        <Link href="/enviar" className="btn-primary">Adicionar exame</Link>
-        <Link href="/compartilhar" className="btn-secondary">Montar relatório para o médico</Link>
-        {!posAlta && (
-          <Link href="/internacao" className="lift mt-2 flex items-center gap-3 rounded-2xl bg-surface p-4">
-            <BedIcon width={24} className="shrink-0" />
-            <span className="flex-1">
-              <span className="block text-[15px] font-medium">Vai se internar?</span>
-              <span className="block text-sm text-muted">Monte a pasta com o que o hospital e o plano pedem.</span>
-            </span>
-            <ChevronRight width={18} className="shrink-0 text-faint" />
-          </Link>
-        )}
-      </div>
 
       <SectionTitle action={<SectionLink href="/wearables">Ver gráficos</SectionLink>}>Sinais dos últimos 7 dias</SectionTitle>
       <div className="grid grid-cols-2 gap-2">
@@ -152,6 +146,7 @@ export function HomeView() {
           <ChevronDown width={18} className="transition-transform group-open:-scale-y-100" />
         </summary>
         <div className="flex flex-col gap-2 px-4 pb-4">
+          <Link href="/impacto" className="btn-secondary">Ver indicadores de resultado</Link>
           <button className="btn-secondary" onClick={() => simulateIrregularRhythm()}>
             Simular batimentos irregulares no relógio
           </button>
@@ -208,5 +203,23 @@ function Vital({
         <Spark values={days.map((d) => d[metric] as number)} width={56} height={22} />
       </div>
     </div>
+  );
+}
+
+function Shortcut({ href, onClick, icon, title, hint, primary }: { href?: string; onClick?: () => void; icon: React.ReactNode; title: string; hint: string; primary?: boolean }) {
+  const cls = `lift flex min-h-24 flex-col justify-between gap-3 rounded-2xl p-4 text-left ${primary ? "bg-ink text-white" : "bg-surface text-ink"}`;
+  const body = (
+    <>
+      <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${primary ? "bg-accent text-ink" : "bg-white"}`}>{icon}</span>
+      <span>
+        <span className="block text-[15px] font-medium leading-tight">{title}</span>
+        <span className={`block text-sm ${primary ? "text-navy-200" : "text-muted"}`}>{hint}</span>
+      </span>
+    </>
+  );
+  return href ? (
+    <Link href={href} className={cls}>{body}</Link>
+  ) : (
+    <button type="button" onClick={onClick} className={cls}>{body}</button>
   );
 }

@@ -43,7 +43,7 @@ export function PageHeader({ eyebrow, title, action, children }: { eyebrow?: Rea
 export function SectionTitle({ children, action, id }: { children: React.ReactNode; action?: React.ReactNode; id?: string }) {
   return (
     <div className="mb-3 mt-10 flex items-baseline justify-between gap-3">
-      <h2 id={id} className="text-xl font-medium tracking-[-0.02em] text-ink">{children}</h2>
+      <h2 id={id} className="scroll-mt-24 text-xl font-medium tracking-[-0.02em] text-ink">{children}</h2>
       {action}
     </div>
   );

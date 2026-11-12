@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { DataPortability } from "@/components/DataPortability";
 import { FileIcon } from "@/components/icons";
 import { RowLink, SectionTitle, Skeleton, Spark, StatusBadge } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
@@ -38,6 +39,8 @@ export function ExamesView() {
           <SeriesList series={rest.filter((s) => s.category === c)} />
         </div>
       ))}
+      <SectionTitle>Trazer ou levar seus exames</SectionTitle>
+      <DataPortability />
       {!series.length && (
         <p className="tile text-[15px]">
           Nenhum exame ainda. <Link className="font-medium underline underline-offset-4" href="/enviar">Adicionar o primeiro</Link>.
