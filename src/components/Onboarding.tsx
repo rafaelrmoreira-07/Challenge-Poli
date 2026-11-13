@@ -41,9 +41,9 @@ const STEPS: { icon: React.ReactNode; title: string; body: React.ReactNode }[] =
     title: "Relógio e anel inteligentes",
     body: (
       <>
-        <p>Batimento, sono e atividade entram no mesmo histórico todos os dias, sem você precisar fazer nada.</p>
+        <p>Exporte os dados do app Saúde (iPhone) ou do Google e do Health Connect (Android) e envie aqui. O Elo organiza batimento, sono e passos dia a dia, ao lado dos exames.</p>
         <p>Se os dados mostrarem algo que vale levar ao médico, como batimentos irregulares, o Elo avisa.</p>
-        <p className="text-[15px] text-muted">Neste perfil de demonstração ainda não há relógio conectado.</p>
+        <p className="text-[15px] text-muted">A exportação do Apple Saúde é lida no seu aparelho: o arquivo não sai dele.</p>
       </>
     ),
   },

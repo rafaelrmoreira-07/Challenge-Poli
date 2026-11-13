@@ -11,7 +11,7 @@ O Elo Saúde é um site estático (GitHub Pages, sem servidor). Isso deixa o pro
 | Cada aparelho tem o seu histórico | Os dados ficam no navegador (localStorage + IndexedDB) | Ensaiar e apresentar no mesmo notebook; nunca em aba anônima |
 | A chave da Gemini fica no navegador | Sem servidor para guardá-la | Criar uma chave só para a demo e apagá-la no AI Studio depois de sábado |
 | Sem login, sem contas, sem modo cuidador | Sem servidor | Trocar de persona no modo apresentação mostra outros casos; modo cuidador vira slide |
-| Wearables são simulados | Ler Apple Health ou Health Connect exige app nativo | Dizer que o modelo de dados (agregados diários) já está pronto para isso |
+| Wearables não sincronizam sozinhos | Ler o Apple Saúde ou o Health Connect continuamente exige um app nativo no celular | A pessoa exporta os dados do celular e envia o arquivo (Enviar → Importar dados do relógio). Exportação do Apple Saúde e planilhas CSV são lidas no próprio aparelho; outros formatos, pela IA. As personas usam dados simulados, e a tela Sinais diz isso |
 | "WhatsApp" é um chat dentro do app | WhatsApp de verdade exige Cloud API da Meta e servidor | Slide de próximos passos |
 | Remédios e vacinas não podem ser adicionados pela tela | Ainda não existe formulário; vêm dos dados iniciais | Mostrar os já carregados; se der tempo, adicionar um formulário simples |
 | Até 5 laudos por envio | A chave gratuita da Gemini aceita poucas leituras por minuto | A IA lê um de cada vez; se um falhar, só ele pede "Tentar ler de novo" |
@@ -74,3 +74,19 @@ O modo apresentação e os "Controles da demonstração" (no fim da tela inicial
 | Pedro Lima, 22 | Saudável e atleta: nenhum alerta pode aparecer |
 
 Trocar de persona apaga os exames enviados e os acessos criados. Não há "uma conta com vários perfis" (modo cuidador): isso exigiria contas e servidor.
+
+### 7. Dados do relógio por arquivo
+
+O app não se conecta ao relógio. A pessoa exporta os dados do celular e envia o arquivo em **Enviar → Importar dados do relógio**:
+
+| Arquivo | Como é lido |
+|---|---|
+| Exportação do Apple Saúde (`exportar.zip` ou `export.xml`) | No navegador, em partes (arquivos de centenas de MB funcionam). Tipos do HealthKit: batimento em repouso, variabilidade, passos (sem somar iPhone e relógio em dobro), sono, saturação, distúrbios respiratórios, pressão e batimento irregular |
+| Planilha CSV com uma linha por dia (Health Auto Export, Health Data Export, Google Fit diário, a nossa) | No navegador; as colunas são reconhecidas pelo nome, em português ou inglês |
+| `.zip` do Google Takeout | No navegador, usando a planilha diária de dentro do arquivo |
+| Outros (PDF de relatório, JSON, planilha sem colunas reconhecíveis) | Pela Gemini, com a chave de Configurações |
+
+Entram os últimos 180 dias. A primeira importação troca a simulação; as seguintes se juntam às anteriores. Um sinal que o aparelho não mede fica "sem medição" e nunca vira zero (saturação zero dispararia o alerta de apneia). A tela Sinais e a do médico mostram a origem dos dados.
+
+Na demo: **Enviar → Importar dados do relógio → Exportação do Apple Saúde (exemplo) → Usar**. O exemplo é gerado com datas até hoje e tem 3 dias de batimento irregular nas últimas duas semanas, então o alerta aparece.
+

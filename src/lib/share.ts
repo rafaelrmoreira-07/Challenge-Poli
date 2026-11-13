@@ -9,7 +9,7 @@ export function shareState(s: Pick<Share, "revokedAt" | "expiresAt">, now = new 
   return "ativo";
 }
 
-type DataPart = Pick<Db, "patient" | "documents" | "labResults" | "encounters" | "medications" | "vaccines" | "wearableDays" | "devices">;
+type DataPart = Pick<Db, "patient" | "documents" | "labResults" | "encounters" | "medications" | "vaccines" | "wearableDays" | "devices" | "wearableSource">;
 
 /** Recorte do histórico que o médico pode ver, conforme o consentimento. */
 export function scopedData(db: DataPart, scopes: Scope[]) {
@@ -28,6 +28,8 @@ export function scopedData(db: DataPart, scopes: Scope[]) {
     vaccines: has("vacinas") ? db.vaccines : [],
     wearableDays: has("wearables") ? db.wearableDays : [],
     devices: has("wearables") ? db.devices : [],
+    /** Origem dos dados do relógio (simulação ou arquivo importado), para o médico saber de onde vêm. */
+    wearableSource: has("wearables") ? db.wearableSource ?? { kind: "simulado" as const } : undefined,
     alerts,
   };
 }
@@ -50,11 +52,32 @@ interface Snapshot {
   e: Omit<Encounter, "id">[];
   m: Omit<Medication, "id">[];
   vc: Omit<Vaccine, "id">[];
-  w: { s: string | null; d: number[][] };
+  w: { s: string | null; d: (number | null)[][] };
+  ws?: Db["wearableSource"];
   sm?: DoctorSummary;
 }
 
 const W_FIELDS = ["restingHr", "hrvMs", "sleepHours", "spo2Min", "breathingDisturbances", "steps", "irregularRhythmEvents", "systolic", "diastolic"] as const;
+
+/**
+ * O link guarda os dias em sequência a partir da primeira data. Dados importados
+ * podem ter buracos (dias sem o relógio), então cada dia faltante vira uma linha vazia.
+ */
+function denseRows(days: WearableDay[]): (number | null)[][] {
+  if (!days.length) return [];
+  const byDate = new Map(days.map((d) => [d.date, d]));
+  const rows: (number | null)[][] = [];
+  const cur = new Date(days[0].date + "T12:00:00Z");
+  const end = days.at(-1)!.date;
+  for (let i = 0; i < 400; i++) {
+    const iso = cur.toISOString().slice(0, 10);
+    if (iso > end) break;
+    const day = byDate.get(iso);
+    rows.push(day ? W_FIELDS.map((f) => day[f] ?? null) : []);
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+  return rows;
+}
 
 function toSnapshot(share: Share, data: ScopedData, summary?: DoctorSummary): Snapshot {
   const docIndex = new Map(data.documents.map((d, i) => [d.id, i]));
@@ -81,7 +104,8 @@ function toSnapshot(share: Share, data: ScopedData, summary?: DoctorSummary): Sn
     e: data.encounters.map(strip),
     m: data.medications.map(strip),
     vc: data.vaccines.map(strip),
-    w: { s: data.wearableDays[0]?.date ?? null, d: data.wearableDays.map((day) => W_FIELDS.map((f) => day[f])) },
+    w: { s: data.wearableDays[0]?.date ?? null, d: denseRows(data.wearableDays) },
+    ws: data.wearableSource,
     sm: summary,
   };
 }
@@ -111,12 +135,13 @@ function fromSnapshot(s: Snapshot): { share: Share; data: ScopedData; summary?: 
   }));
   const start = s.w.s;
   const wearableDays: WearableDay[] = start
-    ? s.w.d.map((row, i) => {
+    ? s.w.d.flatMap((row, i) => {
+        if (!row.length) return []; // dia sem dados
         const date = new Date(start + "T12:00:00Z");
         date.setUTCDate(date.getUTCDate() + i);
         const day = { date: date.toISOString().slice(0, 10) } as WearableDay;
-        W_FIELDS.forEach((f, k) => (day[f] = row[k]));
-        return day;
+        W_FIELDS.forEach((f, k) => (day[f] = row[k] ?? null));
+        return [day];
       })
     : [];
   const share: Share = {
@@ -139,6 +164,7 @@ function fromSnapshot(s: Snapshot): { share: Share; data: ScopedData; summary?: 
       vaccines: s.vc.map((v, i) => ({ id: `v${i}`, ...v })),
       wearableDays,
       devices: [],
+      wearableSource: s.ws,
     },
     s.sh.sc,
   );

@@ -9,8 +9,8 @@ export default function EnviarPage() {
       <Link href="/historico" className="-ml-2 inline-flex min-h-11 items-center gap-1.5 px-2 text-[15px] font-medium text-ink">
         <BackIcon width={20} /> Histórico
       </Link>
-      <PageHeader title="Adicionar exame">
-        A leitura separa cada resultado com a referência do laudo. Você confere antes de salvar.
+      <PageHeader title="Adicionar ao histórico">
+        Laudos em papel ou PDF e os dados exportados do relógio. A leitura organiza tudo e você confere antes de salvar.
       </PageHeader>
       <Uploader />
     </div>

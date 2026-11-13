@@ -10,7 +10,8 @@ import { asset } from "@/lib/paths";
 import { getDbSnapshot, saveExam, type SaveExamInput } from "@/lib/store";
 import type { Confidence, Extraction, ExtractedResult } from "@/lib/types";
 import { toast } from "sonner";
-import { AlertIcon, CameraIcon, CheckIcon, CloseIcon, FileIcon, HistoryIcon } from "./icons";
+import { AlertIcon, CameraIcon, CheckIcon, CloseIcon, FileIcon, HistoryIcon, WatchIcon } from "./icons";
+import { WearableImport } from "./WearableImport";
 import { ReadingSteps } from "./ReadingSteps";
 import { SectionTitle, StatusBadge } from "./ui";
 
@@ -58,8 +59,13 @@ export function Uploader() {
   const camRef = useRef<HTMLInputElement>(null);
   const batch = useRef(0); // invalida leituras de um envio cancelado
   const previews = useRef<string[]>([]);
+  // "relogio": importar os dados exportados do relógio ou anel (atalho: /enviar/?tipo=relogio)
+  const [mode, setMode] = useState<"exames" | "relogio">("exames");
 
   useEffect(() => () => previews.current.forEach((u) => URL.revokeObjectURL(u)), []);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tipo") === "relogio") queueMicrotask(() => setMode("relogio"));
+  }, []);
 
   const patch = (i: number, p: Partial<Item>) => setItems((xs) => xs.map((x, j) => (j === i ? { ...x, ...p } : x)));
 
@@ -149,6 +155,8 @@ export function Uploader() {
 
   const notice = idle.notice && <p className="mb-4 rounded-2xl bg-warn-soft p-4 text-[15px] text-ink" role="status">{idle.notice}</p>;
 
+  if (mode === "relogio") return <WearableImport onBack={() => setMode("exames")} />;
+
   if (items.length) {
     const item = items[current];
     const multi = items.length > 1;
@@ -216,6 +224,15 @@ export function Uploader() {
         <span>
           <span className="block text-xl font-normal tracking-[-0.02em]">Escolher arquivos</span>
           <span className="block text-[15px] text-muted">Até {MAX_BATCH} de uma vez: PDF do laboratório ou imagem, até 10 MB cada</span>
+        </span>
+      </button>
+      <button type="button" onClick={() => setMode("relogio")} className="lift mt-2 flex w-full items-center gap-4 rounded-3xl bg-surface p-5 text-left">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white">
+          <WatchIcon width={28} />
+        </span>
+        <span>
+          <span className="block text-xl font-normal tracking-[-0.02em]">Importar dados do relógio</span>
+          <span className="block text-[15px] text-muted">Arquivo exportado do Apple Saúde ou do Google: batimento, sono, passos</span>
         </span>
       </button>
 

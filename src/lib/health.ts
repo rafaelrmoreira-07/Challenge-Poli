@@ -1,6 +1,6 @@
 import { analyteInfo } from "./analytes";
 import { addDays, daysBetween, formatDate, todayISO } from "./dates";
-import type { Db, HealthAlert, LabResult, WearableDay } from "./types";
+import type { Db, HealthAlert, LabResult, WearableDay, WearableMetric } from "./types";
 
 export type LabStatus = "baixo" | "normal" | "alto" | "sem_faixa";
 
@@ -63,6 +63,17 @@ export function analyteSeries(labs: LabResult[]): AnalyteSeries[] {
 
 const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
 
+/** Valores medidos de um sinal (ignora dias sem medição; pressão 0 = sem medidor). */
+export function measured(days: WearableDay[], key: WearableMetric): number[] {
+  const bp = key === "systolic" || key === "diastolic";
+  return days.flatMap((d) => {
+    const v = d[key];
+    return v == null || !Number.isFinite(v) || (bp && v <= 0) ? [] : [v];
+  });
+}
+
+const val = (v: number | null | undefined) => v ?? 0;
+
 function lastDays(days: WearableDay[], n: number, today = todayISO()): WearableDay[] {
   const from = addDays(today, -(n - 1));
   return days.filter((d) => d.date >= from && d.date <= today);
@@ -79,8 +90,8 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
 
   // 1. Ritmo irregular (possível fibrilação atrial)
   const last14 = lastDays(days, 14, today);
-  const irregular = last14.filter((d) => d.irregularRhythmEvents > 0);
-  const irregularCount = irregular.reduce((s, d) => s + d.irregularRhythmEvents, 0);
+  const irregular = last14.filter((d) => val(d.irregularRhythmEvents) > 0);
+  const irregularCount = irregular.reduce((s, d) => s + val(d.irregularRhythmEvents), 0);
   if (irregularCount >= 2) {
     alerts.push({
       id: "ritmo_irregular",
@@ -97,9 +108,10 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
 
   // 2. Sinais de apneia do sono
   const last30 = lastDays(days, 30, today);
-  const apneaNights = last30.filter((d) => d.spo2Min < 90 && d.breathingDisturbances >= 15);
+  // Só noites em que os dois sinais foram medidos: ausência nunca conta como saturação baixa
+  const apneaNights = last30.filter((d) => d.spo2Min != null && d.breathingDisturbances != null && d.spo2Min < 90 && d.breathingDisturbances >= 15);
   if (apneaNights.length >= 6) {
-    const minSpo2 = Math.min(...apneaNights.map((d) => d.spo2Min));
+    const minSpo2 = Math.min(...measured(apneaNights, "spo2Min"));
     alerts.push({
       id: "apneia",
       kind: "apneia",
@@ -110,16 +122,16 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
       specialty: "Medicina do sono",
       evidence: [
         `Noites com saturação abaixo de 90%: ${apneaNights.length}`,
-        `Pausas na respiração nessas noites: média de ${Math.round(avg(apneaNights.map((d) => d.breathingDisturbances)))} por hora`,
+        `Pausas na respiração nessas noites: média de ${Math.round(avg(measured(apneaNights, "breathingDisturbances")))} por hora`,
       ],
     });
   }
 
   // 3. Pressão arterial (só se houver medidor: dias sem medição têm pressão 0)
-  const bp30 = last30.filter((d) => d.systolic > 0);
+  const bp30 = last30.filter((d) => val(d.systolic) > 0 && val(d.diastolic) > 0);
   if (bp30.length >= 14) {
-    const sys = Math.round(avg(bp30.map((d) => d.systolic)));
-    const dia = Math.round(avg(bp30.map((d) => d.diastolic)));
+    const sys = Math.round(avg(measured(bp30, "systolic")));
+    const dia = Math.round(avg(measured(bp30, "diastolic")));
     const onMed = db.medications.some((m) => !m.endDate && /losartana|enalapril|anlodipino|hidroclorotiazida|valsartana/i.test(m.name));
     if (sys >= 130 || dia >= 80) {
       const high = sys >= 140 || dia >= 90;
@@ -184,13 +196,20 @@ export function restingHrTrend(days: WearableDay[], today = todayISO()): { now: 
     const ago = daysBetween(d.date, today);
     return ago >= 14 && ago < 60;
   });
-  if (last7.length < 5 || baseline.length < 20) return null;
-  return { now: avg(last7.map((d) => d.restingHr)), base: avg(baseline.map((d) => d.restingHr)) };
+  const now = measured(last7, "restingHr");
+  const base = measured(baseline, "restingHr");
+  if (now.length < 5 || base.length < 20) return null;
+  return { now: avg(now), base: avg(base) };
 }
 
 /** Há medidor de pressão nesta série? (dias sem medição guardam pressão 0) */
 export function hasBloodPressure(days: WearableDay[]): boolean {
-  return days.some((d) => d.systolic > 0);
+  return measured(days, "systolic").length > 0;
+}
+
+/** O sinal foi medido em algum dia da série? */
+export function hasMetric(days: WearableDay[], key: WearableMetric): boolean {
+  return measured(days, key).length > 0;
 }
 
 /**
@@ -295,16 +314,32 @@ export function checkRepeats(db: Pick<Db, "labResults" | "documents">, examDate:
   return { duplicate: false, repeats };
 }
 
+/**
+ * Médias da última semana com dados. Se a série termina antes de hoje (um
+ * arquivo exportado há alguns dias), a semana termina no último dia medido.
+ * null = sinal não medido nesse período.
+ */
 export function wearableSnapshot(days: WearableDay[], today = todayISO()) {
-  const last7 = lastDays(days, 7, today);
+  const lastDate = days.at(-1)?.date;
+  const ref = lastDate && lastDate < today ? lastDate : today;
+  const last7 = lastDays(days, 7, ref);
+  const mean = (k: WearableMetric, digits = 0) => {
+    const xs = measured(last7, k);
+    if (!xs.length) return null;
+    const f = 10 ** digits;
+    return Math.round(avg(xs) * f) / f;
+  };
+  const spo2 = measured(last7, "spo2Min");
   return {
-    restingHr: Math.round(avg(last7.map((d) => d.restingHr))),
-    hrvMs: Math.round(avg(last7.map((d) => d.hrvMs))),
-    sleepHours: Math.round(avg(last7.map((d) => d.sleepHours)) * 10) / 10,
-    spo2Min: Math.min(...last7.map((d) => d.spo2Min)),
-    steps: Math.round(avg(last7.map((d) => d.steps))),
-    systolic: Math.round(avg(last7.map((d) => d.systolic))),
-    diastolic: Math.round(avg(last7.map((d) => d.diastolic))),
+    restingHr: mean("restingHr"),
+    hrvMs: mean("hrvMs"),
+    sleepHours: mean("sleepHours", 1),
+    spo2Min: spo2.length ? Math.min(...spo2) : null,
+    steps: mean("steps"),
+    systolic: mean("systolic"),
+    diastolic: mean("diastolic"),
+    /** Último dia da janela (para dizer "até 10/11" quando os dados não chegam a hoje). */
+    until: ref,
   };
 }
 

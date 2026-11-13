@@ -36,7 +36,14 @@ export function buildClinicalContext(data: ScopedData): string {
     lines.push(
       "",
       "WEARABLES (média dos últimos 7 dias)",
-      `FC repouso ${w.restingHr} bpm; VFC ${w.hrvMs} ms; sono ${w.sleepHours} h; SpO2 mínima ${w.spo2Min}%; passos ${w.steps}/dia${hasBloodPressure(data.wearableDays) ? `; PA ${w.systolic}/${w.diastolic} mmHg` : "; sem medidor de pressão"}`,
+      [
+        w.restingHr != null && `FC repouso ${w.restingHr} bpm`,
+        w.hrvMs != null && `VFC ${w.hrvMs} ms`,
+        w.sleepHours != null && `sono ${w.sleepHours} h`,
+        w.spo2Min != null && `SpO2 mínima ${w.spo2Min}%`,
+        w.steps != null && `passos ${w.steps}/dia`,
+        hasBloodPressure(data.wearableDays) && w.systolic != null ? `PA ${w.systolic}/${w.diastolic} mmHg` : "sem medidor de pressão",
+      ].filter(Boolean).join("; ") + (w.until < new Date().toISOString().slice(0, 10) ? ` (dados até ${w.until})` : ""),
     );
   }
 

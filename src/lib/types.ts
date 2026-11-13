@@ -66,26 +66,46 @@ export interface Vaccine {
   dose?: string;
 }
 
+/**
+ * Um dia de dados dos wearables. null = não medido naquele dia (o aparelho não
+ * mede aquilo, ou não foi usado). Nunca trate ausência como zero: saturação 0
+ * dispararia o alerta de apneia. Pressão 0 também conta como não medida
+ * (convenção antiga das personas).
+ */
 export interface WearableDay {
   date: string;
-  restingHr: number;
-  hrvMs: number;
-  sleepHours: number;
-  spo2Min: number;
+  restingHr: number | null;
+  hrvMs: number | null;
+  sleepHours: number | null;
+  spo2Min: number | null;
   /** Distúrbios respiratórios por hora de sono. */
-  breathingDisturbances: number;
-  steps: number;
-  irregularRhythmEvents: number;
-  systolic: number;
-  diastolic: number;
+  breathingDisturbances: number | null;
+  steps: number | null;
+  irregularRhythmEvents: number | null;
+  systolic: number | null;
+  diastolic: number | null;
 }
+
+export type WearableMetric = Exclude<keyof WearableDay, "date">;
 
 export interface WearableDevice {
   id: string;
   name: string;
-  kind: "relogio" | "anel" | "medidor_pressao";
+  kind: "relogio" | "anel" | "medidor_pressao" | "importado";
   metrics: string[];
   connectedAt: string;
+}
+
+/** De onde vêm os dados dos wearables desta pessoa. */
+export interface WearableSource {
+  kind: "simulado" | "importado";
+  /** Ex.: "Apple Saúde", "Planilha (CSV)", "Relatório lido pela IA". */
+  label?: string;
+  /** Nome do arquivo importado. */
+  filename?: string;
+  importedAt?: string;
+  /** Como o arquivo foi lido: direto no navegador ou organizado pela IA. */
+  readBy?: "direto" | "ia";
 }
 
 export const SCOPES = [
@@ -136,6 +156,8 @@ export type PersonaId = "nova" | "carlos" | "juliana" | "lucia" | "pedro";
 export interface Db {
   version: 1;
   personaId?: PersonaId;
+  /** Ausente = dados simulados (personas). */
+  wearableSource?: WearableSource;
   createdAt: string;
   patient: Patient;
   documents: SourceDocument[];

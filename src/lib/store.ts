@@ -6,7 +6,8 @@ import { resetChat } from "./chat";
 import { addDays, isValidISODate, todayISO } from "./dates";
 import { createPersonaDb, personaWearables } from "./personas";
 import { extendWearablesToToday } from "./seed";
-import { SCOPES, type Db, type DoctorSummary, type ExtractionSource, type PersonaId, type Scope } from "./types";
+import { SCOPES, type Db, type DoctorSummary, type ExtractionSource, type PersonaId, type Scope, type WearableDay } from "./types";
+import { MAX_IMPORT_DAYS, METRIC_LABELS, type ImportResult } from "./wearableImport";
 
 /**
  * Armazenamento da versão web: tudo fica no navegador da pessoa.
@@ -32,7 +33,8 @@ function read(): Db {
   if (!db || db.version !== 1) {
     db = createPersonaDb("nova"); // primeiro acesso: app vazio, com o guia de boas-vindas
     write(db);
-  } else if (extendWearablesToToday(db, new Date(), personaWearables(db.personaId))) {
+  } else if (db.wearableSource?.kind !== "importado" && extendWearablesToToday(db, new Date(), personaWearables(db.personaId))) {
+    // Só a simulação é estendida até hoje; dado importado fica como veio do arquivo.
     write(db);
   }
   return db;
@@ -204,12 +206,39 @@ export function simulateIrregularRhythm(): boolean {
   update((db) => {
     for (const d of db.wearableDays) {
       if (plan[d.date]) {
-        d.irregularRhythmEvents += plan[d.date];
-        d.restingHr += 4;
+        d.irregularRhythmEvents = (d.irregularRhythmEvents ?? 0) + plan[d.date];
+        if (d.restingHr != null) d.restingHr += 4;
       }
     }
   });
   return true;
+}
+
+/**
+ * Salva os dias importados de um arquivo do relógio. A primeira importação
+ * substitui a simulação; as seguintes se juntam às anteriores (o dia mais novo
+ * vale), mantendo os últimos 180 dias.
+ */
+export function importWearables(res: ImportResult) {
+  update((db) => {
+    const merged = new Map<string, WearableDay>();
+    if (db.wearableSource?.kind === "importado") for (const d of db.wearableDays) merged.set(d.date, d);
+    for (const d of res.days) merged.set(d.date, d);
+    const days = [...merged.values()].sort((a, b) => a.date.localeCompare(b.date));
+    const last = days.at(-1)!.date;
+    const cutoff = addDays(last, -(MAX_IMPORT_DAYS - 1));
+    db.wearableDays = days.filter((d) => d.date >= cutoff);
+    db.wearableSource = { kind: "importado", label: res.source.label, filename: res.source.filename, readBy: res.source.readBy, importedAt: new Date().toISOString() };
+    db.devices = [
+      {
+        id: "dev-importado",
+        name: res.source.label,
+        kind: "importado",
+        metrics: res.metrics.map((k) => METRIC_LABELS[k].name),
+        connectedAt: new Date().toISOString(),
+      },
+    ];
+  });
 }
 
 /** Cadastro feito no guia de boas-vindas (perfil "Começar do zero"). */

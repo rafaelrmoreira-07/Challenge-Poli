@@ -34,8 +34,9 @@ export function HomeView() {
   const last14 = db.wearableDays.slice(-14);
   const altered = analyteSeries(db.labResults).filter((s) => s.status === "alto" || s.status === "baixo");
   const meds = db.medications.filter((m) => !m.endDate);
-  const bpHigh = w.systolic >= 130 || w.diastolic >= 80;
-  const spo2Low = w.spo2Min < 90;
+  const bpHigh = (w.systolic ?? 0) >= 130 || (w.diastolic ?? 0) >= 80;
+  const spo2Low = w.spo2Min != null && w.spo2Min < 90;
+  const stale = hasWearables && w.until < new Date().toISOString().slice(0, 10);
   const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
 
   return (
@@ -89,39 +90,52 @@ export function HomeView() {
         <Link href="/compartilhar" className="btn-secondary">Montar relatório para o médico</Link>
       </div>
 
-      <SectionTitle action={hasWearables ? <SectionLink href="/wearables">Ver gráficos</SectionLink> : undefined}>Sinais dos últimos 7 dias</SectionTitle>
+      <SectionTitle action={hasWearables ? <SectionLink href="/wearables">Ver gráficos</SectionLink> : undefined}>{stale ? `Sinais até ${formatDate(w.until, { day: "2-digit", month: "2-digit" })}` : "Sinais dos últimos 7 dias"}</SectionTitle>
       {!hasWearables ? (
         <div className="tile flex items-start gap-3">
           <WatchIcon width={26} className="mt-0.5 shrink-0 text-faint" />
           <div>
-            <p className="text-[15px] font-medium text-ink">Nenhum relógio ou anel conectado</p>
+            <p className="text-[15px] font-medium text-ink">Nenhum dado de relógio ou anel</p>
             <p className="mt-0.5 text-[15px] text-muted">
-              Exames, remédios e vacinas funcionam do mesmo jeito. Quando houver um relógio, batimento, sono e atividade entram neste mesmo histórico.
+              Exames, remédios e vacinas funcionam do mesmo jeito. Para trazer batimento, sono e passos, exporte os dados do celular e envie aqui.
             </p>
+            <Link href="/enviar/?tipo=relogio" className="btn-quiet -ml-1 text-sm">Importar dados do relógio</Link>
           </div>
         </div>
       ) : (
       <div className="grid grid-cols-2 gap-2">
-        <Vital icon={<HeartIcon />} label="Batimentos em repouso" unit="bpm" note="média" days={last14} metric="restingHr">
-          <NumberFlow value={w.restingHr} locales="pt-BR" />
-        </Vital>
-        <Vital icon={<MoonIcon />} label="Sono" unit="h por noite" note="média" days={last14} metric="sleepHours">
-          <NumberFlow value={w.sleepHours} locales="pt-BR" format={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} />
-        </Vital>
-        <Vital icon={<DropIcon />} label="Saturação mínima" unit="%" note={spo2Low ? "abaixo de 90%" : "menor valor"} warn={spo2Low} days={last14} metric="spo2Min">
-          <NumberFlow value={w.spo2Min} locales="pt-BR" />
-        </Vital>
-        {hasBp ? (
-          <Vital icon={<GaugeIcon />} label="Pressão" unit="mmHg" note={bpHigh ? "acima de 130/80" : "média"} warn={bpHigh} days={last14} metric="systolic">
-            <NumberFlow value={w.systolic} locales="pt-BR" />
-            <span>/</span>
-            <NumberFlow value={w.diastolic} locales="pt-BR" />
-          </Vital>
-        ) : (
-          <Vital icon={<WatchIcon />} label="Passos" unit="por dia" note="média" days={last14} metric="steps">
-            <NumberFlow value={w.steps} locales="pt-BR" />
-          </Vital>
-        )}
+        {/* Até quatro cartões, só com o que foi medido (cada aparelho mede coisas diferentes) */}
+        {[
+          w.restingHr != null && (
+            <Vital key="hr" icon={<HeartIcon />} label="Batimentos em repouso" unit="bpm" note="média" days={last14} metric="restingHr">
+              <NumberFlow value={w.restingHr} locales="pt-BR" />
+            </Vital>
+          ),
+          w.sleepHours != null && (
+            <Vital key="sono" icon={<MoonIcon />} label="Sono" unit="h por noite" note="média" days={last14} metric="sleepHours">
+              <NumberFlow value={w.sleepHours} locales="pt-BR" format={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} />
+            </Vital>
+          ),
+          w.spo2Min != null && (
+            <Vital key="spo2" icon={<DropIcon />} label="Saturação mínima" unit="%" note={spo2Low ? "abaixo de 90%" : "menor valor"} warn={spo2Low} days={last14} metric="spo2Min">
+              <NumberFlow value={w.spo2Min} locales="pt-BR" />
+            </Vital>
+          ),
+          hasBp && w.systolic != null && w.diastolic != null && (
+            <Vital key="pa" icon={<GaugeIcon />} label="Pressão" unit="mmHg" note={bpHigh ? "acima de 130/80" : "média"} warn={bpHigh} days={last14} metric="systolic">
+              <NumberFlow value={w.systolic} locales="pt-BR" />
+              <span>/</span>
+              <NumberFlow value={w.diastolic} locales="pt-BR" />
+            </Vital>
+          ),
+          w.steps != null && (
+            <Vital key="passos" icon={<WatchIcon />} label="Passos" unit="por dia" note="média" days={last14} metric="steps">
+              <NumberFlow value={w.steps} locales="pt-BR" />
+            </Vital>
+          ),
+        ]
+          .filter(Boolean)
+          .slice(0, 4)}
       </div>
       )}
 
@@ -233,7 +247,7 @@ function Vital({
           {warn && <AlertIcon width={12} />}
           {note}
         </p>
-        <Spark values={days.map((d) => d[metric] as number)} width={56} height={22} />
+        <Spark values={days.flatMap((d) => (d[metric] == null ? [] : [d[metric] as number]))} width={56} height={22} />
       </div>
     </div>
   );

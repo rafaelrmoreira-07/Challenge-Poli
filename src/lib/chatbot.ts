@@ -226,16 +226,16 @@ async function describeVitals(say: Say) {
   const db = getDbSnapshot();
   if (!db.wearableDays.length) return say({ text: "Ainda não recebi medições do relógio nem do medidor de pressão." });
   const w = wearableSnapshot(db.wearableDays);
-  const bpHigh = w.systolic >= 130 || w.diastolic >= 80;
+  const bpHigh = (w.systolic ?? 0) >= 130 || (w.diastolic ?? 0) >= 80;
   return say({
     text: [
       "Suas medições dos últimos 7 dias:",
       "",
-      `• Batimentos em repouso: *${w.restingHr} bpm* (média)`,
-      ...(hasBloodPressure(db.wearableDays) ? [`• Pressão: *${w.systolic}/${w.diastolic} mmHg* (média)${bpHigh ? ", acima da meta de 130/80" : ""}`] : []),
-      `• Saturação mínima: *${w.spo2Min}%*${w.spo2Min < 90 ? ", abaixo de 90%" : ""}`,
-      `• Sono: *${fmt(w.sleepHours)} h* por noite`,
-      `• Passos: *${w.steps.toLocaleString("pt-BR")}* por dia`,
+      ...(w.restingHr != null ? [`• Batimentos em repouso: *${w.restingHr} bpm* (média)`] : []),
+      ...(hasBloodPressure(db.wearableDays) && w.systolic != null ? [`• Pressão: *${w.systolic}/${w.diastolic} mmHg* (média)${bpHigh ? ", acima da meta de 130/80" : ""}`] : []),
+      ...(w.spo2Min != null ? [`• Saturação mínima: *${w.spo2Min}%*${w.spo2Min < 90 ? ", abaixo de 90%" : ""}`] : []),
+      ...(w.sleepHours != null ? [`• Sono: *${fmt(w.sleepHours)} h* por noite`] : []),
+      ...(w.steps != null ? [`• Passos: *${w.steps.toLocaleString("pt-BR")}* por dia`] : []),
     ].join("\n"),
     actions: [{ kind: "link", label: "Ver gráficos", href: "/wearables" }],
   });
