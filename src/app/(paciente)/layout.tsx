@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
+import { ChatButton } from "@/components/ChatButton";
 import { ChatNotifier } from "@/components/ChatNotifier";
 import { GearIcon, Logo } from "@/components/icons";
 import { OnboardingGate } from "@/components/OnboardingGate";
@@ -13,6 +14,7 @@ export default function PacienteLayout({ children }: { children: React.ReactNode
         </Link>
         <div className="flex items-center gap-1">
           <span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-ink">Dados fictícios</span>
+          <ChatButton />
           <Link
             href="/configuracoes"
             aria-label="Configurações"

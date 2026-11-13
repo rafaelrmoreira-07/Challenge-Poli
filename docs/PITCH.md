@@ -10,6 +10,7 @@ Modo apresentação (para projetar): https://suzetemirandasilva5601-cpu.github.i
 - [ ] No notebook da apresentação, abra o site, vá em ⚙️ **Configurações** e cole a chave da Gemini. Espere "Chave funcionando".
 - [ ] Abra o **modo apresentação** (`/demo/`) em tela cheia (F11). Do lado esquerdo fica o celular do paciente; do lado direito, a tela do médico.
 - [ ] Clique em **Restaurar dados** no topo, para começar limpo.
+- [ ] No menu **Persona** do topo, confirme que está em **Carlos Mendes**. No primeiro acesso o app abre vazio, com o guia de boas-vindas; o link com `?persona=carlos` também carrega o Carlos (veja `docs/LIMITACOES.md`).
 - [ ] Faça um teste de leitura de laudo, depois restaure de novo.
 - [ ] Opcional: tenha o `exame-papel-2016.jpg` impresso, para fotografar ao vivo com o celular de vocês.
 

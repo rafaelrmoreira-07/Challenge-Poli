@@ -25,7 +25,7 @@ const STEPS: { icon: React.ReactNode; title: string; body: React.ReactNode }[] =
     ),
   },
   {
-    icon: <FileIcon width={40} className="text-brand-700" />,
+    icon: <FileIcon width={36} />,
     title: "Envie seus exames",
     body: (
       <ul className="list-disc space-y-2 pl-5">
@@ -37,18 +37,18 @@ const STEPS: { icon: React.ReactNode; title: string; body: React.ReactNode }[] =
     ),
   },
   {
-    icon: <WatchIcon width={40} className="text-brand-700" />,
+    icon: <WatchIcon width={36} />,
     title: "Relógio e anel inteligentes",
     body: (
       <>
         <p>Batimento, sono e atividade entram no mesmo histórico todos os dias, sem você precisar fazer nada.</p>
         <p>Se os dados mostrarem algo que vale levar ao médico, como batimentos irregulares, o Elo avisa.</p>
-        <p className="text-sm text-ink-500">Neste perfil de demonstração ainda não há relógio conectado.</p>
+        <p className="text-[15px] text-muted">Neste perfil de demonstração ainda não há relógio conectado.</p>
       </>
     ),
   },
   {
-    icon: <ShieldIcon width={40} className="text-brand-700" />,
+    icon: <ShieldIcon width={36} />,
     title: "Você decide quem vê",
     body: (
       <>
@@ -85,26 +85,26 @@ export function Onboarding() {
   }
 
   return (
-    <div className="fixed inset-0 z-40 overflow-y-auto bg-paper">
+    <div className="fixed inset-0 z-40 overflow-y-auto bg-bg">
       <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-8 pt-[max(1.5rem,env(safe-area-inset-top))]">
         <div className="flex items-center justify-between">
           <div className="flex gap-1.5" aria-label={`Passo ${step + 1} de ${total}`}>
             {Array.from({ length: total }, (_, i) => (
-              <span key={i} className={`h-1.5 w-7 rounded-full ${i <= step ? "bg-brand-600" : "bg-ink-200"}`} />
+              <span key={i} className={`h-1.5 w-7 rounded-full transition-colors ${i < step ? "bg-ink" : i === step ? "bg-accent" : "bg-line"}`} />
             ))}
           </div>
           {!atForm && (
-            <button type="button" onClick={() => setStep(STEPS.length)} className="min-h-11 px-2 text-sm font-semibold text-ink-600">
+            <button type="button" onClick={() => setStep(STEPS.length)} className="btn-quiet text-sm">
               Pular
             </button>
           )}
         </div>
 
         {!atForm ? (
-          <section className="flex flex-1 flex-col pt-10" aria-live="polite">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-ink-200">{STEPS[step].icon}</div>
-            <h1 className="mt-6 font-serif text-[1.9rem] font-semibold leading-tight text-ink-900">{STEPS[step].title}</h1>
-            <div className="mt-4 space-y-3 text-[17px] leading-relaxed text-ink-700">{STEPS[step].body}</div>
+          <section key={step} className="t-reveal flex flex-1 flex-col pt-10" aria-live="polite">
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-surface text-ink">{STEPS[step].icon}</div>
+            <h1 className="display mt-6">{STEPS[step].title}</h1>
+            <div className="mt-4 space-y-3 text-[17px] leading-relaxed text-ink-soft">{STEPS[step].body}</div>
             <div className="mt-auto flex gap-3 pt-10">
               {step > 0 && (
                 <button type="button" className="btn-secondary flex-1" onClick={() => setStep(step - 1)}>
@@ -118,8 +118,8 @@ export function Onboarding() {
           </section>
         ) : (
           <form onSubmit={finish} onChange={() => setError(null)} className="flex flex-1 flex-col pt-8" noValidate>
-            <h1 className="font-serif text-[1.9rem] font-semibold leading-tight text-ink-900">Para começar</h1>
-            <p className="mt-2 text-[15px] text-ink-600">Só o essencial. O resto vem dos seus exames.</p>
+            <h1 className="display">Para começar</h1>
+            <p className="mt-2 text-[15px] text-muted">Só o essencial. O resto vem dos seus exames.</p>
             <div className="mt-6 space-y-4">
               <label className="block">
                 <span className="label">Nome</span>
@@ -133,27 +133,27 @@ export function Onboarding() {
                 <legend className="label">Sexo</legend>
                 <div className="grid grid-cols-2 gap-2">
                   {(["F", "M"] as const).map((v) => (
-                    <label key={v} className={`flex min-h-12 cursor-pointer items-center justify-center rounded-xl border text-[15px] font-semibold ${sex === v ? "border-brand-600 bg-brand-50 text-brand-800" : "border-ink-300 bg-white text-ink-700"}`}>
+                    <label key={v} className={`flex min-h-12 cursor-pointer items-center justify-center rounded-xl border text-[15px] font-medium transition-colors ${sex === v ? "border-ink bg-navy-50 text-ink" : "border-line-strong bg-white text-ink-soft"}`}>
                       <input type="radio" name="sex" value={v} checked={sex === v} onChange={() => setSex(v)} className="sr-only" />
                       {v === "F" ? "Feminino" : "Masculino"}
                     </label>
                   ))}
                 </div>
-                <p className="mt-1 text-sm text-ink-500">Usado para escolher as faixas de referência de alguns exames.</p>
+                <p className="mt-1 text-sm text-muted">Usado para escolher as faixas de referência de alguns exames.</p>
               </fieldset>
               <label className="block">
                 <span className="label">Alergias (opcional)</span>
                 <input className="input" value={allergies} onChange={(e) => setAllergies(e.target.value)} placeholder="Ex.: dipirona, penicilina" />
               </label>
             </div>
-            {error && <p className="mt-4 rounded-xl bg-danger-50 px-3 py-2 text-sm text-danger-700 ring-1 ring-danger-200" role="alert">{error}</p>}
-            <p className="mt-6 text-sm text-ink-500">Tudo fica salvo neste navegador. Use dados fictícios ou os seus.</p>
+            {error && <p className="mt-4 rounded-2xl bg-danger-soft p-3 text-[15px] text-danger" role="alert">{error}</p>}
+            <p className="mt-6 text-sm text-muted">Tudo fica salvo neste navegador. Use dados fictícios ou os seus.</p>
             <div className="mt-auto flex flex-col gap-2 pt-8">
               <button type="submit" className="btn-primary w-full">Começar e enviar meu primeiro exame</button>
               <button type="button" className="btn-secondary w-full" onClick={() => setStep(STEPS.length - 1)}>Voltar</button>
               <button
                 type="button"
-                className="min-h-11 text-sm font-semibold text-brand-700 underline underline-offset-4"
+                className="btn-quiet justify-center text-sm"
                 onClick={async () => {
                   await resetDemo("carlos");
                   router.push("/");

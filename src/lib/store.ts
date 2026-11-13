@@ -30,7 +30,7 @@ function read(): Db {
     }
   }
   if (!db || db.version !== 1) {
-    db = createPersonaDb("carlos");
+    db = createPersonaDb("nova"); // primeiro acesso: app vazio, com o guia de boas-vindas
     write(db);
   } else if (extendWearablesToToday(db, new Date(), personaWearables(db.personaId))) {
     write(db);

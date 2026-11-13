@@ -50,7 +50,7 @@ Magic UI, Aceternity, RareUI e 21st.dev foram avaliados e ficaram de fora: são 
 - **Superfície** (`tile`): fundo `surface`, raio 16 px, sem borda nem sombra.
 - **Botões**: `btn-primary` (laranja), `btn-secondary` (contorno), `btn-danger`, `btn-quiet` (link sublinhado). Altura mínima 48 px. Sobem 1 px no hover do mouse e afundam ao pressionar.
 - **Alertas** (`AlertCard`): sanfona. Fechado mostra gravidade e título; aberto mostra o que aconteceu, o que fazer e as medições. Na tela do médico ficam sempre abertos.
-- **Navegação inferior**: Hoje, Histórico, Sinais, Conversa (com contador), Médico. A aba ativa tem ícone preenchido e um ponto laranja.
+- **Navegação inferior**: Hoje, Histórico, **Enviar** (botão laranja no centro, ação principal), Sinais, Médico. A aba ativa tem ícone preenchido e um ponto laranja. A Conversa fica no cabeçalho, com o contador de mensagens novas.
 
 ## Movimento
 

@@ -145,7 +145,7 @@ export class NoKeyError extends Error {}
 
 /**
  * Extrai os resultados com a Gemini. Sem chave configurada, ou se a IA cair,
- * os dois laudos de exemplo usam a leitura pré-gravada (marcada como
+ * os laudos de exemplo usam a leitura pré-gravada (marcada como
  * "simulado" na interface). Qualquer outro arquivo pede a chave ou o
  * preenchimento manual.
  */

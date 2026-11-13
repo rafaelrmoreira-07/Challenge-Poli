@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
-import { useUnreadCount } from "@/lib/chat";
-import { ChatIcon, DoctorIcon, HistoryIcon, HomeIcon, VitalsIcon } from "./icons";
+import { DoctorIcon, HistoryIcon, HomeIcon, PlusIcon, VitalsIcon } from "./icons";
 
+/** "Enviar" no centro, em destaque: é a ação principal do app. A Conversa fica no cabeçalho (ChatButton). */
 const ITEMS = [
   { href: "/", label: "Hoje", icon: HomeIcon, match: (p: string) => p === "/" },
-  { href: "/historico", label: "Histórico", icon: HistoryIcon, match: (p: string) => /^\/(historico|exames?|enviar)/.test(p) },
+  { href: "/historico", label: "Histórico", icon: HistoryIcon, match: (p: string) => /^\/(historico|exames?)/.test(p) },
+  { href: "/enviar", label: "Enviar", icon: PlusIcon, match: (p: string) => p.startsWith("/enviar"), primary: true },
   { href: "/wearables", label: "Sinais", icon: VitalsIcon, match: (p: string) => p.startsWith("/wearables") },
-  { href: "/conversa", label: "Conversa", icon: ChatIcon, match: (p: string) => p.startsWith("/conversa"), chat: true },
   { href: "/compartilhar", label: "Médico", icon: DoctorIcon, match: (p: string) => p.startsWith("/compartilhar") },
 ];
 
@@ -33,31 +33,28 @@ function ActiveNavItems() {
 }
 
 function NavItems({ pathname }: { pathname: string }) {
-  const unread = useUnreadCount();
   return (
     <ul className="mx-auto flex max-w-md items-stretch justify-around px-2">
-      {ITEMS.map(({ href, label, icon: Icon, match, chat }) => {
+      {ITEMS.map(({ href, label, icon: Icon, match, primary }) => {
         const active = pathname !== "" && match(pathname);
-        const badge = chat && unread > 0;
         return (
           <li key={href} className="flex-1">
             <Link
               href={href}
               aria-current={active ? "page" : undefined}
-              aria-label={badge ? `${label}, ${unread} ${unread === 1 ? "mensagem nova" : "mensagens novas"}` : undefined}
               className={`relative flex min-h-16 flex-col items-center justify-center gap-0.5 text-xs transition-colors ${active ? "font-semibold text-ink" : "font-medium text-muted hover:text-ink"}`}
             >
-              <span className="relative">
+              {primary ? (
+                // Ação principal: botão laranja que sobe acima da barra
+                <span className={`lift -mt-6 mb-0.5 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-ink shadow-md ring-4 ring-white ${active ? "bg-accent-hover" : ""}`}>
+                  <Icon width={26} />
+                </span>
+              ) : (
                 <Icon width={26} weight={active ? "fill" : "regular"} />
-                {badge && (
-                  <span className="num absolute -right-2.5 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-bold leading-none text-ink ring-2 ring-white" aria-hidden>
-                    {unread > 9 ? "9+" : unread}
-                  </span>
-                )}
-              </span>
+              )}
               {label}
               {/* Indicador da tela atual: ponto laranja, além do ícone preenchido e do aria-current */}
-              <span className={`mt-0.5 h-1 w-1 rounded-full ${active ? "bg-accent" : "bg-transparent"}`} aria-hidden />
+              {!primary && <span className={`mt-0.5 h-1 w-1 rounded-full ${active ? "bg-accent" : "bg-transparent"}`} aria-hidden />}
             </Link>
           </li>
         );

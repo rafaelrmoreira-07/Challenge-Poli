@@ -27,7 +27,7 @@ export function AiStatusBanner() {
       <ScanIcon width={22} className="shrink-0 text-ink" />
       <span className="flex-1">
         <span className="block font-medium text-ink">Leitura de laudos desligada</span>
-        Os dois laudos de exemplo funcionam. Para ler outros, adicione uma chave da Gemini.
+        Os laudos de exemplo funcionam. Para ler outros, adicione uma chave da Gemini.
       </span>
       <ChevronRight width={18} className="shrink-0 text-faint" />
     </Link>
