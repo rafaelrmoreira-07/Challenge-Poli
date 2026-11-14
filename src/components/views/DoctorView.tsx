@@ -155,6 +155,14 @@ function Dashboard({
                 <dd className="text-ink">{activeMeds.map((m) => `${m.name} ${m.dose}`).join(", ") || "nenhum"}</dd>
               </>
             )}
+            {p.emergencyContact && (
+              <>
+                <dt className="text-sm font-bold uppercase tracking-[0.06em] text-ink-soft">Emergência</dt>
+                <dd className="text-ink">
+                  {p.emergencyContact.name} · <a className="num underline decoration-line-strong underline-offset-2" href={`tel:${p.emergencyContact.phone.replace(/[^\d+]/g, "")}`}>{p.emergencyContact.phone}</a>
+                </dd>
+              </>
+            )}
           </dl>
         </div>
         <div className="flex gap-3 rounded-lg border border-navy-100 bg-navy-50 p-3 text-sm text-ink md:max-w-sm">
@@ -177,7 +185,7 @@ function Dashboard({
             <section>
               <DocH2>Alertas automáticos</DocH2>
               <div className="grid gap-3 md:grid-cols-2">
-                {data.alerts.map((a) => <AlertCard key={a.id} alert={a} cta={false} open />)}
+                {data.alerts.map((a) => <AlertCard key={a.id} alert={a} cta={false} open audience="medico" />)}
               </div>
             </section>
           )}

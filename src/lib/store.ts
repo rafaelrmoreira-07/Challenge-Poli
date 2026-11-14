@@ -242,10 +242,24 @@ export function importWearables(res: ImportResult) {
   });
 }
 
-/** Cadastro feito no guia de boas-vindas (perfil "Começar do zero"). */
-export function saveProfile(profile: { name: string; birthDate: string; sex: "F" | "M"; allergies: string[] }) {
+/** Cadastro do guia de boas-vindas e edição do perfil em Configurações. */
+export function saveProfile(profile: {
+  name: string;
+  birthDate: string;
+  sex: "F" | "M";
+  allergies: string[];
+  bloodType?: string;
+  emergencyContact?: { name: string; phone: string } | null;
+}) {
   update((db) => {
-    db.patient = { ...db.patient, ...profile };
+    const { emergencyContact, bloodType, ...rest } = profile;
+    db.patient = { ...db.patient, ...rest };
+    if (bloodType !== undefined) db.patient.bloodType = clean(bloodType, 5) || undefined;
+    if (emergencyContact !== undefined) {
+      const name = clean(emergencyContact?.name, 80);
+      const phone = clean(emergencyContact?.phone, 30);
+      db.patient.emergencyContact = name && phone ? { name, phone } : undefined;
+    }
   });
 }
 
@@ -283,7 +297,7 @@ export function createShare(form: {
   const scopes = form.scopes.filter((s): s is Scope => SCOPES.includes(s as Scope));
   if (!doctorName) return { error: form.kind === "hospital" ? "Informe o nome do hospital." : "Informe o nome do médico." };
   if (!scopes.length) return { error: "Escolha pelo menos um tipo de dado para compartilhar." };
-  if (![1, 24, 168, 720].includes(form.hours)) return { error: "Prazo inválido." };
+  if (![1, 24, 168, 720, 2160, 8760].includes(form.hours)) return { error: "Prazo inválido." };
 
   const token = newToken();
   const now = new Date();

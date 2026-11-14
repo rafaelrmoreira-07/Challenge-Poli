@@ -49,7 +49,7 @@ export function buildClinicalContext(data: ScopedData): string {
 
   if (data.alerts.length) {
     lines.push("", "ALERTAS AUTOMÁTICOS");
-    for (const a of data.alerts) lines.push(`- ${a.title}: ${a.message} Evidências: ${a.evidence.join("; ")}`);
+    for (const a of data.alerts) lines.push(`- ${a.title}: ${a.clinical ?? a.message} Evidências: ${a.evidence.join("; ")}`);
   }
 
   if (data.vaccines.length) {
@@ -128,7 +128,7 @@ export function fallbackSummary(data: ScopedData): DoctorSummary {
         : "",
     ].filter(Boolean).join(" "),
     pontosDeAtencao: [
-      ...data.alerts.map((a) => ({ titulo: a.title, detalhe: a.message })),
+      ...data.alerts.map((a) => ({ titulo: a.title, detalhe: a.clinical ?? a.message })),
       ...out.slice(0, 3).map((s) => ({
         titulo: s.name,
         detalhe: `${s.latest.value != null ? fmt(s.latest.value) : s.latest.valueText} ${s.unit} em ${formatDate(s.latest.date)} (referência ${formatRef(s.latest)}).`,

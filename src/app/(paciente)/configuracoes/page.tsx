@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useAiEnabled } from "@/components/AiStatus";
 import { Switch } from "@/components/base/switch";
 import { DataPortability } from "@/components/DataPortability";
+import { DeleteMyData, ProfileSettings } from "@/components/ProfileSettings";
 import { ReadingQuality } from "@/components/ReadingQuality";
 import { PageHeader, SectionTitle } from "@/components/ui";
 import { MODELS, setGeminiKey, testGeminiKey } from "@/lib/gemini";
@@ -38,6 +39,9 @@ export default function ConfiguracoesPage() {
   return (
     <div>
       <PageHeader title="Configurações" />
+      <SectionTitle id="perfil">Seu perfil</SectionTitle>
+      <ProfileSettings />
+
 
       <SectionTitle>Leitura de laudos</SectionTitle>
       <div className="tile space-y-4">
@@ -98,9 +102,7 @@ export default function ConfiguracoesPage() {
       </div>
 
       <SectionTitle>Privacidade</SectionTitle>
-      <p className="tile text-[15px] leading-relaxed text-muted">
-        Todo o histórico fica salvo neste navegador. Para apagar tudo e voltar aos dados de demonstração, use Hoje, Controles da demonstração, Restaurar.
-      </p>
+      <DeleteMyData />
     </div>
   );
 }

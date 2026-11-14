@@ -104,6 +104,8 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
         "Marque consulta com um cardiologista nos próximos dias. Se tiver dor no peito, falta de ar forte, desmaio ou fraqueza de um lado do corpo, vá ao pronto-socorro ou ligue 192.",
       specialty: "Cardiologia",
       evidence: irregular.map((d) => `${formatDate(d.date)}: ${d.irregularRhythmEvents} ${d.irregularRhythmEvents === 1 ? "episódio" : "episódios"}`),
+      clinical: `${irregularCount} episódios de ritmo irregular notificados pelo relógio em 14 dias (${irregular.length} ${irregular.length === 1 ? "dia" : "dias"}). Padrão compatível com possível fibrilação atrial; registro de dispositivo de consumo, sem ECG.`,
+      clinicalNote: "ECG de 12 derivações e, se indicado, Holter de 24 h.",
     });
   }
 
@@ -121,6 +123,8 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
       message: `Em ${apneaNights.length} das últimas 30 noites, a saturação de oxigênio ficou abaixo de 90% (menor valor: ${minSpo2}%), com muitas pausas na respiração.`,
       recommendation: "Procure um pneumologista ou um médico do sono. O exame que confirma ou descarta apneia é a polissonografia.",
       specialty: "Medicina do sono",
+      clinical: `SpO2 mínima noturna abaixo de 90% em ${apneaNights.length} de 30 noites (menor valor ${minSpo2}%), com média de ${Math.round(avg(measured(apneaNights, "breathingDisturbances")))} distúrbios respiratórios por hora nessas noites. Sugere distúrbio respiratório do sono.`,
+      clinicalNote: "Polissonografia.",
       evidence: [
         `Noites com saturação abaixo de 90%: ${apneaNights.length}`,
         `Pausas na respiração nessas noites: média de ${Math.round(avg(measured(apneaNights, "breathingDisturbances")))} por hora`,
@@ -146,6 +150,8 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
           ? "Mostre estas medidas ao médico que trata sua pressão. Pode ser preciso ajustar o remédio."
           : "Marque uma consulta para avaliar a pressão.",
         specialty: "Clínica médica ou cardiologia",
+        clinical: `PA domiciliar média de ${sys}/${dia} mmHg em ${bp30.length} medições nos últimos 30 dias${onMed ? ", em uso de anti-hipertensivo" : ", sem anti-hipertensivo registrado"}. Acima da meta de 130/80 mmHg.`,
+        clinicalNote: onMed ? "Avaliar adesão e esquema terapêutico; MAPA se houver dúvida." : "Confirmar com MAPA ou MRPA.",
         evidence: [`${bp30.length} medições em 30 dias`, `Média: ${sys}/${dia} mmHg`],
       });
     }
@@ -163,6 +169,8 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
         title: "Batimentos em repouso mais altos",
         message: `Na última semana, seus batimentos em repouso ficaram em ${Math.round(now)} bpm. Antes, o normal para você era ${Math.round(base)} bpm.`,
         recommendation: "Estresse, noites mal dormidas ou uma infecção podem causar isso. Se continuar ou vier com outros sintomas, fale com seu médico.",
+        clinical: `FC de repouso média de ${Math.round(now)} bpm na última semana, contra ${Math.round(base)} bpm de 2 a 8 semanas antes (+${Math.round(now - base)} bpm).`,
+        clinicalNote: "Correlacionar com sintomas, sono, infecção e função tireoidiana.",
         evidence: [`Últimos 7 dias: ${Math.round(now)} bpm`, `De 2 a 8 semanas atrás: ${Math.round(base)} bpm`],
       });
     }
@@ -180,6 +188,7 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
       title: "Exames alterados no último ano",
       message: `${recentOut.length === 1 ? "Um resultado do último ano está" : `${recentOut.length} resultados do último ano estão`} fora do valor de referência do laudo.`,
       recommendation: "Leve estes resultados à próxima consulta. Um valor fora da referência nem sempre é problema; quem interpreta é o médico.",
+      clinical: `${recentOut.length === 1 ? "Um resultado" : `${recentOut.length} resultados`} dos últimos 12 meses fora da faixa de referência do laudo: ${recentOut.map((x) => x.name).join(", ")}.`,
       evidence: recentOut.map((s) => `${s.name}: ${fmt(s.latest.value!)} ${s.unit} (${s.status}; referência ${formatRef(s.latest)})`),
     });
   }
@@ -201,6 +210,8 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
         ? `Se a falta de ar ou a dor no peito forem fortes ou estiverem piorando, vá ao pronto-socorro ou ligue 192 agora. Se forem leves, ligue hoje para a ${fu.discharge.teamContact.charAt(0).toLowerCase() + fu.discharge.teamContact.slice(1)}.`
         : `Fale com a ${fu.discharge.teamContact.charAt(0).toLowerCase() + fu.discharge.teamContact.slice(1)} se o sintoma continuar amanhã.`,
       specialty: fu.admission.hospital,
+      clinical: `Registro do paciente no dia ${fu.day} pós-alta (${fu.admission.procedure}): ${ci.symptoms.join(", ").toLowerCase()}${ci.tookMeds ? "" : "; não tomou os remédios no dia"}.`,
+      clinicalNote: red ? "Sintoma de alerta relatado: contato com o paciente hoje." : undefined,
       evidence: [`Internação: ${fu.admission.procedure}`, `Alta em ${formatDate(fu.discharge.date)}`, ci.tookMeds ? "Tomou os remédios" : "Não tomou os remédios no dia"],
     });
   }
@@ -267,6 +278,8 @@ function crossInsights(db: Db, alerts: HealthAlert[], today: string): HealthAler
         title: thyroid ? "Batimentos em repouso e exame da tireoide" : "Batimentos em repouso e hemoglobina",
         message: `Separados, cada dado pode passar despercebido. Juntos: ${hrFact}, e ${labFact(lab, dir)}.`,
         recommendation: "Esses dois dados costumam ser avaliados juntos. Leve os dois ao seu médico na próxima consulta, sem esperar o próximo check-up.",
+        clinical: `FC de repouso em elevação no relógio (${Math.round(hr.base)} → ${Math.round(hr.now)} bpm) e ${lab.name} ${dir} da referência (${fmt(lab.value!)} ${lab.unit} em ${formatDate(lab.date)}).`,
+        clinicalNote: thyroid ? "Avaliação de função tireoidiana." : "Avaliação de anemia.",
         evidence: [`Relógio: média de ${Math.round(hr.now)} bpm na última semana, contra ${Math.round(hr.base)} bpm de 2 a 8 semanas atrás`, `Exame: ${lab.name} ${fmt(lab.value!)} ${lab.unit} em ${formatDate(lab.date)}${lab.lab ? ` (${lab.lab})` : ""}, referência ${formatRef(lab)}`],
         links: [signals, examLink(lab)],
       });
@@ -284,6 +297,7 @@ function crossInsights(db: Db, alerts: HealthAlert[], today: string): HealthAler
         title: `Ritmo irregular e ${lab.name}`,
         message: `O relógio registrou batimentos irregulares nos últimos 14 dias, e ${labFact(lab, dir)}.`,
         recommendation: "Mostre os dois dados juntos ao cardiologista: o exame ajuda a entender o registro do relógio.",
+        clinical: `Ritmo irregular notificado pelo relógio nos últimos 14 dias e ${lab.name} ${dir} da referência (${fmt(lab.value!)} ${lab.unit} em ${formatDate(lab.date)}).`,
         evidence: [`Exame: ${lab.name} ${fmt(lab.value!)} ${lab.unit} em ${formatDate(lab.date)}, referência ${formatRef(lab)}`],
         links: [signals, examLink(lab)],
       });
@@ -299,6 +313,8 @@ function crossInsights(db: Db, alerts: HealthAlert[], today: string): HealthAler
       title: "Sono e pressão arterial",
       message: `O relógio registrou noites com oxigenação baixa e pausas na respiração, e o medidor mostra a pressão acima da meta${/remédio/.test(bp.message) ? " mesmo com remédio" : ""}.`,
       recommendation: "Esses dois achados costumam ser avaliados juntos. Conte os dois ao médico que acompanha sua pressão.",
+      clinical: `Dessaturação noturna com distúrbios respiratórios no relógio e PA domiciliar acima da meta${/remédio/.test(bp.message) ? " em uso de anti-hipertensivo" : ""}.`,
+      clinicalNote: "Distúrbio respiratório do sono como possível fator na hipertensão.",
       evidence: [...(alerts.find((a) => a.kind === "apneia")?.evidence.slice(0, 1) ?? []), ...bp.evidence.slice(1)],
       links: [signals],
     });

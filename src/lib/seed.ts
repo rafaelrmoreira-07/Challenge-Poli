@@ -110,6 +110,7 @@ export function createSeedDb(now = new Date()): Db {
       sex: "M",
       bloodType: "O+",
       allergies: ["Dipirona"],
+      emergencyContact: { name: "Marta Mendes (esposa)", phone: "(11) 95555-0123" },
     },
     documents,
     labResults,

@@ -46,11 +46,29 @@ const HOURS: { re: RegExp; hours: number; label: string }[] = [
 ];
 
 /** Nomes e apelidos de exames, do mais longo ao mais curto (o mais específico ganha). */
-const ANALYTE_TERMS = ANALYTES.flatMap((a) =>
-  [a.name.replace(/\s*\(.*\)/, ""), a.key.replace(/_/g, " "), ...a.aliases].map((term) => ({ key: a.key, term: norm(term) })),
-)
+/** Jeitos populares de perguntar (ideia do Plinio): "como está meu açúcar?", "e os rins?". */
+const POPULAR_TERMS: { key: string; term: string }[] = [
+  { key: "glicose", term: "acucar" },
+  { key: "glicose", term: "acucar no sangue" },
+  { key: "hba1c", term: "diabetes" },
+  { key: "creatinina", term: "rim" },
+  { key: "creatinina", term: "rins" },
+  { key: "tsh", term: "tireoide" },
+  { key: "hemoglobina", term: "anemia" },
+];
+
+const ANALYTE_TERMS = [
+  ...ANALYTES.flatMap((a) => [a.name.replace(/\s*\(.*\)/, ""), a.key.replace(/_/g, " "), ...a.aliases].map((term) => ({ key: a.key, term: norm(term) }))),
+  ...POPULAR_TERMS.filter((x) => ANALYTES.some((a) => a.key === x.key)),
+]
   .filter((x) => x.term.length >= 3)
   .sort((a, b) => b.term.length - a.term.length);
+
+/** Botão para ligar para o contato de emergência cadastrado em Configurações. */
+function emergencyContactAction() {
+  const c = getDbSnapshot().patient.emergencyContact;
+  return c ? [{ kind: "tel" as const, label: `Ligar para ${c.name.split(" ")[0]}`, number: c.phone.replace(/[^\d+]/g, "") }] : [];
+}
 
 function findAnalyte(t: string): string | null {
   for (const { key, term } of ANALYTE_TERMS) {
@@ -72,7 +90,10 @@ export async function respondToText(raw: string, say: Say, opts: { fromButton?: 
     return say({
       alert: { id: "emergencia", severity: "procure_medico" },
       text: "Se você está com esses sintomas agora, ligue *192* (SAMU) ou vá ao pronto-socorro mais próximo. Não espere a resposta por aqui.",
-      actions: [{ kind: "tel", label: "Ligar 192", number: "192" }],
+      actions: [
+        { kind: "tel", label: "Ligar 192", number: "192" },
+        ...emergencyContactAction(),
+      ],
     });
   }
 

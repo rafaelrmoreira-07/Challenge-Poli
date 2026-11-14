@@ -61,7 +61,21 @@ export function SectionLink({ href, children }: { href: string; children: React.
  * Alerta. Fechado mostra gravidade e título; aberto mostra o que aconteceu
  * e o que fazer (accordion do transitions.dev). `open` deixa sempre aberto.
  */
-export function AlertCard({ alert, open: alwaysOpen, cta = true, defaultOpen = false }: { alert: HealthAlert; open?: boolean; cta?: boolean; defaultOpen?: boolean }) {
+export function AlertCard({
+  alert,
+  open: alwaysOpen,
+  cta = true,
+  defaultOpen = false,
+  audience = "paciente",
+}: {
+  alert: HealthAlert;
+  open?: boolean;
+  cta?: boolean;
+  defaultOpen?: boolean;
+  /** "medico": texto clínico em terceira pessoa, sem orientação ao paciente. */
+  audience?: "paciente" | "medico";
+}) {
+  const doctor = audience === "medico";
   const urgent = alert.severity === "procure_medico";
   // "Juntando seus dados": dois fatos de fontes diferentes (relógio + exame), lado a lado
   const insight = alert.kind === "cruzado";
@@ -76,7 +90,7 @@ export function AlertCard({ alert, open: alwaysOpen, cta = true, defaultOpen = f
       </span>
       <span className="min-w-0 flex-1 text-left">
         <span className={`block text-sm font-medium ${insight ? "text-ink-soft" : urgent ? "text-danger" : "text-warn"}`}>
-          {insight ? "Juntando seus dados" : urgent ? "Procure um médico" : "Atenção"}
+          {doctor ? (insight ? "Dados cruzados" : urgent ? "Sinal de alerta" : "Atenção") : insight ? "Juntando seus dados" : urgent ? "Procure um médico" : "Atenção"}
         </span>
         <span className="block text-[17px] font-medium leading-snug text-ink">{alert.title}</span>
       </span>
@@ -95,12 +109,21 @@ export function AlertCard({ alert, open: alwaysOpen, cta = true, defaultOpen = f
       <div className="t-acc-panel">
         <div className="t-acc-panel-inner">
           <div className={`px-4 pb-4 ${alwaysOpen ? "pt-3" : ""}`}>
-            <p className="text-[15px] leading-relaxed text-ink-soft">{alert.message}</p>
-            <p className="mt-3 rounded-xl bg-white p-3 text-[15px] leading-relaxed text-ink">
-              <span className="font-medium">O que fazer: </span>
-              {alert.recommendation}
-            </p>
-            {alert.specialty && <p className="mt-2 text-sm text-muted">Especialidade: {alert.specialty}</p>}
+            <p className="text-[15px] leading-relaxed text-ink-soft">{doctor ? alert.clinical ?? alert.message : alert.message}</p>
+            {doctor ? (
+              alert.clinicalNote && (
+                <p className="mt-3 rounded-xl bg-white p-3 text-[15px] leading-relaxed text-ink">
+                  <span className="font-medium">A considerar: </span>
+                  {alert.clinicalNote}
+                </p>
+              )
+            ) : (
+              <p className="mt-3 rounded-xl bg-white p-3 text-[15px] leading-relaxed text-ink">
+                <span className="font-medium">O que fazer: </span>
+                {alert.recommendation}
+              </p>
+            )}
+            {alert.specialty && !doctor && <p className="mt-2 text-sm text-muted">Especialidade: {alert.specialty}</p>}
             {alert.evidence.length > 0 && (
               <ul className="num mt-2 space-y-0.5 text-sm text-muted">
                 {alert.evidence.map((e) => <li key={e}>· {e}</li>)}

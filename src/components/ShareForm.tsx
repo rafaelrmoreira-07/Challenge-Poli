@@ -17,6 +17,9 @@ const DURATIONS = [
   { hours: 1, label: "1 hora" },
   { hours: 24, label: "24 horas" },
   { hours: 168, label: "7 dias" },
+  // Médico que acompanha o paciente (ideia do Plinio): acesso longo, sempre revogável
+  { hours: 2160, label: "90 dias" },
+  { hours: 8760, label: "1 ano" },
 ];
 
 /** Limite prático de um QR code legível pela câmera do celular. */

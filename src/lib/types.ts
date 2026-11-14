@@ -7,6 +7,8 @@ export interface Patient {
   sex: "F" | "M";
   bloodType?: string;
   allergies: string[];
+  /** Quem avisar numa emergência (aparece para o médico e nos alertas urgentes). */
+  emergencyContact?: { name: string; phone: string };
 }
 
 export type ExtractionSource = "gemini" | "simulado" | "manual" | "seed";
@@ -259,6 +261,10 @@ export interface HealthAlert {
   recommendation: string;
   specialty?: string;
   evidence: string[];
+  /** Texto para o médico, em terceira pessoa e linguagem clínica (a tela do paciente usa `message`). */
+  clinical?: string;
+  /** O que o médico pode considerar. Nunca é prescrição: só exame ou avaliação a considerar. */
+  clinicalNote?: string;
   /** Atalhos para as telas de origem dos dados (usados no app do paciente). */
   links?: { label: string; href: string }[];
 }
