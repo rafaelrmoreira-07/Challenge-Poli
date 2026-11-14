@@ -7,7 +7,7 @@ import { addDays, isValidISODate, todayISO } from "./dates";
 import { createPersonaDb, personaWearables } from "./personas";
 import { extendWearablesToToday } from "./seed";
 import { simulatedDischarge } from "./admission";
-import { SCOPES, type Admission, type CheckInSymptom, type Db, type DoctorSummary, type ExtractedResult, type ExtractionSource, type PersonaId, type Scope, type ShareKind, type WearableDay } from "./types";
+import { SCOPES, type Admission, type CheckInSymptom, type Db, type DescriptiveReport, type DoctorSummary, type ExtractedResult, type ExtractionSource, type PersonaId, type Scope, type ShareKind, type WearableDay } from "./types";
 import { MAX_IMPORT_DAYS, METRIC_LABELS, type ImportResult } from "./wearableImport";
 
 /**
@@ -144,17 +144,36 @@ export interface SaveExamInput {
     refHigh: number | null;
     refText?: string | null;
   }[];
+  /** Laudo descritivo (imagem, coração, endoscopia): salva sem tabela de resultados. */
+  report?: DescriptiveReport | null;
 }
 
 const clean = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 const finite = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+
+const REPORT_CATEGORIES = ["imagem", "cardiologico", "endoscopia", "outro"] as const;
+
+function cleanReport(r: DescriptiveReport): DescriptiveReport | null {
+  const examName = clean(r.examName, 120);
+  const conclusion = clean(r.conclusion, 1200);
+  if (!examName || !conclusion) return null;
+  return {
+    examName,
+    category: REPORT_CATEGORIES.includes(r.category) ? r.category : "outro",
+    conclusion,
+    findings: clean(r.findings, 1200) || undefined,
+    physician: clean(r.physician, 120) || undefined,
+  };
+}
 
 export async function saveExam(input: SaveExamInput): Promise<{ error: string } | { docId: string }> {
   if (!isValidISODate(input.examDate) || input.examDate > todayISO()) return { error: "Informe uma data de coleta válida." };
   const results = input.results
     .slice(0, 80)
     .filter((r) => clean(r.name, 120) && (finite(r.value) != null || clean(r.valueText, 80)));
-  if (!results.length) return { error: "Nenhum resultado para salvar." };
+  const report = input.report ? cleanReport(input.report) : null;
+  if (input.report && !report) return { error: "Informe o nome do exame e a conclusão do laudo." };
+  if (!results.length && !report) return { error: "Nenhum resultado para salvar." };
 
   const docId = crypto.randomUUID();
   let stored = false;
@@ -176,6 +195,7 @@ export async function saveExam(input: SaveExamInput): Promise<{ error: string } 
       lab,
       extractedBy: input.extractedBy === "gemini" ? "gemini" : input.extractedBy === "simulado" ? "simulado" : "manual",
       model: clean(input.model, 60) || undefined,
+      report: report ?? undefined,
     });
     for (const r of results) {
       const name = clean(r.name, 120);

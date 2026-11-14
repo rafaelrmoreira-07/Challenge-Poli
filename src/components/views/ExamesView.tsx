@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { DataPortability } from "@/components/DataPortability";
 import { FileIcon } from "@/components/icons";
+import { ReportList, reportDocuments } from "@/components/ReportList";
 import { RowLink, SectionTitle, Skeleton, Spark, StatusBadge } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
 import { analyteSeries, fmt, formatRef, labStatus, type AnalyteSeries } from "@/lib/health";
@@ -23,6 +24,7 @@ export function ExamesView() {
   const altered = series.filter((s) => s.status === "alto" || s.status === "baixo");
   const rest = series.filter((s) => !altered.includes(s));
   const categories = [...new Set(rest.map((s) => s.category))];
+  const hasReports = reportDocuments(db.documents).length > 0;
 
   return (
     <div>
@@ -33,6 +35,12 @@ export function ExamesView() {
           <SeriesList series={altered} />
         </>
       )}
+      {hasReports && (
+        <>
+          <SectionTitle>Laudos de imagem e procedimentos</SectionTitle>
+          <ReportList documents={db.documents} openDoc={(id) => openDocumentFile(id)} />
+        </>
+      )}
       {categories.map((c) => (
         <div key={c}>
           <SectionTitle>{c}</SectionTitle>
@@ -41,7 +49,7 @@ export function ExamesView() {
       ))}
       <SectionTitle>Trazer ou levar seus exames</SectionTitle>
       <DataPortability />
-      {!series.length && (
+      {!series.length && !hasReports && (
         <p className="tile text-[15px]">
           Nenhum exame ainda. <Link className="font-medium underline underline-offset-4" href="/enviar">Adicionar o primeiro</Link>.
         </p>
@@ -105,6 +113,17 @@ function SuccessCheck() {
 function DocumentPanel({ db, docId, isNew }: { db: Db; docId: string; isNew: boolean }) {
   const doc = db.documents.find((d) => d.id === docId)!;
   const results = db.labResults.filter((r) => r.documentId === docId);
+  if (doc.report)
+    return (
+      <section className="mb-2">
+        {isNew && (
+          <p className="mb-3 flex items-center gap-3 text-[17px] font-medium text-ok" role="status">
+            <SuccessCheck /> Laudo salvo no seu histórico
+          </p>
+        )}
+        <ReportList documents={[doc]} openDoc={(id) => openDocumentFile(id)} />
+      </section>
+    );
   return (
     <section className="tile mb-2">
       {isNew && (

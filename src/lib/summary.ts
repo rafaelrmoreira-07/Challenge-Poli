@@ -26,6 +26,12 @@ export function buildClinicalContext(data: ScopedData): string {
     }
   }
 
+  const reports = data.documents.filter((d) => d.report);
+  if (reports.length) {
+    lines.push("", "LAUDOS DESCRITIVOS (imagem, coração, endoscopia; conclusão copiada do laudo)");
+    for (const d of reports) lines.push(`- ${d.examDate} ${d.report!.examName}${d.lab ? ` (${d.lab})` : ""}: ${d.report!.conclusion}`);
+  }
+
   if (data.encounters.length) {
     lines.push("", "CONSULTAS");
     for (const e of data.encounters) lines.push(`- ${e.date} ${e.specialty}: ${e.reason}. ${e.notes ?? ""}`);
@@ -59,7 +65,7 @@ export function buildClinicalContext(data: ScopedData): string {
   return lines.join("\n");
 }
 
-const SYSTEM = `Você apoia um médico que vai atender um paciente. Receberá o histórico estruturado (exames, remédios, consultas, wearables e alertas automáticos).
+const SYSTEM = `Você apoia um médico que vai atender um paciente. Receberá o histórico estruturado (exames, laudos de imagem e procedimentos, remédios, consultas, wearables e alertas automáticos).
 Escreva em português do Brasil, em linguagem clínica e objetiva, para ser lido em 30 segundos.
 - "resumo": 3 a 5 frases com o quadro geral e as tendências mais relevantes, citando números e datas.
 - "pontosDeAtencao": até 5 itens, do mais ao menos relevante. Cada um com título curto e detalhe com os dados que sustentam.

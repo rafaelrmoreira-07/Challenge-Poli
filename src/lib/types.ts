@@ -13,6 +13,33 @@ export interface Patient {
 
 export type ExtractionSource = "gemini" | "simulado" | "manual" | "seed";
 
+/** Tipo de laudo descritivo (sem tabela de resultados). */
+export type ReportCategory = "imagem" | "cardiologico" | "endoscopia" | "outro";
+
+export const REPORT_CATEGORY_LABELS: Record<ReportCategory, string> = {
+  imagem: "Exame de imagem",
+  cardiologico: "Exame do coração",
+  endoscopia: "Endoscopia ou colonoscopia",
+  outro: "Outro laudo",
+};
+
+/**
+ * Laudo descritivo: ecocardiograma, eletrocardiograma, ultrassom, raio X,
+ * tomografia, endoscopia... O valor está no texto (achados e conclusão),
+ * não numa tabela de números.
+ */
+export interface DescriptiveReport {
+  /** Nome do exame como está no laudo (ex.: "Ecocardiograma transtorácico"). */
+  examName: string;
+  category: ReportCategory;
+  /** Conclusão ou impressão diagnóstica, copiada do laudo. */
+  conclusion: string;
+  /** Resumo fiel dos achados (opcional). */
+  findings?: string;
+  /** Médico que assina o laudo. */
+  physician?: string;
+}
+
 export interface SourceDocument {
   id: string;
   filename: string;
@@ -24,6 +51,8 @@ export interface SourceDocument {
   lab?: string;
   extractedBy: ExtractionSource;
   model?: string;
+  /** Presente quando o documento é um laudo descritivo (imagem, coração, endoscopia). */
+  report?: DescriptiveReport;
 }
 
 export interface LabResult {
@@ -120,7 +149,7 @@ export const SCOPES = [
 export type Scope = (typeof SCOPES)[number];
 
 export const SCOPE_LABELS: Record<Scope, string> = {
-  exames: "Exames laboratoriais",
+  exames: "Exames e laudos",
   consultas: "Consultas",
   medicamentos: "Medicamentos",
   vacinas: "Vacinas",
@@ -290,6 +319,8 @@ export interface Extraction {
   examDate: string | null;
   patientName: string | null;
   results: ExtractedResult[];
+  /** Laudo descritivo lido (imagem, coração, endoscopia). Nesse caso `results` costuma vir vazio. */
+  report?: DescriptiveReport | null;
   notes: string | null;
   source: ExtractionSource;
   model?: string;

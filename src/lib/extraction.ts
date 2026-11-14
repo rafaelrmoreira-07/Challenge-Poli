@@ -3,7 +3,7 @@ import { isValidISODate } from "./dates";
 import { generateJson, geminiConfigured, GeminiUnavailableError } from "./gemini";
 import { asset } from "./paths";
 import { SAMPLE_EXTRACTIONS } from "./samples";
-import type { Confidence, Extraction, ExtractedResult } from "./types";
+import type { Confidence, DescriptiveReport, Extraction, ExtractedResult, ReportCategory } from "./types";
 
 export const ACCEPTED_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
@@ -15,9 +15,20 @@ export function fileType(f: File): string {
   return { pdf: "application/pdf", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", heic: "image/heic", heif: "image/heif" }[ext ?? ""] ?? "";
 }
 
-const SYSTEM = `Você é um extrator de laudos laboratoriais brasileiros. Leia o documento (PDF ou foto, às vezes antiga, torta ou com baixa qualidade) e devolva os resultados em JSON.
+const SYSTEM = `Você é um extrator de laudos médicos brasileiros. Leia o documento (PDF ou foto, às vezes antiga, torta ou com baixa qualidade) e devolva JSON.
 
-Regras:
+Há dois tipos de laudo:
+1. LABORATORIAL: tabela de exames com valor, unidade e faixa (sangue, urina...). "tipo_documento" = "laboratorial"; preencha "resultados".
+2. DESCRITIVO: texto do médico sobre um exame de imagem ou procedimento (ecocardiograma, eletrocardiograma, Holter, MAPA, ultrassom, raio X, tomografia, ressonância, mamografia, densitometria, endoscopia, colonoscopia...). "tipo_documento" = "descritivo"; "resultados" vazio; preencha "laudo_descritivo":
+   - "exame": nome do exame como está no laudo;
+   - "categoria": "imagem" (ultrassom, raio X, tomografia, ressonância, mamografia, densitometria), "cardiologico" (eletrocardiograma, ecocardiograma, Holter, MAPA, teste ergométrico), "endoscopia" (endoscopia, colonoscopia) ou "outro";
+   - "conclusao": a conclusão ou impressão diagnóstica, copiada como está escrita (não resuma, não interprete);
+   - "achados": resumo fiel dos achados principais, em até 4 frases, sem acrescentar nada;
+   - "medico": quem assina, se houver.
+   "laboratorio" é a clínica ou hospital; "data_coleta" é a data do exame.
+Se não for laudo médico, "tipo_documento" = "outro", "resultados" vazio, e explique em "observacoes".
+
+Regras para o laudo laboratorial:
 - Extraia só o que está escrito. Nunca invente valor, unidade ou faixa. Se não conseguir ler, deixe o campo nulo.
 - "confianca" diz o quanto você tem certeza do VALOR lido: "alta" (nítido), "media" (legível, mas com alguma dúvida: borrado, dígito parecido com outro, alinhamento confuso na tabela) ou "baixa" (adivinhação). Se o número estiver coberto por carimbo, rasgado ou ilegível, NÃO tente adivinhar: devolva "valor" nulo e "confianca" baixa. Prefira marcar dúvida a errar.
 - Números brasileiros: vírgula é decimal ("5,8" = 5.8); ponto costuma separar milhar ("7.500" = 7500; "250.000" = 250000).
@@ -25,7 +36,6 @@ Regras:
 - Faixa de referência: use a do laudo. "Desejável: < 130" vira ref_max=130. "Superior a 40" vira ref_min=40. Se houver faixas por sexo ou idade, escolha a do paciente informado. Copie o texto original da faixa em "ref_texto".
 - "chave": use a chave do catálogo abaixo quando o exame corresponder; caso contrário use "outro".
 - "data_coleta" no formato AAAA-MM-DD (data da coleta; se não houver, a data do laudo).
-- Se o documento não for um laudo laboratorial, devolva "resultados" vazio e explique em "observacoes".
 
 Catálogo de chaves:
 ${analyteCatalogForPrompt()}`;
@@ -37,6 +47,19 @@ const SCHEMA = {
     data_coleta: { type: "STRING", nullable: true, description: "AAAA-MM-DD" },
     paciente: { type: "STRING", nullable: true },
     observacoes: { type: "STRING", nullable: true },
+    tipo_documento: { type: "STRING", enum: ["laboratorial", "descritivo", "outro"] },
+    laudo_descritivo: {
+      type: "OBJECT",
+      nullable: true,
+      properties: {
+        exame: { type: "STRING" },
+        categoria: { type: "STRING", enum: ["imagem", "cardiologico", "endoscopia", "outro"] },
+        conclusao: { type: "STRING" },
+        achados: { type: "STRING", nullable: true },
+        medico: { type: "STRING", nullable: true },
+      },
+      required: ["exame", "categoria", "conclusao"],
+    },
     resultados: {
       type: "ARRAY",
       items: {
@@ -59,7 +82,9 @@ const SCHEMA = {
   required: ["resultados"],
 };
 
-interface RawExtraction {
+export interface RawExtraction {
+  tipo_documento?: string | null;
+  laudo_descritivo?: { exame?: string | null; categoria?: string | null; conclusao?: string | null; achados?: string | null; medico?: string | null } | null;
   laboratorio?: string | null;
   data_coleta?: string | null;
   paciente?: string | null;
@@ -84,7 +109,25 @@ const conf = (v: unknown): Confidence | null => {
   return s === "alta" || s === "media" || s === "baixa" ? s : null;
 };
 
+const CATEGORIES: ReportCategory[] = ["imagem", "cardiologico", "endoscopia", "outro"];
+
+/** Laudo descritivo válido só se tiver nome do exame e conclusão. */
+export function normalizeReport(raw: RawExtraction["laudo_descritivo"]): DescriptiveReport | null {
+  const examName = str(raw?.exame, 120);
+  const conclusion = str(raw?.conclusao, 1200);
+  if (!examName || !conclusion) return null;
+  const cat = str(raw?.categoria, 20) as ReportCategory | null;
+  return {
+    examName,
+    category: cat && CATEGORIES.includes(cat) ? cat : "outro",
+    conclusion,
+    findings: str(raw?.achados, 1200) ?? undefined,
+    physician: str(raw?.medico, 120) ?? undefined,
+  };
+}
+
 function normalizeExtraction(raw: RawExtraction): Omit<Extraction, "source" | "model"> {
+  const report = raw.tipo_documento === "descritivo" || raw.laudo_descritivo ? normalizeReport(raw.laudo_descritivo) : null;
   const results: ExtractedResult[] = (raw.resultados ?? []).slice(0, 80).flatMap((r) => {
     const name = str(r.nome, 120);
     if (!name) return [];
@@ -107,7 +150,9 @@ function normalizeExtraction(raw: RawExtraction): Omit<Extraction, "source" | "m
     examDate: isValidISODate(raw.data_coleta) ? raw.data_coleta : null,
     patientName: str(raw.paciente, 120),
     notes: str(raw.observacoes, 500),
-    results,
+    // Laudo descritivo não mistura tabela de números: os resultados ficam vazios
+    results: report ? [] : results,
+    report,
   };
 }
 
@@ -161,7 +206,7 @@ export async function extractLabReport(file: File, patient: { sex: "F" | "M"; ag
         timeoutMs: 40_000,
         parts: [
           { inlineData: { mimeType: fileType(file), data: toBase64(buf) } },
-          { text: `Paciente: sexo ${patient.sex === "F" ? "feminino" : "masculino"}, ${patient.age} anos. Extraia os resultados deste laudo.` },
+          { text: `Paciente: sexo ${patient.sex === "F" ? "feminino" : "masculino"}, ${patient.age} anos. Identifique o tipo do laudo e extraia o conteúdo.` },
         ],
       });
       return { ...normalizeExtraction(data), source: "gemini", model };

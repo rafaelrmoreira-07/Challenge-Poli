@@ -329,6 +329,25 @@ export async function respondToFile(picked: File, say: Say) {
     });
   }
 
+  // Laudo descritivo (eco, eletro, ultrassom, endoscopia): mostra a conclusão como está no laudo
+  if (ex.report) {
+    const r = ex.report;
+    const head = `Li um laudo de *${r.examName}*${ex.lab ? ` (${ex.lab})` : ""}${ex.examDate ? `, de ${formatDate(ex.examDate)}` : ""}.${ex.source === "simulado" ? " Esta é a leitura pré-gravada do laudo de exemplo." : ""}`;
+    const body = `${head}\n\n*Conclusão do laudo:* ${r.conclusion}\n\nEu não interpreto o texto: ele vai para o seu médico como está.`;
+    if (!ex.examDate) {
+      return say({ text: `${body}\n\nNão achei a data do exame. Na tela Adicionar você confere e preenche a data.`, actions: [{ kind: "link", label: "Abrir Adicionar", href: "/enviar" }] });
+    }
+    const id = crypto.randomUUID();
+    pending.set(id, { file, ex });
+    return say({
+      text: `${body}\n\nQuer que eu salve no seu histórico?`,
+      actions: [
+        { kind: "save-exam", label: "Salvar no histórico", pendingId: id },
+        { kind: "discard-exam", label: "Descartar", pendingId: id },
+      ],
+    });
+  }
+
   if (!ex.results.length) {
     return say({ text: `Não encontrei resultados de exame neste arquivo.${ex.notes ? `\n\n${ex.notes}` : ""}` });
   }
@@ -395,11 +414,12 @@ export async function runAction(
     lab: ex.lab ?? "",
     examDate: ex.examDate!,
     results: ex.results,
+    report: ex.report,
   });
   pending.delete(action.pendingId);
   if ("error" in res) return say({ text: `Não consegui salvar: ${res.error}` });
   return say({
-    text: `Pronto, salvei *${ex.results.length} resultados* no seu histórico.`,
+    text: ex.report ? `Pronto, salvei o laudo de *${ex.report.examName}* no seu histórico.` : `Pronto, salvei *${ex.results.length} resultados* no seu histórico.`,
     actions: [{ kind: "link", label: "Ver no histórico", href: `/exames/?novo=${res.docId}` }],
   });
 }

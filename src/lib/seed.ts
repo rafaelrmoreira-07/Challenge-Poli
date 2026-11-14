@@ -65,6 +65,23 @@ function seedLabs(): { documents: SourceDocument[]; labResults: LabResult[] } {
       });
     }
   });
+  // Laudo descritivo antigo: eletrocardiograma em ritmo sinusal, a referência para o
+  // médico comparar com o ritmo irregular que o relógio registra agora.
+  documents.push({
+    id: "seed-doc-ecg-2024",
+    filename: "Eletrocardiograma Clínica Pulsar 2024-03-12.pdf",
+    mimeType: "application/pdf",
+    uploadedAt: "2024-03-12T12:00:00.000Z",
+    examDate: "2024-03-12",
+    lab: "Clínica Pulsar Cardiologia",
+    extractedBy: "seed",
+    report: {
+      examName: "Eletrocardiograma de repouso",
+      category: "cardiologico",
+      conclusion: "Ritmo sinusal, frequência cardíaca de 72 bpm. Sobrecarga ventricular esquerda pelos critérios de voltagem. Sem outras alterações.",
+      physician: "Dr. Renato Alves",
+    },
+  });
   return { documents, labResults };
 }
 

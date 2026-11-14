@@ -9,7 +9,7 @@ import { checkRepeats, labStatus } from "@/lib/health";
 import { asset } from "@/lib/paths";
 import { stageOf } from "@/lib/quality";
 import { getDbSnapshot, recordReadingReview, saveExam, useDb, type SaveExamInput } from "@/lib/store";
-import type { Confidence, Extraction, ExtractedResult } from "@/lib/types";
+import { REPORT_CATEGORY_LABELS, type Confidence, type DescriptiveReport, type Extraction, type ExtractedResult, type ReportCategory } from "@/lib/types";
 import { toast } from "sonner";
 import { AlertIcon, CameraIcon, CheckIcon, CloseIcon, FileIcon, HistoryIcon, WatchIcon } from "./icons";
 import { WearableImport } from "./WearableImport";
@@ -22,6 +22,7 @@ const SAMPLES = [
   { file: "laudo-vida-2026-11.pdf", type: "application/pdf", title: "PDF do laboratório", desc: "Laudo de nov/2026 com 14 exames" },
   { file: "exame-papel-2016.jpg", type: "image/jpeg", title: "Foto de exame em papel", desc: "Laudo antigo de 2016, fotografado" },
   { file: "exame-papel-carimbo-2020.jpg", type: "image/jpeg", title: "Foto difícil de ler", desc: "Papel de 2020, torto, com carimbo em cima de um valor" },
+  { file: "ecocardiograma-2025.pdf", type: "application/pdf", title: "Laudo de ecocardiograma", desc: "Exame do coração de 2025: texto, sem tabela de números" },
 ];
 
 
@@ -291,7 +292,24 @@ const toRow = (r: ExtractedResult, id: number): Row => ({
   checked: false,
 });
 
-function Review({
+type ReviewProps = {
+  phase: Phase;
+  preview: string | null;
+  onCancel: () => void;
+  onSaved: (docId: string) => void;
+  onRetry?: () => void;
+  cancelLabel?: string;
+};
+
+/** Laudo com tabela de números (LabReview) ou laudo descritivo de imagem e procedimentos (ReportReview). */
+function Review(props: ReviewProps) {
+  const [asReport, setAsReport] = useState(false);
+  if (props.phase.extraction?.report || asReport) return <ReportReview {...props} />;
+  return <LabReview {...props} onAsReport={props.phase.extraction ? undefined : () => setAsReport(true)} />;
+}
+
+function LabReview({
+  onAsReport,
   phase,
   preview,
   onCancel,
@@ -305,6 +323,7 @@ function Review({
   onSaved: (docId: string) => void;
   onRetry?: () => void;
   cancelLabel?: string;
+  onAsReport?: () => void;
 }) {
   const ex = phase.extraction;
   const [lab, setLab] = useState(ex?.lab ?? "");
@@ -374,6 +393,7 @@ function Review({
           <>
             {phase.warning ?? "Não foi possível ler o laudo."} Você pode adicionar os resultados manualmente.
             {onRetry && <button type="button" onClick={onRetry} className="btn-quiet ml-1">Tentar ler de novo</button>}
+            {onAsReport && <button type="button" onClick={onAsReport} className="btn-quiet ml-1">É um laudo de imagem ou procedimento</button>}
           </>
         )}
       </div>
@@ -504,3 +524,107 @@ function Review({
 const listNames = (names: string[]) =>
   names.length <= 1 ? names.join("") : `${names.slice(0, -1).join(", ")} e ${names.at(-1)}`;
 const formatShort = (iso: string) => iso.split("-").reverse().join("/");
+
+/**
+ * Revisão de laudo descritivo (ecocardiograma, eletrocardiograma, ultrassom,
+ * endoscopia...): a IA copia a conclusão e resume os achados; a pessoa confere
+ * com o original e salva. O texto não é interpretado: vai para o médico como está.
+ */
+function ReportReview({ phase, preview, onCancel, onSaved, cancelLabel = "Cancelar" }: ReviewProps) {
+  const ex = phase.extraction;
+  const r = ex?.report;
+  const [examName, setExamName] = useState(r?.examName ?? "");
+  const [category, setCategory] = useState<ReportCategory>(r?.category ?? "imagem");
+  const [lab, setLab] = useState(ex?.lab ?? "");
+  const [date, setDate] = useState(ex?.examDate ?? "");
+  const [conclusion, setConclusion] = useState(r?.conclusion ?? "");
+  const [findings, setFindings] = useState(r?.findings ?? "");
+  const [physician, setPhysician] = useState(r?.physician ?? "");
+  const [showOriginal, setShowOriginal] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+  const isImage = phase.file.type.startsWith("image/");
+
+  function submit() {
+    setError(null);
+    const report: DescriptiveReport = { examName, category, conclusion, findings: findings || undefined, physician: physician || undefined };
+    start(async () => {
+      const res = await saveExam({ file: phase.file, extractedBy: ex?.source ?? "manual", model: ex?.model, lab, examDate: date, results: [], report });
+      if ("error" in res) setError(res.error);
+      else {
+        toast.success("Laudo salvo", { description: examName });
+        onSaved(res.docId);
+      }
+    });
+  }
+
+  return (
+    <div>
+      <div className={`mb-4 rounded-2xl p-4 text-[15px] leading-relaxed ${ex?.source === "gemini" ? "bg-navy-50 text-ink" : "bg-warn-soft text-ink"}`}>
+        {ex?.source === "gemini" && <>A IA identificou um <strong>laudo descritivo</strong> ({ex.model}): copiou a conclusão e resumiu os achados. Confira com o original antes de salvar.</>}
+        {ex?.source === "simulado" && <>Leitura pré-gravada deste laudo de exemplo (IA desligada ou indisponível). Com uma chave da Gemini em Configurações, a leitura é feita ao vivo.</>}
+        {!ex && <>Preencha o laudo a partir do original: o nome do exame e a conclusão são obrigatórios.</>}
+      </div>
+      {ex?.patientName && <p className="mb-2 text-sm text-muted">Nome no laudo: {ex.patientName}</p>}
+
+      {preview && (
+        <div className="mb-3">
+          <button type="button" className="btn-quiet text-sm" onClick={() => setShowOriginal((v) => !v)}>
+            {showOriginal ? "Esconder original" : "Comparar com o original"}
+          </button>
+          {showOriginal &&
+            (isImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={preview} alt="Laudo original" className="mt-2 w-full rounded-2xl border border-line" />
+            ) : (
+              <iframe src={preview} title="Laudo original" className="mt-2 h-96 w-full rounded-2xl border border-line" />
+            ))}
+        </div>
+      )}
+
+      <div className="tile space-y-3">
+        <label className="block">
+          <span className="label">Exame</span>
+          <input className="input font-medium" value={examName} onChange={(e) => setExamName(e.target.value)} placeholder="Ex.: Ecocardiograma transtorácico" />
+        </label>
+        <label className="block">
+          <span className="label">Tipo</span>
+          <select className="input" value={category} onChange={(e) => setCategory(e.target.value as ReportCategory)}>
+            {(Object.keys(REPORT_CATEGORY_LABELS) as ReportCategory[]).map((k) => <option key={k} value={k}>{REPORT_CATEGORY_LABELS[k]}</option>)}
+          </select>
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="block">
+            <span className="label">Clínica ou hospital</span>
+            <input className="input" value={lab} onChange={(e) => setLab(e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="label">Data do exame</span>
+            <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+          </label>
+        </div>
+        <label className="block">
+          <span className="label">Conclusão (como está no laudo)</span>
+          <textarea className="input min-h-28 py-3 leading-relaxed" value={conclusion} onChange={(e) => setConclusion(e.target.value)} />
+        </label>
+        <label className="block">
+          <span className="label">Achados principais (opcional)</span>
+          <textarea className="input min-h-24 py-3 leading-relaxed" value={findings} onChange={(e) => setFindings(e.target.value)} />
+        </label>
+        <label className="block">
+          <span className="label">Médico que assina (opcional)</span>
+          <input className="input" value={physician} onChange={(e) => setPhysician(e.target.value)} />
+        </label>
+      </div>
+      <p className="mt-3 text-sm leading-relaxed text-muted">O texto vai para o médico como está no laudo. O Elo não interpreta a conclusão.</p>
+
+      {error && <p className="mt-3 rounded-2xl bg-danger-soft p-3 text-[15px] text-danger" role="alert">{error}</p>}
+      <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] mt-4 flex gap-2 bg-white/95 py-3 backdrop-blur">
+        <button type="button" className="btn-secondary flex-1" onClick={onCancel} disabled={pending}>{cancelLabel}</button>
+        <button type="button" className="btn-primary flex-[2]" onClick={submit} disabled={pending || !examName.trim() || !conclusion.trim() || !date}>
+          {pending ? "Salvando…" : "Salvar laudo"}
+        </button>
+      </div>
+    </div>
+  );
+}

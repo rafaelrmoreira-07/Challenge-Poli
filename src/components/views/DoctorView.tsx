@@ -6,6 +6,7 @@ import { CHART, LabTrendChart, WearableChart } from "@/components/charts";
 import { DoctorSummary } from "@/components/DoctorSummary";
 import { ShieldIcon } from "@/components/icons";
 import { RecentExams } from "@/components/RecentExams";
+import { ReportList } from "@/components/ReportList";
 import { AlertCard, StatusBadge } from "@/components/ui";
 import { HospitalDashboard } from "./HospitalView";
 import { ageFrom, formatDate, formatDateTime } from "@/lib/dates";
@@ -214,6 +215,13 @@ function Dashboard({
                   </div>
                 ))}
               </div>
+            </section>
+          )}
+
+          {has("exames") && data.documents.some((d) => d.report) && (
+            <section>
+              <DocH2>Laudos de imagem e procedimentos</DocH2>
+              <ReportList documents={data.documents} openDoc={openDoc} audience="medico" />
             </section>
           )}
 

@@ -1,5 +1,5 @@
 import { labStatus } from "./health";
-import type { Db, HealthAlert } from "./types";
+import { REPORT_CATEGORY_LABELS, type Db, type HealthAlert } from "./types";
 import { todayISO } from "./dates";
 
 export type TimelineKind = "exame" | "consulta" | "medicamento" | "vacina" | "alerta";
@@ -27,6 +27,19 @@ export function buildTimeline(
   const ev: TimelineEvent[] = [];
 
   for (const doc of data.documents) {
+    if (doc.report) {
+      ev.push({
+        id: "doc-" + doc.id,
+        date: doc.examDate,
+        kind: "exame",
+        title: doc.report.examName,
+        subtitle: [REPORT_CATEGORY_LABELS[doc.report.category], doc.lab].filter(Boolean).join(", "),
+        detail: `Conclusão: ${doc.report.conclusion}`,
+        href: docHref(doc.id),
+        badge: { text: "Laudo", tone: "slate" },
+      });
+      continue;
+    }
     const results = data.labResults.filter((r) => r.documentId === doc.id);
     if (!results.length) continue;
     const out = results.filter((r) => ["alto", "baixo"].includes(labStatus(r)));

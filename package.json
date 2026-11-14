@@ -9,6 +9,7 @@
     "lint": "eslint",
     "exemplos": "node scripts/gerar-exemplos.mjs",
     "exemplos:dificil": "node scripts/gerar-exemplo-dificil.mjs",
+    "exemplos:laudo": "node scripts/gerar-exemplo-laudo-descritivo.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "icones": "node scripts/gerar-icones.mjs",
     "build:pages": "NEXT_PUBLIC_BASE_PATH=/Challenge-Poli next build"

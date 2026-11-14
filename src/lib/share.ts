@@ -1,5 +1,5 @@
 import { computeAlerts } from "./health";
-import type { Admission, CheckIn, Db, DoctorSummary, Encounter, Medication, Patient, Scope, Share, ShareKind, Vaccine, WearableDay } from "./types";
+import type { Admission, CheckIn, Db, DescriptiveReport, DoctorSummary, Encounter, Medication, Patient, Scope, Share, ShareKind, Vaccine, WearableDay } from "./types";
 
 export type ShareState = "ativo" | "expirado" | "revogado";
 
@@ -66,7 +66,7 @@ interface Snapshot {
   ad?: Admission;
   ci?: Omit<CheckIn, "id" | "admissionId">[];
   p: Patient;
-  d: [id: string, date: string, lab: string | null, by: string][];
+  d: [id: string, date: string, lab: string | null, by: string, report?: DescriptiveReport][];
   l: [doc: number, key: string, name: string, value: number | null, unit: string, lo: number | null, hi: number | null, text: string | null][];
   e: Omit<Encounter, "id">[];
   m: Omit<Medication, "id">[];
@@ -111,7 +111,7 @@ function toSnapshot(share: Share, data: ScopedData, summary?: DoctorSummary, ext
     ad: extras.admission ? { ...extras.admission, order: extras.admission.order ? { name: extras.admission.order.name, mimeType: extras.admission.order.mimeType } : undefined } : undefined,
     ci: extras.checkins?.map((c) => ({ at: c.at, symptoms: c.symptoms, tookMeds: c.tookMeds })),
     p: data.patient,
-    d: data.documents.map((d) => [d.id, d.examDate, d.lab ?? null, d.extractedBy]),
+    d: data.documents.map((d) => (d.report ? [d.id, d.examDate, d.lab ?? null, d.extractedBy, d.report] : [d.id, d.examDate, d.lab ?? null, d.extractedBy])),
     l: data.labResults.map((r) => [
       r.documentId != null ? docIndex.get(r.documentId) ?? -1 : -1,
       r.analyteKey,
@@ -132,7 +132,7 @@ function toSnapshot(share: Share, data: ScopedData, summary?: DoctorSummary, ext
 }
 
 function fromSnapshot(s: Snapshot): { share: Share; data: ScopedData; summary?: DoctorSummary } & SharedExtras {
-  const documents = s.d.map(([id, examDate, lab, by]) => ({
+  const documents = s.d.map(([id, examDate, lab, by, report]) => ({
     id,
     filename: "laudo",
     mimeType: "",
@@ -140,6 +140,7 @@ function fromSnapshot(s: Snapshot): { share: Share; data: ScopedData; summary?: 
     examDate,
     lab: lab ?? undefined,
     extractedBy: by as Db["documents"][number]["extractedBy"],
+    report: report && typeof report.examName === "string" && typeof report.conclusion === "string" ? report : undefined,
   }));
   const labResults = s.l.map(([doc, key, name, value, unit, lo, hi, text], i) => ({
     id: `r${i}`,

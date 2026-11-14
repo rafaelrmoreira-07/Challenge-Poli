@@ -100,12 +100,27 @@ export function buildBundle(
       resourceType: "DocumentReference",
       id,
       status: "current",
-      type: { text: "Laudo de exames laboratoriais" },
+      type: { text: d.report ? d.report.examName : "Laudo de exames laboratoriais" },
       subject: { reference: patientRef },
       date: `${d.examDate}T12:00:00Z`,
       description: d.lab ?? "Laudo",
       content: [{ attachment: { contentType: d.mimeType || "application/pdf", title: d.filename } }],
     });
+    // Laudo descritivo: DiagnosticReport com a conclusão como está no laudo
+    if (d.report) {
+      entries.push({
+        resourceType: "DiagnosticReport",
+        id: safeId(`laudo-${d.id}`),
+        status: "final",
+        category: [{ text: d.report.category === "imagem" ? "Imagem" : d.report.category === "cardiologico" ? "Cardiologia" : d.report.category === "endoscopia" ? "Endoscopia" : "Outro" }],
+        code: { text: d.report.examName },
+        subject: { reference: patientRef },
+        effectiveDateTime: d.examDate,
+        ...(d.lab ? { performer: [{ display: d.lab }] } : {}),
+        conclusion: d.report.conclusion,
+        presentedForm: [{ contentType: d.mimeType || "application/pdf", title: d.filename }],
+      });
+    }
   }
   for (const r of db.labResults) entries.push(observation(r, patientRef, r.documentId ? docRef.get(r.documentId) : undefined));
   for (const m of db.medications) {

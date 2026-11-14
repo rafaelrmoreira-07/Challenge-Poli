@@ -6,6 +6,8 @@ import samples from "./samples.json";
  * pré-gravada só é usada se a Gemini estiver fora do ar no momento da demo.
  */
 export interface SampleExtraction {
+  tipo_documento?: "laboratorial" | "descritivo";
+  laudo_descritivo?: { exame: string; categoria: string; conclusao: string; achados?: string | null; medico?: string | null } | null;
   laboratorio: string | null;
   data_coleta: string | null;
   paciente: string | null;
