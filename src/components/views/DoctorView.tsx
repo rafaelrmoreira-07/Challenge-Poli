@@ -217,6 +217,14 @@ function Dashboard({
                           {s.results.length} resultados de {labs.size} {labs.size === 1 ? "local" : "locais"}
                           {names.length > 1 && <> · padronizado de {names.length} nomes: {names.map((n) => `"${n.name}"`).join(", ")}</>}
                           {units.length > 0 && <span className="font-medium text-warn"> · unidades diferentes nos laudos ({units.join(", ")}): confira antes de comparar</span>}
+                          {(() => {
+                            const edited = s.results.filter((r) => r.review);
+                            return edited.length > 0 ? (
+                              <span className="font-medium text-warn">
+                                {" "}· {edited.map((r) => `${formatDate(r.date)} ${r.review === "corrigido" ? "corrigido" : "digitado"} pelo paciente`).join(", ")}
+                              </span>
+                            ) : null;
+                          })()}
                         </p>
                       );
                     })()}
