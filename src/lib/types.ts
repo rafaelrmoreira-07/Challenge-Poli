@@ -68,6 +68,8 @@ export interface LabResult {
   refText?: string;
   date: string;
   lab?: string;
+  /** Na revisão da leitura: "corrigido" (a pessoa mudou o que a IA leu) ou "adicionado" (digitado à mão). */
+  review?: "corrigido" | "adicionado";
 }
 
 export interface Encounter {

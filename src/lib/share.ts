@@ -67,7 +67,7 @@ interface Snapshot {
   ci?: Omit<CheckIn, "id" | "admissionId">[];
   p: Patient;
   d: [id: string, date: string, lab: string | null, by: string, report?: DescriptiveReport][];
-  l: [doc: number, key: string, name: string, value: number | null, unit: string, lo: number | null, hi: number | null, text: string | null][];
+  l: [doc: number, key: string, name: string, value: number | null, unit: string, lo: number | null, hi: number | null, text: string | null, review?: "corrigido" | "adicionado"][];
   e: Omit<Encounter, "id">[];
   m: Omit<Medication, "id">[];
   vc: Omit<Vaccine, "id">[];
@@ -121,7 +121,8 @@ function toSnapshot(share: Share, data: ScopedData, summary?: DoctorSummary, ext
       r.refLow ?? null,
       r.refHigh ?? null,
       r.valueText ?? null,
-    ]),
+      ...(r.review ? [r.review] : []),
+    ] as Snapshot["l"][number]),
     e: data.encounters.map(strip),
     m: data.medications.map(strip),
     vc: data.vaccines.map(strip),
@@ -142,7 +143,7 @@ function fromSnapshot(s: Snapshot): { share: Share; data: ScopedData; summary?: 
     extractedBy: by as Db["documents"][number]["extractedBy"],
     report: report && typeof report.examName === "string" && typeof report.conclusion === "string" ? report : undefined,
   }));
-  const labResults = s.l.map(([doc, key, name, value, unit, lo, hi, text], i) => ({
+  const labResults = s.l.map(([doc, key, name, value, unit, lo, hi, text, review], i) => ({
     id: `r${i}`,
     documentId: documents[doc]?.id,
     analyteKey: key,
@@ -154,6 +155,7 @@ function fromSnapshot(s: Snapshot): { share: Share; data: ScopedData; summary?: 
     refHigh: hi,
     date: documents[doc]?.examDate ?? s.sh.ca.slice(0, 10),
     lab: documents[doc]?.lab,
+    review: review === "corrigido" || review === "adicionado" ? review : undefined,
   }));
   const start = s.w.s;
   const wearableDays: WearableDay[] = start

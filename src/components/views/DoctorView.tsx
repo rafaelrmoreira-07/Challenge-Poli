@@ -7,6 +7,8 @@ import { DoctorSummary } from "@/components/DoctorSummary";
 import { ShieldIcon } from "@/components/icons";
 import { RecentExams } from "@/components/RecentExams";
 import { ReportList } from "@/components/ReportList";
+import { CoverageCard } from "@/components/CoverageCard";
+import { computeCoverage, mixedUnits, namesInReports, resultOrigin } from "@/lib/provenance";
 import { AlertCard, StatusBadge } from "@/components/ui";
 import { HospitalDashboard } from "./HospitalView";
 import { ageFrom, formatDate, formatDateTime } from "@/lib/dates";
@@ -180,6 +182,8 @@ function Dashboard({
         <div className="space-y-4 lg:col-span-2">
           <DoctorSummary load={loadSummary} cacheKey={cacheKey} />
 
+          <CoverageCard c={computeCoverage(data, share.scopes)} audience="medico" />
+
           {has("exames") && <RecentExams labs={data.labResults} documents={data.documents} openDoc={openDoc} />}
 
           {data.alerts.length > 0 && (
@@ -204,6 +208,18 @@ function Dashboard({
                         <StatusBadge status={s.status} />
                       </span>
                     </div>
+                    {(() => {
+                      const names = namesInReports(s.results, s.name);
+                      const units = mixedUnits(s.results);
+                      const labs = new Set(s.results.map((r) => r.lab).filter(Boolean));
+                      return (
+                        <p className="px-2 text-xs leading-snug text-muted">
+                          {s.results.length} resultados de {labs.size} {labs.size === 1 ? "local" : "locais"}
+                          {names.length > 1 && <> · padronizado de {names.length} nomes: {names.map((n) => `"${n.name}"`).join(", ")}</>}
+                          {units.length > 0 && <span className="font-medium text-warn"> · unidades diferentes nos laudos ({units.join(", ")}): confira antes de comparar</span>}
+                        </p>
+                      );
+                    })()}
                     <LabTrendChart
                       height={170}
                       points={s.results.filter((r) => r.value != null).map((r) => ({ date: r.date, value: r.value! }))}
@@ -281,6 +297,16 @@ function Dashboard({
                       <td className="py-2 pl-4 pr-2">
                         {s.name}
                         <span className="block text-xs text-muted">{formatDate(s.latest.date)} · ref. {formatRef(s.latest)}</span>
+                        {(() => {
+                          // Procedência do valor: de qual laudo, com que nome e como entrou
+                          const o = resultOrigin(s.latest, s.latest.documentId ? docs.get(s.latest.documentId) : undefined);
+                          const asWritten = s.latest.name.trim().toLowerCase() !== s.name.toLowerCase() ? `"${s.latest.name}" · ` : "";
+                          return (
+                            <span className={`block text-xs ${o.tone === "warn" ? "font-medium text-warn" : "text-muted"}`}>
+                              {asWritten}{s.latest.lab ?? "laboratório não informado"} · {o.label}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="whitespace-nowrap pr-2 text-right font-semibold">{s.latest.value != null ? fmt(s.latest.value) : s.latest.valueText} <span className="font-normal text-muted">{s.unit}</span></td>
                       <td className="pr-4 text-right"><StatusBadge status={s.status} /></td>

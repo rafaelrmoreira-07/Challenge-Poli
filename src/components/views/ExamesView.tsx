@@ -6,6 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { DataPortability } from "@/components/DataPortability";
 import { FileIcon } from "@/components/icons";
 import { ReportList, reportDocuments } from "@/components/ReportList";
+import { CoverageCard } from "@/components/CoverageCard";
+import { computeCoverage } from "@/lib/provenance";
 import { RowLink, SectionTitle, Skeleton, Spark, StatusBadge } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
 import { analyteSeries, fmt, formatRef, labStatus, type AnalyteSeries } from "@/lib/health";
@@ -29,6 +31,7 @@ export function ExamesView() {
   return (
     <div>
       {doc && <DocumentPanel db={db} docId={doc.id} isNew={Boolean(novo)} />}
+      {!doc && <CoverageCard c={computeCoverage(db)} audience="paciente" />}
       {altered.length > 0 && (
         <>
           <SectionTitle>Alterados no último resultado</SectionTitle>

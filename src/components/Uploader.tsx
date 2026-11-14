@@ -278,6 +278,18 @@ const isMissing = (r: Row) => r.confidence != null && !r.value.trim() && !r.valu
 /** Valor lido com dúvida, ainda não conferido. */
 const needsCheck = (r: Row) => !r.checked && (isMissing(r) || r.confidence === "baixa" || r.confidence === "media");
 
+/**
+ * Procedência de cada valor para o médico: a linha veio da leitura e foi mudada
+ * ("corrigido"), foi digitada à mão ("adicionado") ou ficou como a IA leu.
+ */
+function reviewOf(r: Row, ex: Extraction | null): "corrigido" | "adicionado" | undefined {
+  const orig = ex?.results[r.id];
+  if (!ex || ex.source === "manual" || !orig) return "adicionado";
+  const same = (a: number | null, b: number | null) => (a == null && b == null) || (a != null && b != null && Math.abs(a - b) < 1e-9);
+  const changed = !same(numOrNull(r.value), orig.value) || !same(numOrNull(r.refLow), orig.refLow) || !same(numOrNull(r.refHigh), orig.refHigh) || r.unit.trim() !== orig.unit.trim();
+  return changed ? "corrigido" : undefined;
+}
+
 const toRow = (r: ExtractedResult, id: number): Row => ({
   id,
   name: r.name,
@@ -358,6 +370,7 @@ function LabReview({
         refLow: numOrNull(r.refLow),
         refHigh: numOrNull(r.refHigh),
         refText: r.refText,
+        review: reviewOf(r, ex),
       })),
     };
     start(async () => {

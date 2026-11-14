@@ -1,6 +1,7 @@
 import { ageFrom, formatDate, todayISO } from "./dates";
 import { generateJson, geminiConfigured } from "./gemini";
 import { analyteSeries, fmt, formatRef, hasBloodPressure, wearableSnapshot } from "./health";
+import { computeCoverage, coverageLine } from "./provenance";
 import type { ScopedData } from "./share";
 import type { DoctorSummary } from "./types";
 
@@ -11,6 +12,8 @@ export function buildClinicalContext(data: ScopedData): string {
     `Data de hoje: ${todayISO()}`,
     `Paciente: sexo ${p.sex === "F" ? "feminino" : "masculino"}, ${ageFrom(p.birthDate)} anos. Alergias: ${p.allergies.join(", ") || "nenhuma registrada"}.`,
   ];
+
+  lines.push(`Cobertura do histórico: ${coverageLine(computeCoverage(data))}`);
 
   if (data.medications.length) {
     lines.push("", "MEDICAMENTOS");
@@ -70,7 +73,7 @@ Escreva em português do Brasil, em linguagem clínica e objetiva, para ser lido
 - "resumo": 3 a 5 frases com o quadro geral e as tendências mais relevantes, citando números e datas.
 - "pontosDeAtencao": até 5 itens, do mais ao menos relevante. Cada um com título curto e detalhe com os dados que sustentam.
 - "perguntasSugeridas": até 4 perguntas ou condutas que o médico pode querer considerar (ex.: exame complementar).
-Não feche diagnósticos: use "sugere", "compatível com", "a considerar". Use apenas os dados fornecidos; se faltar dado, diga que falta.`;
+Não feche diagnósticos: use "sugere", "compatível com", "a considerar". Use apenas os dados fornecidos; se faltar dado, diga que falta (use a linha de cobertura do histórico para apontar lacunas).`;
 
 const SCHEMA = {
   type: "OBJECT",

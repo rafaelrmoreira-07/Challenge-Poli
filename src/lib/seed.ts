@@ -35,6 +35,16 @@ const LAB_HISTORY: Panel[] = [
   { date: "2026-09-24", lab: "Clínica São Lucas", values: { hemoglobina: 15.0, leucocitos: 6900, plaquetas: 238000, creatinina: 1.1, potassio: 4.5 } },
 ];
 
+/**
+ * Cada laboratório escreve o mesmo exame de um jeito (como na vida real). O Elo
+ * guarda o nome do laudo e junta tudo numa chave padronizada: é isso que a tela
+ * do exame e a do médico mostram como "padronização".
+ */
+const NAME_BY_LAB: Record<string, Record<string, string>> = {
+  "Clínica São Lucas": { glicose: "Glicemia de jejum", ldl: "LDL-Colesterol", hdl: "HDL-Colesterol", triglicerides: "Triglicérides", hemoglobina: "Hemoglobina (Hb)", tsh: "Hormônio tireoestimulante (TSH)", leucocitos: "Leucometria global" },
+  "LabNorte Análises": { glicose: "Glicose plasmática", ldl: "Colesterol LDL (calculado - Friedewald)", hdl: "Colesterol HDL", hba1c: "A1C", tgo: "AST (TGO)", tgp: "ALT (TGP)", vitamina_d: "25-hidroxivitamina D", psa: "PSA total" },
+};
+
 function seedLabs(): { documents: SourceDocument[]; labResults: LabResult[] } {
   const documents: SourceDocument[] = [];
   const labResults: LabResult[] = [];
@@ -55,7 +65,7 @@ function seedLabs(): { documents: SourceDocument[]; labResults: LabResult[] } {
         id: `${docId}-${key}`,
         documentId: docId,
         analyteKey: key,
-        name: info.name,
+        name: NAME_BY_LAB[panel.lab]?.[key] ?? info.name,
         value,
         unit: info.unit,
         refLow: info.refLow ?? null,

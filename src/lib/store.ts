@@ -143,6 +143,7 @@ export interface SaveExamInput {
     refLow: number | null;
     refHigh: number | null;
     refText?: string | null;
+    review?: "corrigido" | "adicionado";
   }[];
   /** Laudo descritivo (imagem, coração, endoscopia): salva sem tabela de resultados. */
   report?: DescriptiveReport | null;
@@ -213,6 +214,7 @@ export async function saveExam(input: SaveExamInput): Promise<{ error: string } 
         refText: clean(r.refText, 160) || undefined,
         date: input.examDate,
         lab,
+        review: r.review === "corrigido" || r.review === "adicionado" ? r.review : undefined,
       });
     }
   });

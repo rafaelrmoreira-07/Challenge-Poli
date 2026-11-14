@@ -9,6 +9,7 @@ import NumberFlow from "@number-flow/react";
 import { RECENT_DAYS } from "@/components/RecentExams";
 import { daysBetween, formatDate, todayISO } from "@/lib/dates";
 import { analyteSeries, fmt, formatRef, labStatus, medicationMarkers } from "@/lib/health";
+import { mixedUnits, namesInReports, resultOrigin } from "@/lib/provenance";
 import { openDocumentFile, useDb } from "@/lib/store";
 
 export function ExameView() {
@@ -76,6 +77,27 @@ export function ExameView() {
         </div>
       )}
 
+      {(() => {
+        const names = namesInReports(s.results, s.name);
+        const units = mixedUnits(s.results);
+        if (names.length < 2 && !units.length) return null;
+        return (
+          <div className="mt-4 rounded-2xl bg-surface p-4 text-[15px] leading-relaxed text-ink">
+            {names.length > 1 && (
+              <p>
+                <span className="font-medium">Mesmo exame, nomes diferentes.</span> Seus laudos escrevem este exame de {names.length} jeitos:{" "}
+                {names.map((n) => `“${n.name}”${n.labs.length ? ` (${n.labs.join(", ")})` : ""}`).join(", ")}. O Elo junta tudo numa curva só.
+              </p>
+            )}
+            {units.length > 0 && (
+              <p className={names.length > 1 ? "mt-2 text-warn" : "text-warn"}>
+                Os laudos usam unidades diferentes ({units.join(", ")}). O Elo não converte: confira com o médico antes de comparar os valores.
+              </p>
+            )}
+          </div>
+        );
+      })()}
+
       <SectionTitle>Todos os resultados</SectionTitle>
       <ul className="divide-y divide-line border-y border-line">
         {[...s.results].reverse().map((r) => {
@@ -85,9 +107,9 @@ export function ExameView() {
               <div className="min-w-0">
                 <p className="num text-[15px] font-medium">{formatDate(r.date)}</p>
                 <p className="truncate text-sm text-muted">
-                  {r.lab ?? "Laboratório não informado"}
-                  {doc?.extractedBy === "gemini" ? " · lido por IA" : ""}
+                  {r.lab ?? "Laboratório não informado"} · {resultOrigin(r, doc).label}
                 </p>
+                {r.name.trim().toLowerCase() !== s.name.toLowerCase() && <p className="truncate text-sm text-muted">No laudo: “{r.name}”</p>}
               </div>
               <div className="flex items-center gap-2">
                 <span className="num text-[17px] font-medium">{r.value != null ? fmt(r.value) : r.valueText}</span>
