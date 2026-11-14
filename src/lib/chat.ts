@@ -188,7 +188,9 @@ export function alertDraft(a: HealthAlert): BotDraft {
     actions: [
       a.kind === "exames"
         ? { kind: "reply", label: "Ver exames alterados", text: "exames alterados" }
-        : { kind: "link", label: "Ver medições", href: "/wearables" },
+        : a.kind === "pos_alta"
+          ? { kind: "link", label: "Abrir o pós-alta", href: "/internacao" }
+          : { kind: "link", label: "Ver medições", href: "/wearables" },
       ...(urgent ? [{ kind: "reply", label: "Mandar relatório ao médico", text: "relatório para o médico" } as const] : []),
     ],
   };

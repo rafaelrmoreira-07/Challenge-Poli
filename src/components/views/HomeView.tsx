@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AiStatusBanner } from "@/components/AiStatus";
 import { ExamSearch } from "@/components/ExamSearch";
-import { AlertIcon, ChevronDown, DropIcon, GaugeIcon, HeartIcon, MoonIcon, WatchIcon } from "@/components/icons";
+import { AlertIcon, BedIcon, ChatIcon, ChevronDown, ChevronRight, DoctorIcon, DropIcon, GaugeIcon, HeartIcon, MoonIcon, ScanIcon, WatchIcon } from "@/components/icons";
+import { openChat } from "@/lib/chatOpen";
+import { followUp } from "@/lib/admission";
 import { AlertCard, Disclaimer, RowLink, SectionLink, SectionTitle, Skeleton, Spark, StatusBadge } from "@/components/ui";
 import NumberFlow from "@number-flow/react";
 import { ageFrom, formatDate } from "@/lib/dates";
@@ -38,6 +40,8 @@ export function HomeView() {
   const spo2Low = w.spo2Min != null && w.spo2Min < 90;
   const stale = hasWearables && w.until < new Date().toISOString().slice(0, 10);
   const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+  const fu = followUp(db);
+  const posAlta = fu?.active ? fu : null;
 
   return (
     <div>
@@ -65,6 +69,25 @@ export function HomeView() {
         </div>
       </dl>
 
+      {posAlta && (
+        <Link href="/internacao#registro" className="lift mt-4 flex items-center gap-4 rounded-3xl bg-ink p-5 text-white">
+          <BedIcon width={28} className="shrink-0 text-accent" />
+          <span className="flex-1">
+            <span className="block text-sm text-navy-200">Pós-alta · dia {posAlta.day} de {posAlta.total}</span>
+            <span className="block text-lg font-normal tracking-[-0.02em]">{posAlta.checkedInToday ? "Registro de hoje feito" : "Faça o registro de hoje"}</span>
+          </span>
+          <ChevronRight width={18} className="shrink-0 text-navy-200" />
+        </Link>
+      )}
+
+      {/* Atalhos: tudo o que o app faz, a um toque */}
+      <nav aria-label="Atalhos" className="mt-4 grid grid-cols-2 gap-2">
+        <Shortcut href="/enviar" icon={<ScanIcon width={22} />} title="Adicionar exame" hint="Foto ou PDF" primary />
+        <Shortcut onClick={openChat} icon={<ChatIcon width={22} />} title="Perguntar ao Elo" hint="Exames, sinais, remédios" />
+        <Shortcut href="/compartilhar" icon={<DoctorIcon width={22} />} title="Relatório" hint="Para a consulta" />
+        <Shortcut href="/internacao" icon={<BedIcon width={22} />} title="Internação" hint={posAlta ? `Pós-alta, dia ${posAlta.day}` : "Pasta para o hospital"} />
+      </nav>
+
       <AiStatusBanner />
 
       {insights.length > 0 && (
@@ -84,11 +107,6 @@ export function HomeView() {
       ) : (
         <p className="tile text-[15px] text-muted">Nenhum alerta. Eu aviso na Conversa se aparecer algum.</p>
       )}
-
-      <div className="mt-6 flex flex-col gap-2">
-        <Link href="/enviar" className="btn-primary">Adicionar exame</Link>
-        <Link href="/compartilhar" className="btn-secondary">Montar relatório para o médico</Link>
-      </div>
 
       <SectionTitle action={hasWearables ? <SectionLink href="/wearables">Ver gráficos</SectionLink> : undefined}>{stale ? `Sinais até ${formatDate(w.until, { day: "2-digit", month: "2-digit" })}` : "Sinais dos últimos 7 dias"}</SectionTitle>
       {!hasWearables ? (
@@ -194,6 +212,7 @@ export function HomeView() {
               {PERSONAS.map((x) => <option key={x.id} value={x.id}>{x.name}: {x.resumo}</option>)}
             </select>
           </label>
+          <Link href="/impacto" className="btn-secondary">Ver indicadores de resultado</Link>
           <button className="btn-secondary" disabled={!hasWearables} onClick={() => simulateIrregularRhythm()}>
             Simular batimentos irregulares no relógio
           </button>
@@ -250,5 +269,23 @@ function Vital({
         <Spark values={days.flatMap((d) => (d[metric] == null ? [] : [d[metric] as number]))} width={56} height={22} />
       </div>
     </div>
+  );
+}
+
+function Shortcut({ href, onClick, icon, title, hint, primary }: { href?: string; onClick?: () => void; icon: React.ReactNode; title: string; hint: string; primary?: boolean }) {
+  const cls = `lift flex min-h-24 flex-col justify-between gap-3 rounded-2xl p-4 text-left ${primary ? "bg-ink text-white" : "bg-surface text-ink"}`;
+  const body = (
+    <>
+      <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${primary ? "bg-accent text-ink" : "bg-white"}`}>{icon}</span>
+      <span>
+        <span className="block text-[15px] font-medium leading-tight">{title}</span>
+        <span className={`block text-sm ${primary ? "text-navy-200" : "text-muted"}`}>{hint}</span>
+      </span>
+    </>
+  );
+  return href ? (
+    <Link href={href} className={cls}>{body}</Link>
+  ) : (
+    <button type="button" onClick={onClick} className={cls}>{body}</button>
   );
 }

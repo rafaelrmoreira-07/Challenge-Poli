@@ -6,7 +6,8 @@ import { LabTrendChart } from "@/components/charts";
 import { BackIcon } from "@/components/icons";
 import { SectionTitle, Skeleton, StatusBadge } from "@/components/ui";
 import NumberFlow from "@number-flow/react";
-import { formatDate } from "@/lib/dates";
+import { RECENT_DAYS } from "@/components/RecentExams";
+import { daysBetween, formatDate, todayISO } from "@/lib/dates";
 import { analyteSeries, fmt, formatRef, labStatus, medicationMarkers } from "@/lib/health";
 import { openDocumentFile, useDb } from "@/lib/store";
 
@@ -50,6 +51,15 @@ export function ExameView() {
         </div>
         <StatusBadge status={s.status} />
       </div>
+
+      {(() => {
+        const ago = daysBetween(s.latest.date, todayISO());
+        return ago <= RECENT_DAYS ? (
+          <p className="mt-4 rounded-2xl bg-navy-50 p-3 text-[15px] text-ink">
+            Feito há {ago === 0 ? "menos de um dia" : `${ago} ${ago === 1 ? "dia" : "dias"}`}. Se um médico pedir este exame de novo, mostre este resultado antes: ele vai junto no relatório.
+          </p>
+        ) : null;
+      })()}
 
       {numeric.length > 0 && (
         <div className="tile mt-6 px-2">

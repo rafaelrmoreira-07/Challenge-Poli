@@ -50,3 +50,4 @@ npm run build:pages
 - [docs/ARQUITETURA.md](docs/ARQUITETURA.md): arquitetura, regras de alerta, privacidade e o que falta para produção.
 - [docs/PITCH.md](docs/PITCH.md): roteiro da apresentação de 10 minutos com a demo ao vivo.
 - [docs/LIMITACOES.md](docs/LIMITACOES.md): o que a arquitetura sem servidor não permite, como contornar na demo, e as personas de teste.
+- [docs/APENDICES.md](docs/APENDICES.md): análise da Rivio e ideias que ligam o Elo ao ciclo de receita dos hospitais.

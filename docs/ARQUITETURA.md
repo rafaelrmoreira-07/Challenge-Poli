@@ -96,7 +96,7 @@ A primeira versão com servidor (Next.js com rotas de API, banco em arquivo e li
 
 ## Conversa com o Elo
 
-Chat dentro do app, no estilo do WhatsApp (`/conversa`, botão de balão no cabeçalho). Não usa o WhatsApp de verdade: roda no navegador, como o resto do protótipo.
+Chat dentro do app, aberto pelo botão flutuante "Elo" no canto da tela (`components/ChatLauncher.tsx`): a conversa sobe numa gaveta por cima da tela atual, sem trocar de página. `/conversa` continua existindo para links diretos. Não usa o WhatsApp de verdade: roda no navegador, como o resto do protótipo.
 
 - `lib/chat.ts`: mensagens salvas no navegador (`localStorage`, chave `elo-saude:chat:v1`) e a lista de alertas já avisados. Restaurar a demonstração apaga a conversa.
 - `lib/chatbot.ts`: respostas por palavra-chave, sem IA na conversa. Cada resposta vem dos dados do histórico: alertas, exames alterados, um exame pelo nome ("como está meu colesterol LDL?"), medições dos últimos 7 dias, remédios e acessos de médicos. Sintomas de emergência ("dor no peito", "falta de ar"...) sempre recebem a orientação de ligar 192 antes de qualquer outra coisa.
@@ -105,3 +105,14 @@ Chat dentro do app, no estilo do WhatsApp (`/conversa`, botão de balão no cabe
 - **Relatório para o médico:** o Elo pergunta o nome do médico e o prazo, cria o acesso com `createShare` (todos os tipos de dado) e devolve o link, com botão para revogar.
 
 Para virar WhatsApp de verdade: WhatsApp Business Cloud API (conta Meta verificada, número próprio, templates aprovados), um servidor para o webhook, os dados do paciente num banco com login e vínculo do número de WhatsApp à conta, e cuidados de LGPD para dado de saúde (consentimento, criptografia, registro de acesso). As regras de `lib/chatbot.ts` podem ser reaproveitadas no servidor.
+
+## Apêndices no app
+
+Detalhes em [APENDICES.md](APENDICES.md). No código:
+
+- `lib/admission.ts`: pasta de pré-internação, conferência (com o código de glosa de cada pendência), alta simulada e pós-alta.
+- `lib/fhir.ts`: exportar e importar em FHIR R4. Exemplo fictício em `public/exemplos/rnds-exemplo.json`.
+- `lib/quality.ts`: estágio de conferência de cada exame na leitura de laudos.
+- `components/views/InternacaoView.tsx` (paciente) e `components/views/HospitalView.tsx` (o que o hospital vê pelo link).
+- O link do hospital usa a mesma rota `/medico/`, com `kind: "hospital"` no compartilhamento. Ele leva só os laudos escolhidos na pasta, a pasta (sem o arquivo do pedido, que fica no aparelho) e os registros do pós-alta.
+- Campos novos no banco (`admissions`, `checkins`, `readingStats`, `fhirExports`) são opcionais, para não apagar o que já estava salvo no navegador.

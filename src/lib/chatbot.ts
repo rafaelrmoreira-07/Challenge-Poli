@@ -1,5 +1,6 @@
 "use client";
 
+import { admissionChecklist, checklistScore, followUp, latestAdmission } from "./admission";
 import { ANALYTES } from "./analytes";
 import { getChatSnapshot, markActionsDone, menuActions, alertDraft, setFlow, type BotDraft, type ChatResultRow } from "./chat";
 import { ageFrom, formatDate } from "./dates";
@@ -98,6 +99,7 @@ export async function respondToText(raw: string, say: Say, opts: { fromButton?: 
     return say({ text: `Olá, ${name}. Em que posso ajudar?`, actions: menuActions() });
   }
   if (has(t, /revogar|tirar o acesso|cancelar acesso|cancelar o acesso/)) return listShares(say);
+  if (has(t, /internac|internar|cirurgia|pos-alta|pos alta|depois da alta|recebi alta|dei alta|\bhospital\b/)) return aboutAdmission(say);
   if (has(t, /alerta|aviso/) && (!ai || short)) return listAlerts(say);
   if (has(t, /\b(enviar|mandar|anexar|subir|carregar|fotografar)\b/) && !/\b(medic[oa]|doutor|dra?)\b|relatorio/.test(t)) return askFile(say);
   if (ai && has(t, /relatorio|compartilh|(enviar|mandar|passar).*(medic[oa]|doutor|\bdra?\b)/)) return startReport(say);
@@ -160,6 +162,29 @@ async function createReport(doctorName: string, hours: number, label: string, sa
       { kind: "link", label: "Abrir relatório", href: `/medico/?t=${encodeURIComponent(res.token)}`, newTab: true },
       { kind: "revoke", label: "Revogar acesso", token: res.token },
     ],
+  });
+}
+
+async function aboutAdmission(say: Say) {
+  const db = getDbSnapshot();
+  const fu = followUp(db);
+  if (fu?.active) {
+    return say({
+      text: `Você está no *dia ${fu.day} de ${fu.total}* do pós-alta (${fu.admission.procedure}).${fu.checkedInToday ? " O registro de hoje já foi feito." : " Ainda falta o registro de hoje."}`,
+      actions: [{ kind: "link", label: fu.checkedInToday ? "Ver o pós-alta" : "Fazer o registro de hoje", href: "/internacao" }],
+    });
+  }
+  const ad = latestAdmission(db);
+  if (ad) {
+    const sc = checklistScore(admissionChecklist(ad));
+    return say({
+      text: `Sua pasta para *${ad.procedure}* no ${ad.hospital} está com *${sc.ok} de ${sc.total}* itens completos.${sc.complete ? " Pode enviar ao hospital." : " Complete o que falta para a autorização não travar."}`,
+      actions: [{ kind: "link", label: "Abrir a pasta", href: "/internacao" }],
+    });
+  }
+  return say({
+    text: "Se você vai se internar, posso ajudar a montar a pasta com plano, autorização, pedido médico e os laudos que o hospital pede.",
+    actions: [{ kind: "link", label: "Montar a pasta", href: "/internacao" }],
   });
 }
 

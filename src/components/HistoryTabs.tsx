@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { ExamSearch } from "./ExamSearch";
 import { PlusIcon } from "./icons";
 import { SlidingTabs } from "./SlidingTabs";
 import { PageHeader } from "./ui";
@@ -14,7 +13,6 @@ export function HistoryHeader({ active }: { active: "timeline" | "exames" }) {
         title="Histórico"
         action={
           <div className="flex items-center gap-1">
-            <ExamSearch variant="icon" />
             <Link href="/enviar" className="btn-primary min-h-11 px-4 text-sm">
               <PlusIcon width={16} /> Adicionar
             </Link>

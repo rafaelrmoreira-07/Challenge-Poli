@@ -32,6 +32,17 @@ Modo apresentação (para projetar): https://suzetemirandasilva5601-cpu.github.i
 
 **Para a banca testar:** o QR code abaixo do celular no modo apresentação abre o app no celular de quem ler. A pessoa pode navegar, enviar os laudos de exemplo e criar um acesso para médico. No celular dela a IA fica desligada, então os exemplos usam a leitura pré-gravada.
 
+## Demonstração extra (apêndices, 2 minutos)
+
+1. **Médico → Internação → Preencher com um exemplo → Criar pasta.** A conferência mostra o que falta e qual glosa cada pendência pode causar.
+2. **Completar a pasta** com uma senha que vence antes da internação: aparece o risco da glosa 1414. Marque o consentimento para o prontuário e gere o link do hospital.
+3. **Simular alta do hospital:** aparece o resumo da alta. No registro diário, marque "Falta de ar": o alerta chega na tela Hoje e na conversa.
+4. **Configurações → Ver indicadores de resultado:** o que hospital e plano pagariam.
+
+## Material extra
+
+Para perguntas sobre como o projeto se liga ao negócio da Rivio, veja [APENDICES.md](APENDICES.md): pasta de pré-internação, exames que não precisam ser repetidos, pós-alta, FHIR e modelo pago por resultado.
+
 ## Plano B
 
 - **A IA demorou ou falhou:** o app tenta outro modelo sozinho. Para os laudos de exemplo existe a leitura pré-gravada, e a tela avisa: diga isso em voz alta, sem esconder.

@@ -39,6 +39,11 @@ import {
   WarningOctagonIcon as PhWarningOctagon,
   WatchIcon as PhWatch,
   WhatsappLogoIcon as PhWhatsapp,
+  BedIcon as PhBed,
+  DownloadSimpleIcon as PhDownload,
+  UploadSimpleIcon as PhUpload,
+  ChartBarIcon as PhChart,
+  CircleNotchIcon as PhRing,
   XIcon as PhX,
 } from "@phosphor-icons/react/ssr";
 import type { Icon as PhIcon, IconWeight } from "@phosphor-icons/react/lib";
@@ -86,6 +91,11 @@ export const WatchIcon = wrap(PhWatch);
 /** Dois dados de fontes diferentes conectados ("Juntando seus dados"). */
 export const InsightIcon = wrap(PhIntersect);
 export const WhatsappIcon = wrap(PhWhatsapp);
+export const RingIcon = wrap(PhRing);
+export const BedIcon = wrap(PhBed);
+export const DownloadIcon = wrap(PhDownload);
+export const UploadIcon = wrap(PhUpload);
+export const ChartIcon = wrap(PhChart);
 
 // Envio de laudo
 export const CameraIcon = wrap(PhCamera);

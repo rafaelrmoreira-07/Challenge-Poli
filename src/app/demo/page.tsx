@@ -55,7 +55,10 @@ export default function DemoPage() {
               {PERSONAS.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
             </select>
           </label>
-          <button
+          <a href={asset("/impacto/")} target="_blank" rel="noopener" className="rounded-xl bg-white/10 px-3.5 py-2 text-sm font-medium hover:bg-white/15">
+            Indicadores
+          </a>
+                    <button
             className="rounded-xl bg-white/10 px-3.5 py-2 text-sm font-medium hover:bg-white/15 disabled:opacity-40"
             disabled={!db?.wearableDays.length}
             title={db?.wearableDays.length ? undefined : "Esta persona não usa relógio"}

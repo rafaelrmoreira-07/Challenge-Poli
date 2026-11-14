@@ -15,7 +15,7 @@ export default function MedicoPage() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <Logo />
-            <span className="hidden border-l border-line pl-3 text-[15px] text-muted sm:inline">Relatório para o médico</span>
+            <span className="hidden border-l border-line pl-3 text-[15px] text-muted sm:inline">Compartilhado pelo paciente</span>
           </div>
           <span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-ink">Dados fictícios</span>
         </div>

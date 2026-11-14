@@ -5,13 +5,13 @@ import { usePathname } from "next/navigation";
 import { Suspense } from "react";
 import { DoctorIcon, HistoryIcon, HomeIcon, PlusIcon, VitalsIcon } from "./icons";
 
-/** "Enviar" no centro, em destaque: é a ação principal do app. A Conversa fica no cabeçalho (ChatButton). */
+/** "Enviar" no centro, em destaque: é a ação principal do app. A conversa com o Elo é o botão flutuante (ChatLauncher). */
 const ITEMS = [
   { href: "/", label: "Hoje", icon: HomeIcon, match: (p: string) => p === "/" },
   { href: "/historico", label: "Histórico", icon: HistoryIcon, match: (p: string) => /^\/(historico|exames?)/.test(p) },
   { href: "/enviar", label: "Enviar", icon: PlusIcon, match: (p: string) => p.startsWith("/enviar"), primary: true },
   { href: "/wearables", label: "Sinais", icon: VitalsIcon, match: (p: string) => p.startsWith("/wearables") },
-  { href: "/compartilhar", label: "Médico", icon: DoctorIcon, match: (p: string) => p.startsWith("/compartilhar") },
+  { href: "/compartilhar", label: "Médico", icon: DoctorIcon, match: (p: string) => /^\/(compartilhar|internacao|acessos)/.test(p) },
 ];
 
 /**

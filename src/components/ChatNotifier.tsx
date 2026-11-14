@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { syncAlerts } from "@/lib/chat";
+import { openChat } from "@/lib/chatOpen";
 import { computeAlerts } from "@/lib/health";
 import { useDb } from "@/lib/store";
 
@@ -13,7 +13,6 @@ import { useDb } from "@/lib/store";
  */
 export function ChatNotifier() {
   const db = useDb();
-  const router = useRouter();
 
   useEffect(() => {
     if (!db || !db.patient.name.trim()) return; // ainda no guia de boas-vindas
@@ -24,10 +23,10 @@ export function ChatNotifier() {
         id: `alerta-${a.id}`,
         description: a.message,
         duration: 9000,
-        action: { label: "Abrir", onClick: () => router.push("/conversa") },
+        action: { label: "Abrir", onClick: () => openChat() },
       });
     }
-  }, [db, router]);
+  }, [db]);
 
   return null;
 }

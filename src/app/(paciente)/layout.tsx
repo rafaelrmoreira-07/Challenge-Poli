@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
-import { ChatButton } from "@/components/ChatButton";
+import { ChatLauncher } from "@/components/ChatLauncher";
 import { ChatNotifier } from "@/components/ChatNotifier";
+import { ExamSearch } from "@/components/ExamSearch";
 import { GearIcon, Logo } from "@/components/icons";
 import { OnboardingGate } from "@/components/OnboardingGate";
 
@@ -12,9 +13,9 @@ export default function PacienteLayout({ children }: { children: React.ReactNode
         <Link href="/" aria-label="Elo Saúde, início" className="-ml-1 flex min-h-11 items-center px-1">
           <Logo />
         </Link>
-        <div className="flex items-center gap-1">
-          <span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-ink">Dados fictícios</span>
-          <ChatButton />
+        <div className="flex items-center">
+          <span className="mr-1 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-ink">Dados fictícios</span>
+          <ExamSearch variant="icon" />
           <Link
             href="/configuracoes"
             aria-label="Configurações"
@@ -25,6 +26,7 @@ export default function PacienteLayout({ children }: { children: React.ReactNode
         </div>
       </header>
       <ChatNotifier />
+      <ChatLauncher />
       <main className="flex-1 px-5 pb-32 pt-4">{children}</main>
       <BottomNav />
       <OnboardingGate />

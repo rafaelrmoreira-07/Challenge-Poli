@@ -367,6 +367,17 @@ summary::-webkit-details-marker {
   }
 }
 
+/* Contador da conversa (transitions.dev "Notification badge": pop com bounce) */
+.t-badge {
+  animation: t-badge-pop var(--duration-very-slow) var(--ease-bounce) both;
+}
+@keyframes t-badge-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
 /* "digitando…" da conversa */
 @keyframes typing-dot {
   0%, 80%, 100% { opacity: 0.25; }

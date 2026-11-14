@@ -19,7 +19,7 @@ Requisito: Node.js 20 ou mais novo.
 src/
 ├── app/
 │   ├── (paciente)/   páginas do paciente: enviar, exames, histórico, wearables, compartilhar, configurações
-│   ├── conversa/     conversa com o Elo (chat no estilo do WhatsApp)
+│   ├── conversa/     conversa com o Elo em tela cheia (no app ela abre pelo botão flutuante)
 │   ├── medico/       página que o médico abre pelo link compartilhado
 │   └── demo/         modo apresentação (para projetar no palco)
 ├── components/

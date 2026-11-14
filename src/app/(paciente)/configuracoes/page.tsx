@@ -5,6 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useAiEnabled } from "@/components/AiStatus";
 import { Switch } from "@/components/base/switch";
+import { DataPortability } from "@/components/DataPortability";
+import { ReadingQuality } from "@/components/ReadingQuality";
 import { PageHeader, SectionTitle } from "@/components/ui";
 import { MODELS, setGeminiKey, testGeminiKey } from "@/lib/gemini";
 
@@ -76,6 +78,12 @@ export default function ConfiguracoesPage() {
         </p>
       </div>
 
+      <SectionTitle id="qualidade">Qualidade da leitura</SectionTitle>
+      <ReadingQuality />
+
+      <SectionTitle id="dados">Seus dados em outros sistemas</SectionTitle>
+      <DataPortability />
+
       <SectionTitle>Usar como app</SectionTitle>
       <div className="tile space-y-2 text-[15px] leading-relaxed">
         <p><span className="font-medium">iPhone (Safari):</span> Compartilhar, depois Adicionar à Tela de Início.</p>
@@ -84,8 +92,9 @@ export default function ConfiguracoesPage() {
 
       <SectionTitle>Apresentação</SectionTitle>
       <div className="tile space-y-3">
-        <p className="text-[15px] text-muted">O app do paciente e a tela do médico lado a lado, para projetar.</p>
+        <p className="text-[15px] text-muted">O app do paciente e a tela do médico lado a lado, para projetar, e os indicadores que um hospital ou plano pagaria por resultado.</p>
         <Link href="/demo" className="btn-secondary w-full">Abrir modo apresentação</Link>
+        <Link href="/impacto" className="btn-secondary w-full">Ver indicadores de resultado</Link>
       </div>
 
       <SectionTitle>Privacidade</SectionTitle>

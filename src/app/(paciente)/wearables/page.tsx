@@ -3,12 +3,15 @@
 import NumberFlow from "@number-flow/react";
 import Link from "next/link";
 import { CHART, WearableChart } from "@/components/charts";
-import { WatchIcon } from "@/components/icons";
+import { GaugeIcon, RingIcon, WatchIcon } from "@/components/icons";
 import { AlertCard, Disclaimer, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { formatDate, todayISO } from "@/lib/dates";
 import { computeAlerts, fmt, hasBloodPressure, hasMetric, wearableSnapshot } from "@/lib/health";
 import type { WearableMetric } from "@/lib/types";
 import { simulateIrregularRhythm, useDb } from "@/lib/store";
+
+/** Um ícone por tipo de aparelho: relógio, anel e medidor de pressão (o mesmo manômetro do cartão de pressão na tela Hoje). */
+const DEVICE_ICON: Record<string, typeof WatchIcon> = { relogio: WatchIcon, anel: RingIcon, medidor_pressao: GaugeIcon, importado: WatchIcon };
 
 export default function WearablesPage() {
   const db = useDb();
@@ -21,7 +24,7 @@ export default function WearablesPage() {
 }
 
 function Wearables({ db }: { db: NonNullable<ReturnType<typeof useDb>> }) {
-  const alerts = computeAlerts(db).filter((a) => a.kind !== "exames" && a.kind !== "cruzado");
+  const alerts = computeAlerts(db).filter((a) => a.kind !== "exames" && a.kind !== "cruzado" && a.kind !== "pos_alta");
   const days = db.wearableDays;
   if (!days.length)
     return (
@@ -47,7 +50,7 @@ function Wearables({ db }: { db: NonNullable<ReturnType<typeof useDb>> }) {
     <div>
       {/* Origem dos dados: honesta sobre o que é simulação e o que veio de um arquivo */}
       <div className="tile flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white"><WatchIcon width={20} /></span>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white">{(() => { const Icon = DEVICE_ICON[db.devices[0]?.kind ?? "relogio"] ?? WatchIcon; return <Icon width={20} />; })()}</span>
         <div className="min-w-0 flex-1">
           {imported ? (
             <>

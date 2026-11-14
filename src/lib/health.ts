@@ -1,3 +1,4 @@
+import { followUp, hasRedFlag, recentCheckIn } from "./admission";
 import { analyteInfo } from "./analytes";
 import { addDays, daysBetween, formatDate, todayISO } from "./dates";
 import type { Db, HealthAlert, LabResult, WearableDay, WearableMetric } from "./types";
@@ -184,6 +185,25 @@ export function computeAlerts(db: Db, today = todayISO()): HealthAlert[] {
   }
 
   alerts.push(...crossInsights(db, alerts, today));
+
+  // 6. Pós-alta (apêndice C): sintomas do check-in diário
+  const fu = followUp(db, today);
+  const ci = fu?.active ? recentCheckIn(fu, today) : undefined;
+  if (fu && ci && ci.symptoms.length) {
+    const red = hasRedFlag(ci);
+    alerts.push({
+      id: `pos_alta-${ci.id}`,
+      kind: "pos_alta",
+      severity: red ? "procure_medico" : "atencao",
+      title: red ? "Sintoma de alerta depois da alta" : "Sintoma no pós-alta",
+      message: `No registro de ${formatDate(ci.at.slice(0, 10))}, dia ${fu.day} depois da alta, você marcou: ${ci.symptoms.join(", ").toLowerCase()}.`,
+      recommendation: red
+        ? `Se a falta de ar ou a dor no peito forem fortes ou estiverem piorando, vá ao pronto-socorro ou ligue 192 agora. Se forem leves, ligue hoje para a ${fu.discharge.teamContact.charAt(0).toLowerCase() + fu.discharge.teamContact.slice(1)}.`
+        : `Fale com a ${fu.discharge.teamContact.charAt(0).toLowerCase() + fu.discharge.teamContact.slice(1)} se o sintoma continuar amanhã.`,
+      specialty: fu.admission.hospital,
+      evidence: [`Internação: ${fu.admission.procedure}`, `Alta em ${formatDate(fu.discharge.date)}`, ci.tookMeds ? "Tomou os remédios" : "Não tomou os remédios no dia"],
+    });
+  }
 
   const sev = { procure_medico: 0, atencao: 1 } as const;
   return alerts.sort((a, b) => sev[a.severity] - sev[b.severity]);
