@@ -1,4 +1,6 @@
-# Roteiro do pitch (10 minutos, demo ao vivo)
+# Roteiro do pitch
+
+> **Formato confirmado na reunião com a Rivio: 5 minutos de apresentação + 5 de perguntas.** O roteiro abaixo foi escrito para 10 minutos; o corte para 5 será decidido pelo time no evento.
 
 Personagem: **Carlos, 58 anos** (sintético). Hipertenso, com colesterol alto, exames espalhados por quatro laboratórios desde 2016 e um relógio no pulso.
 
@@ -13,6 +15,8 @@ Modo apresentação (para projetar): https://suzetemirandasilva5601-cpu.github.i
 - [ ] No menu **Persona** do topo, confirme que está em **Carlos Mendes**. No primeiro acesso o app abre vazio, com o guia de boas-vindas; o link com `?persona=carlos` também carrega o Carlos (veja `docs/LIMITACOES.md`).
 - [ ] Faça um teste de leitura de laudo, depois restaure de novo.
 - [ ] Opcional: tenha o `exame-papel-2016.jpg` impresso, para fotografar ao vivo com o celular de vocês.
+- [ ] Laudos de exemplo em Enviar: PDF do laboratório, foto de 2016, foto difícil de 2020 (fecha a lacuna do histórico) e ecocardiograma de 2025 (laudo descritivo). Ver `docs/LIMITACOES.md`, seções 8 e 9.
+- [ ] Apresentar pelo site congelado (ver "Versão congelada" no README).
 
 ## Roteiro
 

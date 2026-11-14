@@ -15,6 +15,8 @@ O Elo Saúde é um site estático (GitHub Pages, sem servidor). Isso deixa o pro
 | "WhatsApp" é um chat dentro do app | WhatsApp de verdade exige Cloud API da Meta e servidor | Slide de próximos passos |
 | Remédios e vacinas não podem ser adicionados pela tela | Ainda não existe formulário; vêm dos dados iniciais | Mostrar os já carregados; se der tempo, adicionar um formulário simples |
 | Até 5 laudos por envio | A chave gratuita da Gemini aceita poucas leituras por minuto | A IA lê um de cada vez; se um falhar, só ele pede "Tentar ler de novo" |
+| Laudo de imagem guarda o texto, não a imagem do exame | Ler a imagem médica (DICOM) é outro problema; o que o médico usa no dia a dia é o laudo | A IA copia a conclusão como está e resume os achados, sem interpretar; o original fica a um clique |
+| O Elo não converte unidades | Converter exige regras por exame e validação clínica | Nomes diferentes viram o mesmo exame; unidades diferentes geram aviso para o médico conferir |
 
 ## Em detalhe
 
@@ -90,3 +92,19 @@ Entram os últimos 180 dias. A primeira importação troca a simulação; as seg
 
 Na demo: **Enviar → Importar dados do relógio → Exportação do Apple Saúde (exemplo) → Usar**. O exemplo é gerado com datas até hoje e tem 3 dias de batimento irregular nas últimas duas semanas, então o alerta aparece.
 
+
+### 8. Laudos de imagem e procedimentos
+
+Ecocardiograma, eletrocardiograma, ultrassom, raio X, tomografia, endoscopia: o valor está no texto, não numa tabela. A leitura por IA reconhece o tipo do laudo, **copia a conclusão como está escrita** e resume os achados em até 4 frases, sem interpretar. A pessoa confere com o original ao lado e salva. Se a leitura falhar, dá para preencher à mão ("É um laudo de imagem ou procedimento").
+
+O laudo aparece no Histórico (seção própria e linha do tempo), na tela do médico ("Laudos de imagem e procedimentos", com a origem do texto), no resumo por IA e no FHIR (DiagnosticReport com a conclusão).
+
+Na demo: **Enviar → Laudo de ecocardiograma → Usar**. O Carlos já tem um eletrocardiograma de 2024 em ritmo sinusal, a referência para o médico comparar com o ritmo irregular do relógio.
+
+### 9. Padronização, procedência e cobertura
+
+- **Padronização:** cada laboratório escreve o exame de um jeito ("Glicemia de jejum", "Glicose plasmática"). O Elo guarda o nome do laudo e junta tudo numa chave padronizada. A tela de cada exame mostra "Mesmo exame, nomes diferentes"; no médico, cada gráfico diz de quantos locais e nomes veio.
+- **Procedência:** cada valor sabe se ficou como a IA leu, se foi corrigido ou digitado pelo paciente. O médico vê isso em cada resultado; corrigido e digitado aparecem em destaque.
+- **Cobertura:** período, laudos, locais, dias de relógio, lacunas de 18 meses ou mais e o que não foi compartilhado. No médico, "Cobertura do histórico"; no Histórico, o convite a enviar exames do período que falta.
+
+Na demo: o Carlos tem uma lacuna de ago/2019 a mar/2021. O laudo de exemplo **Foto difícil de ler** é de 2020: enviar fecha a lacuna ao vivo, e o valor ilegível que a pessoa preenche aparece para o médico como "corrigido pelo paciente".

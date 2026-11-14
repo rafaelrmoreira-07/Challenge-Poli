@@ -1,9 +1,18 @@
 # Elo Saúde · hub de saúde pessoal
 
+> ## ⛔ Versão congelada para a apresentação (14/11/2026)
+>
+> Este é o código que o time validou e apresenta para a Rivio. **Até o fim da apresentação, não altere o `main` nem publique o site.** Ideias novas ficam para depois (veja `AGENTS.md`).
+>
+> - **Site da apresentação:** https://rafaelrmoreira-07.github.io/Challenge-Poli/ · modo apresentação: https://rafaelrmoreira-07.github.io/Challenge-Poli/demo/
+> - **Tag do código congelado:** `apresentacao-14-11`
+> - **Cópia offline:** pacote `elo-saude-apresentacao.zip` com o site pronto (instruções dentro).
+
+
 Protótipo para o desafio da Rivio (demo em 14/11/2026, Gama House). Usa IA para juntar o histórico de saúde de uma pessoa, do exame em papel de dez anos atrás aos dados dos wearables, e organizar tudo para ela e para o médico dela.
 
-**Site publicado:** https://suzetemirandasilva5601-cpu.github.io/Challenge-Poli/
-**Modo apresentação:** https://suzetemirandasilva5601-cpu.github.io/Challenge-Poli/demo/
+**Site antigo (redesenho do Matteo, sem as melhorias):** https://suzetemirandasilva5601-cpu.github.io/Challenge-Poli/
+**Para apresentar, use o site congelado do aviso acima.**
 
 > **Todos os dados são sintéticos.** O paciente "Carlos Mendes" e os laudos em `public/exemplos/` são fictícios.
 
