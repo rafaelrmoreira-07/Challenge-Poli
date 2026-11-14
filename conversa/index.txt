@@ -1,32 +1,31 @@
 1:"$Sreact.fragment"
 2:"/Challenge-Poli/_next/static/chunks/3qfy96eoyh-ek.js"
-3:"/Challenge-Poli/_next/static/chunks/3uytutfwatklv.js"
-4:"/Challenge-Poli/_next/static/chunks/1ccbn8rh1evky.js"
-5:"/Challenge-Poli/_next/static/chunks/3f90gsrtmv3j_.js"
-6:I[28736,["$2","$3","$4","$5"],"PersonaFromUrl"]
-7:I[39756,["$2","$3","$4","$5"],"default"]
-8:I[37457,["$2","$3","$4","$5"],"default"]
-9:I[65091,["$2","$3","$4","$5"],"Toaster"]
-d:"/Challenge-Poli/_next/static/chunks/0fgjfbvf6j9wg.js"
-e:"/Challenge-Poli/_next/static/chunks/3z02puz5cqwn3.js"
-f:"/Challenge-Poli/_next/static/chunks/3n97ipdqhyszs.js"
-10:I[60463,["$2","$3","$4","$5","$d","$e","$f"],"ChatView"]
-11:I[3987,["$2","$3","$4","$5","$d","$e","$f"],"OnboardingGate"]
-12:I[97367,["$2","$3","$4","$5"],"OutletBoundary"]
-13:"$Sreact.suspense"
-15:"ViewportBoundary"
-16:I[97367,["$2","$3","$4","$5"],"$15"]
-18:"MetadataBoundary"
-19:I[97367,["$2","$3","$4","$5"],"$18"]
-1b:I[68027,["$2","$3","$4","$5"],"default",1]
-:HL["/Challenge-Poli/_next/static/chunks/3-o1juc_ttni_.css","style"]
-:HL["/Challenge-Poli/_next/static/media/hanken_grotesk_latin_wght_normal-s.p.3241148m1u9do.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-b:X
-c:[["children",{"s":"__PAGE__","h":512,"d":{"r":["$","$1","c",{"children":[[["$","$L10",null,{}],["$","$L11",null,{}]],[["$","script","script-0",{"src":"/Challenge-Poli/_next/static/chunks/0fgjfbvf6j9wg.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/Challenge-Poli/_next/static/chunks/3z02puz5cqwn3.js","async":true,"nonce":"$undefined"}],["$","script","script-2",{"src":"/Challenge-Poli/_next/static/chunks/3n97ipdqhyszs.js","async":true,"nonce":"$undefined"}]],["$","$L12",null,{"children":["$","$13",null,{"name":"Next.MetadataOutlet","children":"$@14"}]}]]}],"p":false,"v":null}}]]
-a:[["children",{"s":"conversa","h":512,"d":{"r":["$","$1","c",{"children":[null,["$","$L7",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L8",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],"p":false,"v":"$b"},"c":"$Qc"}]]
-0:{"P":null,"c":["","conversa",""],"q":"","i":false,"t":{"t":{"s":"","h":528,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/Challenge-Poli/_next/static/chunks/3-o1juc_ttni_.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/Challenge-Poli/_next/static/chunks/3qfy96eoyh-ek.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/Challenge-Poli/_next/static/chunks/3uytutfwatklv.js","async":true,"nonce":"$undefined"}],["$","script","script-2",{"src":"/Challenge-Poli/_next/static/chunks/1ccbn8rh1evky.js","async":true,"nonce":"$undefined"}],["$","script","script-3",{"src":"/Challenge-Poli/_next/static/chunks/3f90gsrtmv3j_.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"pt-BR","className":"ZTSAWW_variable h-full antialiased","children":["$","body",null,{"className":"min-h-full","children":[["$","$L6",null,{}],["$","$L7",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L8",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}],["$","$L9",null,{}]]}]}]]}],"p":false,"v":null},"c":"$Qa"},"h":{"r":["$","$1","h",{"children":[null,["$","$L16",null,{"children":"$L17"}],["$","$L19",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$13",null,{"name":"Next.Metadata","children":"$L1a"}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":false,"v":null}},"m":"$undefined","G":["$1b",[["$","link","0",{"rel":"stylesheet","href":"/Challenge-Poli/_next/static/chunks/3-o1juc_ttni_.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]]],"S":true,"r":"$undefined","s":"$undefined","a":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"O2by6s_r8sjj_0u8ECKF6"}
-b:C
-17:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, viewport-fit=cover"}],["$","meta","2",{"name":"theme-color","content":"#ffffff"}]]
-1c:I[27201,["$2","$3","$4","$5"],"IconMark"]
-14:null
-1a:[["$","title","0",{"children":"Conversa · Elo Saúde"}],["$","meta","1",{"name":"description","content":"Exames, consultas, remédios, vacinas e medições do relógio organizados para você e para o seu médico."}],["$","meta","2",{"name":"application-name","content":"Elo Saúde"}],["$","link","3",{"rel":"manifest","href":"/Challenge-Poli/manifest.webmanifest","crossOrigin":"$undefined"}],["$","link","4",{"rel":"icon","href":"/Challenge-Poli/icon.png?icon.3_b-t59ua1eo0.png","sizes":"512x512","type":"image/png"}],["$","link","5",{"rel":"apple-touch-icon","href":"/Challenge-Poli/apple-icon.png?apple-icon.0mpj01lk815ft.png","sizes":"180x180","type":"image/png"}],["$","$L1c","6",{}]]
+3:"/Challenge-Poli/_next/static/chunks/1-xug982k-juk.js"
+4:"/Challenge-Poli/_next/static/chunks/2rnvc_7kv2tos.js"
+5:I[28736,["$2","$3","$4"],"PersonaFromUrl"]
+6:I[39756,["$2","$3","$4"],"default"]
+7:I[37457,["$2","$3","$4"],"default"]
+8:I[65091,["$2","$3","$4"],"Toaster"]
+c:"/Challenge-Poli/_next/static/chunks/0-l-630bgj2kw.js"
+d:"/Challenge-Poli/_next/static/chunks/2u7xmj2eoep7m.js"
+e:"/Challenge-Poli/_next/static/chunks/22v9eb-kfrw--.js"
+f:I[60463,["$2","$3","$4","$c","$d","$e"],"ChatView"]
+10:I[3987,["$2","$3","$4","$c","$d","$e"],"OnboardingGate"]
+11:I[97367,["$2","$3","$4"],"OutletBoundary"]
+12:"$Sreact.suspense"
+14:"ViewportBoundary"
+15:I[97367,["$2","$3","$4"],"$14"]
+17:"MetadataBoundary"
+18:I[97367,["$2","$3","$4"],"$17"]
+1a:I[68027,["$2","$3","$4"],"default",1]
+:HL["/Challenge-Poli/_next/static/chunks/03ymwdb1i834b.css","style"]
+:HL["/Challenge-Poli/_next/static/media/hanken_local-s.p.3241148m1u9do.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+a:X
+b:[["children",{"s":"__PAGE__","h":512,"d":{"r":["$","$1","c",{"children":[[["$","$Lf",null,{}],["$","$L10",null,{}]],[["$","script","script-0",{"src":"/Challenge-Poli/_next/static/chunks/0-l-630bgj2kw.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/Challenge-Poli/_next/static/chunks/2u7xmj2eoep7m.js","async":true,"nonce":"$undefined"}],["$","script","script-2",{"src":"/Challenge-Poli/_next/static/chunks/22v9eb-kfrw--.js","async":true,"nonce":"$undefined"}]],["$","$L11",null,{"children":["$","$12",null,{"name":"Next.MetadataOutlet","children":"$@13"}]}]]}],"p":false,"v":null}}]]
+9:[["children",{"s":"conversa","h":512,"d":{"r":["$","$1","c",{"children":[null,["$","$L6",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L7",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],"p":false,"v":"$a"},"c":"$Qb"}]]
+0:{"P":null,"c":["","conversa",""],"q":"","i":false,"t":{"t":{"s":"","h":528,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/Challenge-Poli/_next/static/chunks/03ymwdb1i834b.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/Challenge-Poli/_next/static/chunks/3qfy96eoyh-ek.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/Challenge-Poli/_next/static/chunks/1-xug982k-juk.js","async":true,"nonce":"$undefined"}],["$","script","script-2",{"src":"/Challenge-Poli/_next/static/chunks/2rnvc_7kv2tos.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"pt-BR","className":"u4-7Na_variable h-full antialiased","children":["$","body",null,{"className":"min-h-full","children":[["$","$L5",null,{}],["$","$L6",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L7",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}],["$","$L8",null,{}]]}]}]]}],"p":false,"v":null},"c":"$Q9"},"h":{"r":["$","$1","h",{"children":[null,["$","$L15",null,{"children":"$L16"}],["$","$L18",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$12",null,{"name":"Next.Metadata","children":"$L19"}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":false,"v":null}},"m":"$undefined","G":["$1a",[["$","link","0",{"rel":"stylesheet","href":"/Challenge-Poli/_next/static/chunks/03ymwdb1i834b.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]]],"S":true,"r":"$undefined","s":"$undefined","a":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"nXG24mmYSLhQJL7i1fZ9b"}
+a:C
+16:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, viewport-fit=cover"}],["$","meta","2",{"name":"theme-color","content":"#ffffff"}]]
+1b:I[27201,["$2","$3","$4"],"IconMark"]
+13:null
+19:[["$","title","0",{"children":"Conversa · Elo Saúde"}],["$","meta","1",{"name":"description","content":"Exames, consultas, remédios, vacinas e medições do relógio organizados para você e para o seu médico."}],["$","meta","2",{"name":"application-name","content":"Elo Saúde"}],["$","link","3",{"rel":"manifest","href":"/Challenge-Poli/manifest.webmanifest","crossOrigin":"$undefined"}],["$","link","4",{"rel":"icon","href":"/Challenge-Poli/icon.png?icon.3_b-t59ua1eo0.png","sizes":"512x512","type":"image/png"}],["$","link","5",{"rel":"apple-touch-icon","href":"/Challenge-Poli/apple-icon.png?apple-icon.0mpj01lk815ft.png","sizes":"180x180","type":"image/png"}],["$","$L1b","6",{}]]
